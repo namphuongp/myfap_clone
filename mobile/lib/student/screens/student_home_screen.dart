@@ -33,6 +33,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   ];
 
   int _selectedIndex = 0;
+  int _scheduleRevision = 0;
   bool _loggingOut = false;
 
   void _signedOutFromProfile() {
@@ -85,8 +86,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     body: IndexedStack(
       index: _selectedIndex,
       children: [
-        StudentScheduleScreen(api: widget.api),
-        const EnrollmentScreen(),
+        StudentScheduleScreen(
+          key: ValueKey(_scheduleRevision),
+          api: widget.api,
+        ),
+        EnrollmentScreen(
+          api: widget.api,
+          studentId: widget.user['id'] as String,
+          onEnrollmentChanged: () => setState(() => _scheduleRevision++),
+        ),
         const RequestsScreen(),
         const AnnouncementsScreen(),
       ],
