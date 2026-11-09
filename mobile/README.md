@@ -36,4 +36,22 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 
 Backend cần chạy tại `http://localhost:3000/api` trên máy phát triển.
 
+## Chạy trên Chrome (không cần máy ảo)
+
+Từ thư mục gốc, mở terminal thứ nhất để chạy API và MongoDB:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-local.ps1
+```
+
+Mở terminal thứ hai:
+
+```powershell
+cd mobile
+flutter pub get
+flutter run -d chrome --web-hostname=localhost --web-port=5173
+```
+
+Web mặc định gọi `http://localhost:3000/api`. Cổng `5173` khớp với `CORS_ORIGINS` trong `backend/.env.example`. Nếu đổi cổng web, cập nhật `CORS_ORIGINS` trong `backend/.env` rồi khởi động lại API. Khi đang chạy, nhấn `r` trong terminal Flutter để hot reload.
+
 Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; cho sửa liên hệ và đổi mật khẩu, không upload ảnh. HEAD tải tổng quan bộ môn thay vì lịch. Thông báo/chuyển ngành đã có backend API; các màn thao tác học vụ còn cần tích hợp. Xem ../STUDENT_AFFAIRS.md và ../API.md.

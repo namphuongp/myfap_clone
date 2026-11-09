@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
   final String message;
@@ -13,10 +14,13 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000/api',
-  );
+  static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static String get baseUrl {
+    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    return kIsWeb
+        ? 'http://localhost:3000/api'
+        : 'http://10.0.2.2:3000/api';
+  }
   final FlutterSecureStorage _storage;
   final http.Client _client;
   String? _token;

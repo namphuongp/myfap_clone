@@ -157,7 +157,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
               const SizedBox(height: 4),
               Text('${section.code} • ${section.semesterCode}'),
               const SizedBox(height: 8),
-              Text('Còn ${section.remaining ?? 0}/30 chỗ'),
+              Text('Còn ${section.remaining ?? 0} chỗ trống'),
               const SizedBox(height: 20),
               Text(
                 'Lịch học sắp tới',
@@ -445,7 +445,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 6),
-                        Text('Còn ${section.remaining ?? 0}/30 chỗ'),
+                        Text('Còn ${section.remaining ?? 0} chỗ trống'),
                         const Spacer(),
                         const Icon(Icons.chevron_right),
                       ],
