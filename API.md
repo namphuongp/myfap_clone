@@ -1,87 +1,116 @@
-# MyFAP API
+# MyFAP API Express Mongoose
 
-Base URL trên máy: `http://localhost:3000/api`; Android emulator: `http://10.0.2.2:3000/api`. Ngoài health/login, mọi API yêu cầu `Authorization: Bearer <accessToken>`. JSON dùng snake_case cho dữ liệu học vụ; phản hồi login dùng `accessToken`, `expiresAt`.
+Base URL: `http://localhost:3000/api`. Android emulator: `http://10.0.2.2:3000/api`. Ngoài health/login, cần `Authorization: Bearer <accessToken>`. ID là chuỗi MongoDB ObjectId 24 ký tự hex, lấy trường `id` từ response, không dùng ID số cũ. `slot_id` vẫn là số 1–4; `version` bắt đầu 0, luôn đọc bản mới nhất trước khi ghi.
 
-| Method | Đường dẫn | Vai trò / kết quả |
+| Method | Đường dẫn | Quyền / ý nghĩa |
 |---|---|---|
-| GET | /health | Công khai; kết nối DB |
-| POST | /auth/login | Công khai; cấp phiên |
-| GET | /auth/me | Mọi vai trò; thông tin tài khoản |
-| POST | /auth/logout | Mọi vai trò; 204 |
-| POST | /users | STAFF; cấp tài khoản |
-| GET | /rooms | Mọi vai trò; tối đa 200 phòng |
-| POST | /rooms | STAFF; tạo phòng |
-| GET | /sections | Theo phạm vi vai trò; tối đa 200 lớp |
-| POST | /sections | STAFF; tạo lớp |
-| POST | /sections/:id/enrollments | STAFF; thêm sinh viên trước khi xếp lịch |
-| GET | /schedule?from=...&to=... | Lịch cá nhân/bộ môn/toàn trường; tối đa 93 ngày, 1000 buổi |
-| POST | /sessions | STAFF; xếp buổi học |
-| GET | /sessions/:id/attendance | Đúng phạm vi; sinh viên chỉ nhận dòng của mình |
-| PUT | /sessions/:id/attendance | Giảng viên phụ trách; cập nhật đủ lớp |
-| POST | /leave-requests | STUDENT; gửi đơn nghỉ |
-| GET | /leave-requests?status=PENDING&page=1 | Theo phạm vi; 50 dòng/trang |
-| PATCH | /leave-requests/:id/decision | Giảng viên phụ trách duyệt |
-| POST | /change-requests | Giảng viên phụ trách đề xuất đổi lịch/phòng |
-| GET | /change-requests?status=PENDING&page=1 | LECTURER xem của mình; HEAD trong bộ môn; STAFF tất cả |
-| PATCH | /change-requests/:id/decision | STAFF duyệt; chấp thuận cập nhật lịch nguyên tử |
-| GET | /department/summary | HEAD; thống kê lịch/điểm danh bộ môn tài khoản |
+| GET | /health | Công khai, xác minh kết nối MongoDB |
+| POST | /auth/login | Công khai, cấp token phiên |
+| GET | /auth/me | Tài khoản hiện tại |
+| POST | /auth/logout | Thu hồi token, trả 204 |
+| POST | /users | STAFF cấp tài khoản |
+| GET/POST | /departments | Mọi role đọc; STAFF tạo bộ môn |
+| GET/POST | /courses | Mọi role đọc; STAFF tạo môn |
+| GET/POST | /semesters | Mọi role đọc; STAFF tạo kỳ |
+| GET/POST | /rooms | Mọi role đọc; STAFF tạo phòng |
+| GET | /time-slots | 4 slot cố định, giờ Việt Nam |
+| GET | /sections | STUDENT các lớp đã đăng ký; LECTURER lớp phụ trách; HEAD bộ môn; STAFF toàn trường |
+| GET | /sections/available?course_id=...&semester_id=... | STUDENT/STAFF; lớp mở có lịch tương lai, enrolled/remaining; lớp đầy vẫn hiện remaining=0 |
+| POST | /sections | STAFF tạo lớp 30 chỗ |
+| PATCH | /sections/:id/status | STAFF mở/đóng đăng ký |
+| GET | /sections/:id/sessions | Xem lịch lớp trước khi đăng ký; STUDENT không nhận danh sách điểm danh |
+| GET | /sections/:id/enrollments | Theo phạm vi; STUDENT chỉ dòng của mình |
+| POST | /sections/:id/enrollments | STUDENT tự đăng ký; STAFF đăng ký thay |
+| POST | /sections/:id/enrollments/:studentId/withdraw | STUDENT tự rút; STAFF rút thay |
+| GET | /me/enrollments | STUDENT xem đăng ký hiện tại và đã rút |
+| GET | /schedule?from=...&to=... | Lịch đúng phạm vi, tối đa 93 ngày/1000 buổi; không trả danh sách điểm danh |
+| POST | /sessions | STAFF xếp buổi theo ngày + slot |
+| PATCH | /sessions/:id/schedule | STAFF đổi lịch trực tiếp hoặc chuẩn hóa buổi cũ còn ở tương lai |
+| PATCH | /sessions/:id/status | STAFF đặt COMPLETED/CANCELLED |
+| GET | /sessions/:id/history | LECTURER phụ trách / HEAD bộ môn / STAFF xem lịch sử lịch |
+| GET | /sessions/:id/attendance | Đúng phạm vi, STUDENT chỉ dữ liệu bản thân |
+| PUT | /sessions/:id/attendance | LECTURER phụ trách, đủ danh sách của buổi |
+| GET | /sessions/:id/attendance-history | LECTURER/HEAD/STAFF đúng phạm vi, snapshot trước/sau |
+| POST | /leave-requests | STUDENT gửi nghỉ đúng buổi/ngày/slot |
+| GET | /leave-requests?status=PENDING&page=1 | Theo phạm vi vai trò |
+| PATCH | /leave-requests/:id/decision | LECTURER phụ trách duyệt/từ chối |
+| POST | /change-requests | LECTURER phụ trách gửi đổi lịch/phòng |
+| GET | /change-requests?status=PENDING&page=1 | LECTURER xem của mình; HEAD bộ môn; STAFF tất cả |
+| PATCH | /change-requests/:id/decision | STAFF duyệt, cập nhật lịch nguyên tử |
+| GET | /department/summary?semester_id=... | HEAD thống kê bộ môn tài khoản, không có điểm |
 
-Các list đơn nhận status tùy chọn: PENDING, APPROVED, REJECTED. `page` mặc định 1. API không nhận department/user tùy ý để mở rộng phạm vi truy cập. ID số nguyên dương, version bắt đầu 0. Đọc version hiện tại từ danh sách đơn hoặc GET attendance trước khi cập nhật. Nếu danh sách chạm giới hạn 200/1000, thu hẹp dữ liệu trước khi mở rộng hệ thống; chưa có phân trang danh mục/lịch.
+List đơn có 50 dòng/trang, page mặc định 1. Danh mục/lớp tối đa 200, lịch và lịch lớp tối đa 1000; history tối đa 200. Đây là giới hạn MVP, chưa có phân trang đầy đủ cho các list ngoài đơn.
 
-## Payload mẫu
+## Payload
+
+Các ID mẫu bên dưới chỉ minh họa; thay bằng id nhận từ GET/POST tương ứng.
 
 Đăng nhập:
 ```json
 {"email":"student@myfap.local","password":"Demo@12345678"}
 ```
-Phản hồi: `{"accessToken":"...","expiresAt":"...Z","user":{"id":1,"name":"...","email":"...","role":"STUDENT","department":"SE","active":1}}`.
+Trả `accessToken`, `expiresAt`, `user`. Token chỉ lưu hash trong DB; hạn mặc định 8 giờ. Không có đăng ký tài khoản công khai.
 
-STAFF cấp tài khoản (không nhận trường active hoặc password_hash từ client):
+Cấp tài khoản:
 ```json
-{"name":"Sinh viên Hai","email":"student2@myfap.local","password":"NewDemo@12345678","role":"STUDENT","department":"SE"}
+{"user_code":"HE200002","name":"Sinh viên Hai","email":"student2@myfap.local","password":"NewDemo@12345678","role":"STUDENT","department_id":"507f1f77bcf86cd799439011"}
 ```
-Tạo phòng:
-```json
-{"name":"BE-303","capacity":40}
-```
+Bộ môn: `{"code":"SE","name":"Kỹ thuật phần mềm"}`.
+
+Môn: `{"code":"PRM393","name":"Flutter Mobile","department_id":"507f1f77bcf86cd799439011"}`.
+
+Kỳ: `{"code":"SPRING2027","name":"Xuân 2027","start_at":"2027-01-01T00:00:00+07:00","end_at":"2027-05-01T00:00:00+07:00"}`.
+
+Phòng: `{"name":"BE-303","capacity":30}`.
+
 Tạo lớp:
 ```json
-{"code":"SE20B-PRM393","course":"Flutter Mobile","department":"SE","lecturer_id":2}
+{"code":"SE20B-PRM393","course_id":"507f1f77bcf86cd799439012","semester_id":"507f1f77bcf86cd799439013","lecturer_id":"507f1f77bcf86cd799439014"}
 ```
-Thêm sinh viên `POST /sections/2/enrollments`:
-```json
-{"student_id":1}
-```
-Tạo buổi học (thay ngày tương lai phù hợp thời điểm chạy):
-```json
-{"section_id":1,"room_id":1,"start_at":"2026-12-01T01:00:00Z","end_at":"2026-12-01T03:00:00Z"}
-```
-Gửi đơn nghỉ:
-```json
-{"session_id":2,"reason":"Có lịch khám bệnh"}
-```
-Duyệt đơn nghỉ hoặc đổi lịch:
-```json
-{"version":0,"decision":"APPROVED","note":"Đồng ý theo đề nghị"}
-```
-Từ chối dùng `decision: "REJECTED"`; note bắt buộc. Chỉ PENDING được xử lý; không được duyệt lại.
+Không gửi capacity; server cố định 30. Bộ môn suy ra từ môn học và đối chiếu giảng viên. Mã lớp được dùng lại ở học kỳ khác. Đóng/mở đăng ký: `{"version":0,"status":"CLOSED"}` hoặc OPEN.
 
-Đề nghị đổi lịch/phòng:
+Tạo buổi, thay ngày phù hợp học kỳ và tương lai:
 ```json
-{"session_id":2,"reason":"Phòng đang bảo trì","proposed_room_id":2,"proposed_start":"2026-12-01T01:00:00Z","proposed_end":"2026-12-01T03:00:00Z"}
+{"section_id":"507f1f77bcf86cd799439015","room_id":"507f1f77bcf86cd799439016","session_date":"2027-01-15","slot_id":1}
 ```
-Đổi phòng giữ start/end hiện tại; đổi giờ giữ room hiện tại. Cần gửi cả ba trường proposed.
+Server tự tính start_at/end_at UTC từ giờ Việt Nam. Slot 1: 07:30–09:50; slot 2: 10:00–12:20; slot 3: 12:50–15:10; slot 4: 15:20–17:40. Không nhận start_at/end_at tự do.
 
-Lưu điểm danh (gửi tất cả sinh viên, không chỉ những người vắng):
+Sinh viên đăng ký: body `{}`. STAFF đăng ký thay: `{"student_id":"507f1f77bcf86cd799439017"}`. Rút lớp: `{"version":0}`; version lấy từ /me/enrollments hoặc list đăng ký. Lớp chưa có lịch, lớp đủ, trùng môn cùng kỳ hoặc trùng lịch đều trả 409.
+
+Gửi nghỉ:
 ```json
-{"version":0,"rows":[{"student_id":1,"status":"ABSENT"}]}
+{"session_id":"507f1f77bcf86cd799439018","reason":"Có lịch khám bệnh"}
 ```
-GET attendance trả:
+Backend chụp ngày/slot hiện tại, client không tự ghi ngày/slot của đơn. Một buổi/sinh viên chỉ có một đơn PENDING hoặc APPROVED. INVALIDATED/REJECTED/CANCELLED vẫn lưu lịch sử và cho phép gửi đơn mới khi buổi còn tương lai.
+
+Duyệt đơn nghỉ/đổi lịch:
 ```json
-{"version":1,"saved":true,"rows":[{"student_id":1,"name":"Demo STUDENT","email":"student@myfap.local","status":"ABSENT","approved_leave_id":1,"note":"Nghỉ có phép"}]}
+{"version":0,"decision":"APPROVED","note":"Đồng ý"}
 ```
-Nếu chưa ghi: status NOT_RECORDED, saved false. Ghi chú độc lập với status, không do client tùy ý ghi. UI đặt `note` ở cột cạnh trạng thái; có thể hiện nhãn `ABSENT • Nghỉ có phép`.
+Từ chối dùng REJECTED; note bắt buộc. Chỉ đơn PENDING được xử lý. HEAD không được duyệt.
+
+Gửi đổi lịch/phòng:
+```json
+{"session_id":"507f1f77bcf86cd799439018","reason":"Phòng bảo trì","proposed_room_id":"507f1f77bcf86cd799439019","proposed_date":"2027-01-15","proposed_slot_id":2}
+```
+Đổi phòng giữ ngày/slot; đổi slot giữ phòng nếu phù hợp. Kiểm tra trùng lại khi STAFF duyệt. Đổi ngày/slot làm đơn nghỉ cũ INVALIDATED; không tự duyệt lại. Sinh viên phải gửi đơn mới.
+
+STAFF đổi lịch trực tiếp:
+```json
+{"version":0,"room_id":"507f1f77bcf86cd799439019","session_date":"2027-01-15","slot_id":2,"reason":"Điều chỉnh lịch"}
+```
+Đặt trạng thái buổi: `{"version":0,"status":"CANCELLED","reason":"Nghỉ học"}` hoặc COMPLETED sau giờ kết thúc.
+
+Điểm danh:
+```json
+{"version":0,"rows":[{"student_id":"507f1f77bcf86cd799439017","status":"ABSENT"}]}
+```
+Gửi đủ danh sách của buổi, không chỉ người vắng. Status: PRESENT/ABSENT/LATE/EXCUSED. GET attendance trả:
+```json
+{"version":1,"saved":true,"session_status":"COMPLETED","rows":[{"student_id":"507f1f77bcf86cd799439017","user_code":"HE200002","name":"Sinh viên Hai","status":"ABSENT","approved_leave_id":"507f1f77bcf86cd799439020","note":"Nghỉ có phép"}]}
+```
+Chưa ghi: status NOT_RECORDED. Note là giá trị suy ra từ đơn APPROVED còn đúng lịch, không nhận note do sinh viên tự ghi. Khi bị INVALIDATED, note biến mất.
 
 ## Lỗi
 
-400 dữ liệu/ID/JSON sai; 401 chưa đăng nhập, sai mật khẩu, phiên hết hạn/thu hồi; 403 sai quyền/phạm vi; 404 không có bản ghi/API; 409 trùng dữ liệu/lịch, version cũ hoặc sai trạng thái nghiệp vụ; 413 JSON >64 KiB; 429 vượt giới hạn; 500 lỗi nội bộ. Lỗi thường dạng `{"message":"..."}`; 400 validation có thêm issues. Middleware giới hạn tần suất có thể trả text, Flutter đã xử lý phản hồi không phải JSON.
+400 payload/ID/JSON sai; 401 đăng nhập sai hoặc phiên hết hạn/thu hồi; 403 sai quyền/phạm vi; 404 không có bản ghi; 409 lớp đủ/trùng lịch/dữ liệu trùng/version cũ/sai trạng thái; 413 JSON >64 KiB; 429 vượt giới hạn; 500 lỗi máy chủ. JSON lỗi dạng `{"message":"..."}`, validation có thêm issues. Không trả stack trace, password_hash hoặc token_hash.

@@ -1,19 +1,15 @@
 services:
-  mysql:
-    image: mysql:8.4
+  mongo:
+    image: mongo:8.0
+    command: ["mongod", "--replSet", "myfap-rs", "--bind_ip_all", "--port", "27018"]
     ports:
-      - "127.0.0.1:3307:3306"
-    environment:
-      MYSQL_DATABASE: myfap
-      MYSQL_USER: myfap
-      MYSQL_PASSWORD: ${DB_PASSWORD:-LocalDemo@123456}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-RootLocalDemo@123456}
+      - "127.0.0.1:27018:27018"
     volumes:
-      - myfap_mysql:/var/lib/mysql
+      - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      test: ["CMD", "mongosh", "--quiet", "--port", "27018", "--eval", "try { rs.status() } catch (e) { rs.initiate({_id:'myfap-rs',members:[{_id:0,host:'127.0.0.1:27018'}]}) }; quit(db.hello().isWritablePrimary ? 0 : 1)"]
       interval: 5s
       timeout: 5s
       retries: 30
 volumes:
-  myfap_mysql:
+  mongo_data:

@@ -3,52 +3,57 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { checkVersion, hash, token, parse, id } from "../src/core.js";
-import { db } from "../src/db.js";
+import { disconnect } from "../src/db.js";
 const app = createApp();
-test.after(() => db.destroy());
-test("Từ chối API riêng tư khi thiếu token", async () => {
+test.after(() => disconnect());
+test("API riêng tư yêu cầu token", async () => {
   await request(app).get("/api/sections").expect(401);
 });
-test("Từ chối token sai định dạng trước truy vấn DB", async () => {
+test("Token sai định dạng bị chặn trước DB", async () => {
   await request(app)
     .get("/api/auth/me")
     .set("Authorization", "Bearer abc")
     .expect(401);
 });
-test("Từ chối NoSQL operator trong email", async () => {
+test("NoSQL operator trong email bị từ chối", async () => {
   await request(app)
     .post("/api/auth/login")
     .send({ email: { $ne: null }, password: "anything" })
     .expect(400);
 });
-test("Từ chối role tự gán trong payload đăng nhập", async () => {
+test("Không tự gán role trong login", async () => {
   await request(app)
     .post("/api/auth/login")
     .send({ email: "a@demo.local", password: "x", role: "STAFF" })
     .expect(400);
 });
-test("Từ chối JSON lỗi", async () => {
+test("JSON lỗi trả 400", async () => {
   await request(app)
     .post("/api/auth/login")
     .set("Content-Type", "application/json")
     .send("{")
     .expect(400);
 });
-test("Token ngẫu nhiên 256 bit và chỉ lưu hash", () => {
+test("Token 256 bit và hash khác token gốc", () => {
   const a = token(),
     b = token();
   assert.match(a, /^[a-f0-9]{64}$/);
   assert.notEqual(a, b);
   assert.notEqual(hash(a), a);
 });
-test("Phiên bản cũ bị từ chối", () => {
+test("Version cũ trả conflict", () => {
   assert.throws(
     () => checkVersion({ version: 2 }, 1),
     (e) => e.status === 409,
   );
   checkVersion({ version: 2 }, 2);
 });
-test("ID injection bị chặn", () => {
+test("Chỉ nhận ObjectId, chặn selector và ID dạng số", () => {
+  assert.throws(() => parse(id, { $ne: null }));
   assert.throws(() => parse(id, "1 OR 1=1"));
-  assert.equal(parse(id, "12"), 12);
+  assert.throws(() => parse(id, 1));
+  assert.equal(
+    parse(id, "507f1f77bcf86cd799439011"),
+    "507f1f77bcf86cd799439011",
+  );
 });

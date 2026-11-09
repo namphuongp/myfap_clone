@@ -1,22 +1,26 @@
-import knex from "knex";
-export const db = knex({
-  client: "mysql2",
-  connection: {
-    host: process.env.DB_HOST ?? "127.0.0.1",
-    port: Number(process.env.DB_PORT ?? 3307),
-    user: process.env.DB_USER ?? "myfap",
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME ?? "myfap",
-    timezone: "Z",
-  },
-  pool: {
-    min: 0,
-    max: 10,
-    afterCreate(connection, done) {
-      connection.query("SET time_zone = '+00:00'", (error) =>
-        done(error, connection),
-      );
-    },
-  },
-  acquireConnectionTimeout: 10000,
-});
+import mongoose from "mongoose";
+import { MODELS, Lock } from "./models.js";
+export async function connect(uri = process.env.MONGODB_URI) {
+  if (!uri) throw new Error("Thiếu MONGODB_URI trong .env");
+  mongoose.set("strictQuery", "throw");
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 10000,
+    maxPoolSize: 15,
+    autoIndex: false,
+  });
+  const hello = await mongoose.connection.db.admin().command({ hello: 1 });
+  if (!hello.setName && !hello.msg?.includes("isdbgrid"))
+    throw new Error("MongoDB cần replica set để hỗ trợ transaction");
+}
+export async function initialize() {
+  for (const Model of MODELS) {
+    await Model.createCollection();
+    await Model.createIndexes();
+  }
+  await Lock.updateOne(
+    { _id: "academic" },
+    { $setOnInsert: { revision: 0 } },
+    { upsert: true },
+  );
+}
+export const disconnect = () => mongoose.disconnect();

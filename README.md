@@ -1,98 +1,121 @@
-# MyFAP Flutter và Express MySQL
+# MyFAP Flutter và Express Mongoose MongoDB
 
-Backend cho 4 vai trò STUDENT, LECTURER, HEAD, STAFF. Dữ liệu giả lập, không kết nối FAP thật. Không có chức năng điểm. Yêu cầu trong chat được ưu tiên hơn thiết kế MySQL cũ trong báo cáo.
+Dự án tại `D:\Study\Project\myfap_clone`. Frontend Dart/Flutter Android; backend Node.js/Express + Mongoose; MongoDB replica set dùng transaction. Không có chức năng điểm, không kết nối FAP thật.
 
-## Chạy trên Windows
+## Quy tắc đã triển khai
 
-Trong workspace đã bàn giao, MySQL portable đã khởi tạo ở `.local/mysql-runtime` (runtime cục bộ được loại khỏi Git), backend/.env hiện dùng cổng 13379. API demo đã được chạy ở 3000. Sau khi tắt/mở máy, từ thư mục dự án này chạy `powershell -ExecutionPolicy Bypass -File .\start-local.ps1` để mở lại cả hai tiến trình. Script dùng runtime cục bộ trong dự án; khi chuyển dự án sang máy khác dùng Docker/MySQL bên dưới, cấu hình lại .env từ .env.example (cổng 3307).
+- 4 role: STUDENT, LECTURER, HEAD, STAFF. HEAD chỉ đọc phạm vi bộ môn; STAFF quản lý danh mục, lớp, lịch, cấp tài khoản và duyệt đổi lịch.
+- Một môn có nhiều lớp ở nhiều học kỳ. Mỗi lớp cố định **30 sinh viên**. Cán bộ xếp lịch trước; sinh viên xem lịch/chỗ còn rồi tự đăng ký. STAFF cũng có thể đăng ký/rút thay sinh viên. Không đăng ký hai lớp cùng môn trong cùng kỳ.
+- Khi đăng ký kiểm tra chỗ còn, phòng, trùng toàn bộ lịch tương lai; đăng ký tranh chỗ cuối được tuần tự hóa trong transaction. Lớp đầy trả 409 để chọn lớp khác.
+- Slot cố định theo giờ Việt Nam UTC+7: **07:30–09:50**, **10:00–12:20**, **12:50–15:10**, **15:20–17:40**. Nghỉ giữa buổi 10 phút, nghỉ trưa 30 phút. Backend nhận ngày + slot, tự tính giờ UTC; không nhận giờ tự do.
+- Đơn nghỉ áp dụng đúng buổi của môn, ngày và slot đã gửi. Đổi ngày/giờ làm đơn PENDING/APPROVED thành INVALIDATED; sinh viên gửi đơn mới nếu cần. Chỉ đổi phòng giữ đơn.
+- Đơn nghỉ APPROVED hiển thị ghi chú **Nghỉ có phép** cạnh điểm danh, không tự biến thành PRESENT. NOT_RECORDED thể hiện chưa ghi nhận. Giảng viên chọn PRESENT/ABSENT/LATE/EXCUSED.
+- Điểm danh chỉ sau khi buổi bắt đầu, phải gửi đủ danh sách của buổi. Khi rút/đăng ký lại lớp, các khoảng đăng ký cũ vẫn giữ; không mất điểm danh quá khứ.
+- Buổi học có SCHEDULED/COMPLETED/CANCELLED. Cán bộ chỉ hủy buổi chưa bắt đầu, chưa điểm danh. Hủy buổi giải phóng phòng/slot và hủy đơn còn hiệu lực. Đánh dấu COMPLETED sau giờ kết thúc; dữ liệu demo quá khứ được chuẩn hóa thành COMPLETED.
+- Mọi thay đổi học vụ có version, transaction và audit before/after; đổi lịch có lịch sử cũ/mới. Mỗi lần sửa điểm danh giữ snapshot trước và sau.
 
-Cần Node.js >=22.12, Flutter SDK, Android SDK và MySQL 8.0.16+ (khuyến nghị 8.4). Mở thư mục này trong VS Code.
+## Chạy môi trường hiện tại
+
+Máy đã có MongoDB Server; dự án dùng instance riêng cổng **27018**, replica set `myfap-rs`, dữ liệu `.local/mongo-data`. MongoDB 27017 của máy được giữ nguyên. `.local/` và `.env` bị loại khỏi Git.
+
+```powershell
+cd D:\Study\Project\myfap_clone
+.\start-local.ps1
+```
+
+API: `http://localhost:3000/api`; health trả `{"status":"ok","database":"mongodb"}`. Backend/.env trỏ tới `mongodb://127.0.0.1:27018/myfap?replicaSet=myfap-rs`.
+
+Tài khoản demo: `student@myfap.local`, `lecturer@myfap.local`, `head@myfap.local`, `staff@myfap.local`; mật khẩu **Demo@12345678**. Dữ liệu cũ đã được chuyển bằng importer; không chạy seed lại trên database này.
+
+## Máy mới
+
+Cần Node.js >=22.12, Flutter/Android SDK; MongoDB hỗ trợ replica set hoặc MongoDB Atlas. Có thể dùng Docker Compose:
 
 ```powershell
 cd D:\Study\Project\myfap_clone
 docker compose up -d --wait
 cd backend
-Copy-Item .env.example .env # Chỉ lần đầu, giữ file cấu hình riêng nếu đã có
+Copy-Item .env.example .env # Chỉ khi chưa có cấu hình riêng
 npm ci
-npm run migrate
-npm run seed
+npm run db:replica # Chỉ cho MongoDB cục bộ, không chạy với Atlas
+npm run db:init
+npm run seed # Chỉ database chưa có người dùng
 npm run dev
 ```
 
-Nếu Docker Desktop chưa chạy: mở Docker Desktop và đợi engine sẵn sàng. Nếu dùng MySQL có sẵn: tạo database trống `myfap` với charset `utf8mb4`, tạo tài khoản riêng có quyền trên database này và sửa `backend/.env`; bỏ qua lệnh Docker. Migration không xóa bảng, chỉ dùng cho database trống. DDL MySQL tự commit: nếu migration lỗi giữa chừng cần kiểm tra bảng đã tạo trước khi tiếp tục, không tự chạy lại trên dữ liệu thật.
+Nếu dùng MongoDB Server trên Windows, chạy `start-local.ps1` sau `npm ci`. Script tự tìm mongod trong PATH hoặc `C:\Program Files\MongoDB\Server`; có thể đặt `$env:MONGOD_EXE` nếu cài nơi khác. Nếu dùng Atlas: đổi MONGODB_URI, chạy db:init/seed nếu database trống, rồi npm run dev; không dùng start-local hoặc db:replica.
 
-Compose dùng cổng máy chủ 3307 để tránh MySQL 3306 đang có. Mật khẩu trong compose/.env.example chỉ phục vụ máy phát triển. Nếu đổi mật khẩu compose, đồng thời đổi backend/.env; mật khẩu khởi tạo container chỉ có hiệu lực khi volume còn trống. `docker compose down` giữ dữ liệu volume; không dùng `down -v` nếu muốn giữ dữ liệu.
+MongoDB standalone không hỗ trợ transaction của dự án. Local dùng single-node replica set. Compose chỉ bind cổng lên loopback để phục vụ phát triển. Môi trường triển khai phải có tài khoản DB, kết nối bảo mật và HTTPS. Không commit URI có credential.
 
-Mật khẩu mẫu `Demo@12345678` (đổi SEED_PASSWORD trước seed nếu cần). Email: `student@myfap.local`, `lecturer@myfap.local`, `head@myfap.local`, `staff@myfap.local`. Seed không chạy nếu đã có người dùng. Lịch mẫu gồm một buổi trước và một buổi sau thời điểm seed, cho phép thử điểm danh và xin nghỉ.
-
-Trong terminal thứ hai:
+Trong terminal khác:
 
 ```powershell
 cd D:\Study\Project\myfap_clone\mobile
-flutter doctor
 flutter pub get
 flutter devices
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 ```
 
-Android emulator dùng `10.0.2.2`; máy thật dùng IP LAN của máy chạy backend và cấu hình firewall cho mạng riêng nếu cần. Chỉ bản Android debug cho phép HTTP. Bản release phải dùng HTTPS. Flutter hiện là khung phát triển gồm đăng nhập, đăng xuất, xem lịch; UI duyệt đơn/điểm danh cần xây tiếp dựa trên API đã có. Chưa có APK được kiểm thử trên thiết bị.
+Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất/xem lịch; UI đăng ký, điểm danh và duyệt đơn còn cần xây tiếp theo API.
 
-## Phân quyền và quy tắc
+## Chuyển dữ liệu cũ và chuẩn hóa lịch
 
-| Vai trò | Quyền |
-|---|---|
-| STUDENT | Xem lịch, điểm danh bản thân; gửi/xem đơn nghỉ của mình |
-| LECTURER | Xem lịch/lớp được phân công; điểm danh; duyệt nghỉ; gửi đơn đổi lịch/phòng |
-| HEAD | Xem lịch, đơn, điểm danh và thống kê trong bộ môn; không duyệt |
-| STAFF | Cấp tài khoản, phòng, lớp, danh sách lớp, tạo lịch; xem toàn trường; duyệt đổi lịch/phòng |
+Backup SQL, snapshot JSON, bản nháp MySQL đều ở `.local/` và không lên Git. Backend hiện tại không có dependency MySQL/Knex. Importer nhận snapshot định dạng `myfap-mysql-v1`, không cần kết nối SQL:
 
-- Không đăng ký công khai. Mật khẩu bcrypt, token ngẫu nhiên 256 bit; DB chỉ lưu SHA-256 của token. Logout thu hồi phiên trên server. Phiên mặc định 8 giờ. Chưa có quên mật khẩu/refresh token; app mở lại yêu cầu đăng nhập.
-- Cả email và payload đều được kiểm tra chặt; truy vấn Knex có bind parameter; không đưa đối tượng người dùng trực tiếp vào SQL. Giới hạn tốc độ và kích thước JSON. Không bật proxy trust tùy tiện.
-- Gửi/duyệt đồng ý đơn nghỉ trước buổi học. Một sinh viên có một đơn trên một buổi; bản MVP chưa hỗ trợ gửi lại đơn bị từ chối/rút đơn. Ghi chú `Nghỉ có phép` lấy trực tiếp từ đơn APPROVED, không đổi thành PRESENT; chưa ghi nhận vẫn là NOT_RECORDED. Khi điểm danh, giảng viên chọn PRESENT/ABSENT/LATE/EXCUSED độc lập với ghi chú.
-- Điểm danh chỉ khi buổi đã bắt đầu, phải gửi đủ danh sách lớp, không có ID trùng/lạ. Giảng viên có thể sửa sau buổi học bằng version mới; chưa có hạn khóa điểm danh theo quy chế nhà trường.
-- Một buổi chỉ có một yêu cầu đổi lịch PENDING. Chỉ đổi buổi tương lai. Cán bộ duyệt mới thay đổi lịch thực, kiểm tra lại trùng phòng/giảng viên/sinh viên và sức chứa ngay lúc duyệt. Khoảng buổi học tối đa 12 giờ; hai buổi tiếp giáp được phép.
-- Mọi ghi học vụ khóa cùng một dòng trong transaction InnoDB, kèm version và nhật ký. Phù hợp MVP, tuần tự hóa các thao tác ghi để giữ tính đúng. Khi tải lớn có thể tách khóa theo ngày/tài nguyên sau khi có kiểm thử đồng thời.
-- Tạo lớp -> thêm sinh viên -> xếp lịch. MVP chặn thêm sinh viên khi lớp đã có buổi học, tránh phá lịch và dữ liệu điểm danh. Chưa có màn hình/endpoint sửa/xóa hồ sơ, đổi giảng viên hay hủy buổi; không sửa SQL thủ công lúc app đang chạy.
-- Thời gian API yêu cầu ISO 8601 có Z/offset; lưu UTC ở DATETIME(3), Flutter hiển thị giờ địa phương.
-- Nếu buổi được đổi lịch, đơn nghỉ vẫn gắn cùng mã buổi học; ghi chú được giữ. Đây là hành vi MVP, có thể cần yêu cầu sinh viên xác nhận lại ở phiên bản sau.
+```powershell
+cd backend
+npm run import:legacy -- ..\.local\backups\mysql-source.json
+npm run slots:preview
+npm run slots:repair
+```
 
-## Các tệp chính
+Importer chỉ chạy trên database chưa có người dùng, hoặc trả kết quả đã import nếu cùng source hash. Import nguyên tử, giữ hash mật khẩu, đăng ký, điểm danh và version. ID mới là **ObjectId**, API trả `id`; `legacy_id` giữ số cũ để đối chiếu. Không dùng ID số cũ gọi API.
 
-- `backend/src/app.js`: route, kiểm tra payload, phân quyền.
-- `backend/src/core.js`: phiên đăng nhập, phạm vi dữ liệu, version, transaction, audit.
-- `backend/src/scheduling.js`: kiểm tra xung đột lịch và sức chứa.
-- `backend/schema.sql`: schema mới; `src/migrate.js`, `src/seed.js`: khởi tạo.
-- `mobile/lib/main.dart` -> `mobile/lib/api_client.dart` -> REST API -> MySQL.
-- [API.md](API.md): đường dẫn và ví dụ payload. [requests.http](requests.http): gọi API nhanh bằng REST Client.
-- [database.md](database.md): ERD mới và các quyết định dữ liệu.
+Buổi cũ lệch giờ được đưa về slot gần giờ bắt đầu cũ nhất trong cùng ngày, có kiểm tra xung đột. Không có slot hợp lệ thì toàn bộ đợt sửa được hoàn tác. Preview chạy thử rồi rollback. Lịch cũ lưu trong SessionHistory; điểm danh vẫn được giữ. Các đơn nghỉ có lịch thay đổi bị INVALIDATED; đơn đổi lịch PENDING bị CANCELLED. Đây là lệnh sửa dữ liệu cũ được kiểm soát, có thể xử lý cả buổi đã kết thúc; API thường vẫn chặn đổi buổi quá khứ.
+
+Dữ liệu cũ không có mã môn/học kỳ chính thức: môn được cấp mã LEGACY-n, học kỳ LEGACY bao phủ lịch cũ. Không thể suy diễn học kỳ thực hoặc dựng lại lịch sử trước khi có snapshot. Đăng ký cũ không có thời gian bắt đầu được gắn mốc 1970 để giữ quyền xem điểm danh quá khứ. Đơn đổi lịch cũ không có bằng chứng lịch gốc thì original_* giữ null.
+
+## Cấu trúc
+
+- `backend/src/models.js`: Mongoose schemas và indexes; điểm danh nhúng tối đa 30 dòng trong buổi học.
+- `core.js`: xác thực, serialize ObjectId, phân quyền, version, transaction, audit.
+- `academic.js`: chỗ trống, xung đột lịch, đăng ký/rút và đổi slot.
+- `academic-routes.js`, `request-routes.js`, `catalog-routes.js`, `auth-routes.js`: API theo nghiệp vụ.
+- `importer.js`, `legacy-repair.js`: chuyển dữ liệu và chuẩn hóa lịch cũ.
+- `mobile/lib/main.dart` → `api_client.dart` → Express → Mongoose → MongoDB.
+- [API.md](API.md): API/payload; [requests.http](requests.http): gọi thử; [database.md](database.md): mô hình dữ liệu.
+
+Không có API sửa/xóa tài khoản/danh mục hoặc đổi giảng viên của lớp. Thông tin tham chiếu được kiểm tra bởi service; không sửa trực tiếp DB trong lúc ứng dụng đang hoạt động. Khi mở rộng cần tiếp tục giữ các quy tắc này.
 
 ## Kiểm thử
 
 ```powershell
 cd backend
 npm test
-cd ..\mobile
-flutter analyze
-flutter test
 ```
 
-`npm test` có 8 bài không cần DB; bài workflow MySQL mặc định SKIP. Chạy tích hợp trên database riêng trống `myfap_test` đã tạo sẵn và user có quyền tương ứng:
+8 bài bảo mật/validation không cần DB. Workflow/import test phải dùng hai database **riêng, trống**, tên kết thúc bằng `_test`; không chạy trên myfap:
 
 ```powershell
-cd backend
-$env:DB_NAME = 'myfap_test'
-$env:RUN_MYSQL_TESTS = '1'
-node --env-file=.env --test --test-concurrency=1
-Remove-Item Env:RUN_MYSQL_TESTS
-Remove-Item Env:DB_NAME
+$stamp = Get-Date -Format yyyyMMddHHmmss
+$env:MONGODB_URI = "mongodb://127.0.0.1:27018/myfap_workflow_${stamp}_test?replicaSet=myfap-rs"
+npm run test:workflow
+$env:MONGODB_URI = "mongodb://127.0.0.1:27018/myfap_import_${stamp}_test?replicaSet=myfap-rs"
+npm run test:import
+Remove-Item Env:MONGODB_URI
+npm run format:check
 ```
 
-Test tích hợp tạo schema và dữ liệu trong database test, không dọn/xóa khi kết thúc để giữ bằng chứng. Lần chạy tiếp theo cần một database test trống. Không dùng database triển khai để thử nghiệm. Tài liệu tham chiếu: [Knex transaction](https://knexjs.org/guide/transactions.html), [MySQL InnoDB](https://dev.mysql.com/doc/refman/8.4/en/innodb-introduction.html), [Flutter Android](https://docs.flutter.dev/platform-integration/android/setup).
+Test không xóa dữ liệu sau khi chạy; dùng tên mới cho mỗi đợt để giữ bằng chứng. Workflow bao gồm tranh chỗ cuối, chống ghi đè điểm danh, đổi slot vô hiệu đơn, giữ lịch sử, phân quyền theo bộ môn và logout. Import test có rollback khi thiếu tham chiếu, giữ hash/version/điểm danh, chạy lại không nhân đôi và preview không ghi dữ liệu.
 
-## Kết quả xác minh bàn giao
+Tài liệu chính thức: [Mongoose schemas](https://mongoosejs.com/docs/guide.html), [MongoDB replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
 
-- Backend: 8/8 kiểm tra bảo mật/validation đạt, không cần DB.
-- Workflow tích hợp MySQL 8.0.46 portable, database riêng myfap_test: đạt. Bao gồm login đủ 4 role, chặn sinh viên tạo lịch, HEAD đọc thống kê, gửi/duyệt nghỉ đúng quyền, ghi chú Nghỉ có phép, chặn điểm danh buổi tương lai, hai cập nhật cùng version chỉ một thành công, duyệt đổi phòng, chặn trùng lịch và logout vô hiệu token.
-- Database demo myfap: migration và seed đã chạy thành công riêng với database test.
-- Flutter analyze: không có lỗi; widget test kiểm tra form đăng nhập: 1/1 đạt. Chưa build APK, chưa xác minh gọi API trên thiết bị/emulator, chưa đo hiệu năng.
-- Docker Desktop chưa khởi động engine trong phiên này; compose được cung cấp nhưng không tính là đã kiểm chứng chạy container.
+## Xác minh bản chuyển MongoDB
+
+- MongoDB Server 8.3.x cục bộ, replica set myfap-rs, cổng 27018: đã chạy thật.
+- 8/8 kiểm tra bảo mật/validation đạt.
+- 9 nhóm workflow (10 test tính cả suite cha) đạt trên database test riêng; có tranh chỗ thứ 30 và ghi điểm danh đồng thời.
+- Import/chuẩn hóa lịch cũ: đạt; có test rollback khi snapshot lỗi, giữ password hash/version/điểm danh, preview không ghi dữ liệu và import không nhân đôi.
+- Database myfap hiện có 4 tài khoản, 2 phòng, 1 lớp, 1 đăng ký và 2 buổi đã chuyển từ snapshot. Hai buổi cũ ngày 09/11 và 10/11/2026 đã chuẩn hóa về slot 4 (15:20–17:40), có lịch sử giờ cũ/mới.
+- Script start-local đã chạy; health xác nhận mongodb, đăng nhập tài khoản cũ và xem lịch/logout trên API cổng 3000 đạt. MySQL portable cổng 13379 đã dừng; dữ liệu/backup còn trong .local.
+- Prettier và git diff --check đạt. Chưa chạy Docker Compose, chưa kiểm thử frontend trên thiết bị/emulator hay build APK trong lần đổi backend này.

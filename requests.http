@@ -1,39 +1,76 @@
 @base = http://localhost:3000/api
 @token = paste_accessToken_here
-@sessionId = 2
-@requestId = 1
+@sectionId = 507f1f77bcf86cd799439011
+@sessionId = 507f1f77bcf86cd799439012
+@requestId = 507f1f77bcf86cd799439013
+@studentId = 507f1f77bcf86cd799439014
+@roomId = 507f1f77bcf86cd799439015
 
-### Kiểm tra database
+### Thay ID ví dụ bằng id thực nhận từ API
 GET {{base}}/health
 
-### Đăng nhập (đổi email theo vai trò cần thử)
+### Đổi email để đăng nhập theo từng role; copy accessToken vào biến token
 POST {{base}}/auth/login
 Content-Type: application/json
 
 {"email":"student@myfap.local","password":"Demo@12345678"}
 
-### Thông tin tài khoản
+### Tài khoản
 GET {{base}}/auth/me
 Authorization: Bearer {{token}}
 
-### Xem lịch (thay khoảng ngày phù hợp)
-GET {{base}}/schedule?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z
+### Danh mục môn
+GET {{base}}/courses
 Authorization: Bearer {{token}}
 
-### Phòng
+### Danh mục học kỳ
+GET {{base}}/semesters
+Authorization: Bearer {{token}}
+
+### Danh mục phòng
 GET {{base}}/rooms
 Authorization: Bearer {{token}}
 
-### Lớp
-GET {{base}}/sections
+### 4 slot
+GET {{base}}/time-slots
 Authorization: Bearer {{token}}
 
-### Sinh viên gửi nghỉ
+### Lớp mở và số chỗ còn
+GET {{base}}/sections/available
+Authorization: Bearer {{token}}
+
+### Xem lịch lớp trước khi đăng ký
+GET {{base}}/sections/{{sectionId}}/sessions
+Authorization: Bearer {{token}}
+
+### Sinh viên tự đăng ký sau khi lớp đã có lịch
+POST {{base}}/sections/{{sectionId}}/enrollments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Đăng ký của bản thân, gồm version để rút
+GET {{base}}/me/enrollments
+Authorization: Bearer {{token}}
+
+### Rút đăng ký (đổi version và studentId đúng tài khoản)
+POST {{base}}/sections/{{sectionId}}/enrollments/{{studentId}}/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0}
+
+### Xem lịch cá nhân (thay khoảng ngày phù hợp, tối đa 93 ngày)
+GET {{base}}/schedule?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z
+Authorization: Bearer {{token}}
+
+### Sinh viên gửi nghỉ đúng buổi/ngày/slot hiện tại
 POST {{base}}/leave-requests
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"session_id":{{sessionId}},"reason":"Khám bệnh"}
+{"session_id":"{{sessionId}}","reason":"Khám bệnh"}
 
 ### Danh sách đơn nghỉ
 GET {{base}}/leave-requests?status=PENDING&page=1
@@ -46,34 +83,38 @@ Content-Type: application/json
 
 {"version":0,"decision":"APPROVED","note":"Đồng ý"}
 
-### Xem điểm danh và ghi chú nghỉ có phép
+### Điểm danh và ghi chú nghỉ có phép
 GET {{base}}/sessions/{{sessionId}}/attendance
 Authorization: Bearer {{token}}
 
-### Giảng viên lưu điểm danh sau khi buổi bắt đầu
+### Giảng viên gửi đủ danh sách của buổi, lấy version từ GET attendance
 PUT {{base}}/sessions/{{sessionId}}/attendance
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"version":0,"rows":[{"student_id":1,"status":"ABSENT"}]}
+{"version":0,"rows":[{"student_id":"{{studentId}}","status":"ABSENT"}]}
 
-### Giảng viên đề nghị đổi buổi
+### Giảng viên đề nghị đổi phòng hoặc ngày/slot
 POST {{base}}/change-requests
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"session_id":{{sessionId}},"reason":"Đổi phòng","proposed_room_id":2,"proposed_start":"2026-12-01T01:00:00Z","proposed_end":"2026-12-01T03:00:00Z"}
+{"session_id":"{{sessionId}}","reason":"Đổi lịch","proposed_room_id":"{{roomId}}","proposed_date":"2026-12-01","proposed_slot_id":2}
 
-### Cán bộ xem đơn đổi lịch
-GET {{base}}/change-requests?status=PENDING&page=1
-Authorization: Bearer {{token}}
-
-### Cán bộ duyệt đổi lịch
+### Cán bộ duyệt đổi lịch (đổi ngày/slot làm đơn nghỉ cũ INVALIDATED)
 PATCH {{base}}/change-requests/{{requestId}}/decision
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"version":0,"decision":"APPROVED","note":"Đã kiểm tra phòng và lịch"}
+{"version":0,"decision":"APPROVED","note":"Đã kiểm tra lịch"}
+
+### Lịch sử lịch của buổi
+GET {{base}}/sessions/{{sessionId}}/history
+Authorization: Bearer {{token}}
+
+### Lịch sử điểm danh before/after
+GET {{base}}/sessions/{{sessionId}}/attendance-history
+Authorization: Bearer {{token}}
 
 ### Trưởng bộ môn xem thống kê
 GET {{base}}/department/summary
