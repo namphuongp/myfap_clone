@@ -4,9 +4,10 @@ import 'package:myfap/core/api/api_client.dart';
 import 'package:myfap/student/screens/enrollment_screen.dart';
 
 class FakeEnrollmentApi extends ApiClient {
-  FakeEnrollmentApi({this.registered = false});
+  FakeEnrollmentApi({this.registered = false, this.remaining = 30});
 
   bool registered;
+  final int remaining;
   bool withdrawn = false;
   int? withdrawnVersion;
 
@@ -27,7 +28,11 @@ class FakeEnrollmentApi extends ApiClient {
     String path, [
     Map<String, dynamic>? body,
   ]) async {
-    if (method == 'GET' && path == '/sections/available') return [section];
+    if (method == 'GET' && path == '/sections/available') {
+      return [
+        {...section, 'remaining': remaining},
+      ];
+    }
     if (method == 'GET' && path == '/me/enrollments') {
       return registered || withdrawn
           ? [
@@ -95,6 +100,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tìm lớp'));
     await tester.pumpAndSettle();
+    expect(find.text('Còn 30 chỗ trống'), findsOneWidget);
     await tester.tap(find.text('Cơ sở dữ liệu'));
     await tester.pumpAndSettle();
     expect(find.text('Lịch học sắp tới'), findsOneWidget);
@@ -103,6 +109,32 @@ void main() {
     expect(api.registered, isTrue);
     expect(changes, 1);
     expect(find.text('Lớp của tôi'), findsOneWidget);
+  });
+
+  testWidgets('Lớp hết chỗ không thể đăng ký', (tester) async {
+    final api = FakeEnrollmentApi(remaining: 0);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EnrollmentScreen(
+            api: api,
+            studentId: '507f1f77bcf86cd799439014',
+            onEnrollmentChanged: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tìm lớp'));
+    await tester.pumpAndSettle();
+    expect(find.text('Còn 0 chỗ trống'), findsOneWidget);
+    await tester.tap(find.text('Cơ sở dữ liệu'));
+    await tester.pumpAndSettle();
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Lớp đã đầy'),
+    );
+    expect(button.onPressed, isNull);
+    expect(api.registered, isFalse);
   });
 
   testWidgets('Rút lớp gửi đúng version hiện tại', (tester) async {
