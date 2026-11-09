@@ -99,7 +99,7 @@ POST {{base}}/change-requests
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"session_id":"{{sessionId}}","reason":"Đổi lịch","proposed_room_id":"{{roomId}}","proposed_date":"2026-12-01","proposed_slot_id":2}
+{"session_id":"{{sessionId}}","reason":"Đổi lịch","proposed_room_id":"{{roomId}}","proposed_date":"2026-11-20","proposed_slot_id":2}
 
 ### Cán bộ duyệt đổi lịch (đổi ngày/slot làm đơn nghỉ cũ INVALIDATED)
 PATCH {{base}}/change-requests/{{requestId}}/decision
@@ -122,4 +122,88 @@ Authorization: Bearer {{token}}
 
 ### Đăng xuất
 POST {{base}}/auth/logout
+Authorization: Bearer {{token}}
+
+### Profile cho mọi role
+GET {{base}}/profile
+Authorization: Bearer {{token}}
+
+### Cập nhật liên hệ; lấy version mới nhất từ profile
+PATCH {{base}}/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"phone":"0901234567","address":"Hà Nội","date_of_birth":"2004-01-15"}
+
+### Đổi mật khẩu sẽ thu hồi toàn bộ phiên; dùng trên tài khoản thử nghiệm riêng
+PATCH {{base}}/profile/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"current_password":"Demo@12345678","new_password":"ReplaceWithOwnStrongPassword123!"}
+
+### Ngành học (STUDENT/STAFF); thay ID ví dụ bằng dữ liệu API
+GET {{base}}/majors
+Authorization: Bearer {{token}}
+
+### STUDENT gửi chuyển ngành, server tự chọn kỳ tiếp theo
+POST {{base}}/major-transfer-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"to_major_id":"507f1f77bcf86cd799439020","reason":"Định hướng chuyên ngành mới"}
+
+### STUDENT xem đơn mình; STAFF xem để duyệt
+GET {{base}}/major-transfer-requests?status=PENDING&page=1
+Authorization: Bearer {{token}}
+
+### STAFF duyệt trước kỳ hiệu lực; không đổi ngành ngay
+PATCH {{base}}/major-transfer-requests/{{requestId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"decision":"APPROVED","note":"Đủ điều kiện"}
+
+### STUDENT rút đơn còn PENDING
+POST {{base}}/major-transfer-requests/{{requestId}}/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0}
+
+### STAFF tạo học kỳ chuẩn
+POST {{base}}/semesters
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"term":"SPRING","year":2027}
+
+### STAFF tạo nháp; copy id trả về để publish
+POST {{base}}/notices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"title":"Thông báo đăng ký môn","content":"Sinh viên kiểm tra thời gian đăng ký trên hệ thống.","audience":"ALL_STUDENTS"}
+
+### STAFF phát hành nháp
+POST {{base}}/notices/{{requestId}}/publish
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0}
+
+### STUDENT chỉ xem bản đã phát hành đúng đối tượng, chưa hết hạn
+GET {{base}}/notices?page=1
+Authorization: Bearer {{token}}
+
+### Đánh dấu đã đọc (lặp lại không đổi thời điểm đầu tiên)
+POST {{base}}/notices/{{requestId}}/read
+Authorization: Bearer {{token}}
+
+### HEAD báo cáo trong bộ môn; tùy chọn semester_id/course_id/lecturer_id/section_id
+GET {{base}}/reports/attendance?group_by=COURSE
+Authorization: Bearer {{token}}
+
+### HEAD thống kê đơn theo trạng thái
+GET {{base}}/reports/requests
 Authorization: Bearer {{token}}

@@ -8,6 +8,8 @@ lib/
   core/
     api/api_client.dart              Gọi API và lưu token
     auth/screens/login_screen.dart   Đăng nhập
+    profile/screens/                 Hồ sơ dùng chung, avatar chữ
+    profile/repositories/            API hồ sơ và mật khẩu
     navigation/role_home_router.dart Chọn màn hình theo role
     widgets/schedule_home_screen.dart Màn hình lịch hiện dùng chung
     utils/                           Tiện ích dùng chung
@@ -31,3 +33,5 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 ```
 
 Backend cần chạy tại `http://localhost:3000/api` trên máy phát triển.
+
+Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; cho sửa liên hệ và đổi mật khẩu, không upload ảnh. HEAD tải tổng quan bộ môn thay vì lịch. Thông báo/chuyển ngành đã có backend API; các màn thao tác học vụ còn cần tích hợp. Xem ../STUDENT_AFFAIRS.md và ../API.md.

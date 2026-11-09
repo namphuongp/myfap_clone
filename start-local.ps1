@@ -24,9 +24,9 @@ if (!(Test-LocalPort 27018)) {
 }
 Push-Location $backendRoot
 try {
-    & node --env-file=.env src/init-replica.js
+    & node --env-file=.env src/scripts/init-replica.js
     if ($LASTEXITCODE -ne 0) { throw 'Replica set chưa sẵn sàng' }
-    & node --env-file=.env src/init-db.js
+    & node --env-file=.env src/scripts/init-db.js
     if ($LASTEXITCODE -ne 0) { throw 'Không khởi tạo được MongoDB' }
     if (!(Test-LocalPort 3000)) {
         Start-Process -FilePath (Get-Command node.exe).Source -ArgumentList @('--env-file=.env', 'src/server.js') -WorkingDirectory $backendRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $localRoot 'api.stdout.log') -RedirectStandardError (Join-Path $localRoot 'api.stderr.log') | Out-Null

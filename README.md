@@ -4,7 +4,9 @@ Dự án tại `D:\Study\Project\myfap_clone`. Frontend Dart/Flutter Android; ba
 
 ## Quy tắc đã triển khai
 
-- 4 role: STUDENT, LECTURER, HEAD, STAFF. HEAD chỉ đọc phạm vi bộ môn; STAFF quản lý danh mục, lớp, lịch, cấp tài khoản và duyệt đổi lịch.
+- STUDENT: lịch, đăng ký môn thuộc ngành, đơn nghỉ/chuyển ngành, thông báo. LECTURER: lịch dạy, duyệt nghỉ, yêu cầu đổi lịch/phòng, điểm danh. HEAD: báo cáo bộ môn. STAFF: thông báo, duyệt đổi lịch/chuyển ngành và quản trị dữ liệu vận hành. Mọi role có profile.
+- Ngành có chương trình môn riêng và môn chung. Chuyển ngành được duyệt có hiệu lực từ đầu kỳ sau ngày gửi; rút môn chỉ thuộc ngành cũ ở kỳ hiệu lực trở đi, giữ môn chung và lịch sử.
+- Năm học bắt đầu Fall (tháng 9–11), Spring (1–3), Summer (5–7); nghỉ tháng 12, 4, 8. API nhận term/year và tự tính mốc UTC+7.
 - Một môn có nhiều lớp ở nhiều học kỳ. Mỗi lớp cố định **30 sinh viên**. Cán bộ xếp lịch trước; sinh viên xem lịch/chỗ còn rồi tự đăng ký. STAFF cũng có thể đăng ký/rút thay sinh viên. Không đăng ký hai lớp cùng môn trong cùng kỳ.
 - Khi đăng ký kiểm tra chỗ còn, phòng, trùng toàn bộ lịch tương lai; đăng ký tranh chỗ cuối được tuần tự hóa trong transaction. Lớp đầy trả 409 để chọn lớp khác.
 - Slot cố định theo giờ Việt Nam UTC+7: **07:30–09:50**, **10:00–12:20**, **12:50–15:10**, **15:20–17:40**. Nghỉ giữa buổi 10 phút, nghỉ trưa 30 phút. Backend nhận ngày + slot, tự tính giờ UTC; không nhận giờ tự do.
@@ -56,7 +58,7 @@ flutter devices
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 ```
 
-Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất/xem lịch; UI đăng ký, điểm danh và duyệt đơn còn cần xây tiếp theo API.
+Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất, lịch, tổng quan HEAD và profile cho bốn role (avatar chữ, sửa liên hệ, đổi mật khẩu). UI đăng ký, điểm danh, thông báo và duyệt đơn còn cần xây tiếp theo API.
 
 ## Chuyển dữ liệu cũ và chuẩn hóa lịch
 
@@ -73,18 +75,23 @@ Importer chỉ chạy trên database chưa có người dùng, hoặc trả kế
 
 Buổi cũ lệch giờ được đưa về slot gần giờ bắt đầu cũ nhất trong cùng ngày, có kiểm tra xung đột. Không có slot hợp lệ thì toàn bộ đợt sửa được hoàn tác. Preview chạy thử rồi rollback. Lịch cũ lưu trong SessionHistory; điểm danh vẫn được giữ. Các đơn nghỉ có lịch thay đổi bị INVALIDATED; đơn đổi lịch PENDING bị CANCELLED. Đây là lệnh sửa dữ liệu cũ được kiểm soát, có thể xử lý cả buổi đã kết thúc; API thường vẫn chặn đổi buổi quá khứ.
 
-Dữ liệu cũ không có mã môn/học kỳ chính thức: môn được cấp mã LEGACY-n, học kỳ LEGACY bao phủ lịch cũ. Không thể suy diễn học kỳ thực hoặc dựng lại lịch sử trước khi có snapshot. Đăng ký cũ không có thời gian bắt đầu được gắn mốc 1970 để giữ quyền xem điểm danh quá khứ. Đơn đổi lịch cũ không có bằng chứng lịch gốc thì original_* giữ null.
+Importer giữ mã môn LEGACY-n và kỳ LEGACY khi thiếu metadata. Sau import, dùng `npm run academics:preview` rồi `npm run academics:normalize` để ánh xạ lớp vào kỳ chuẩn dựa trên lịch thực; chặn lớp có buổi trong tháng nghỉ hoặc nhiều kỳ. Database demo đã chuẩn hóa FALL-2026. Không dựng lại lịch sử trước khi có snapshot. Đăng ký cũ không có thời gian bắt đầu được gắn mốc 1970 để giữ quyền xem điểm danh quá khứ. Đơn đổi lịch cũ không có bằng chứng lịch gốc thì original_* giữ null.
 
 ## Cấu trúc
 
-- `backend/src/models.js`: Mongoose schemas và indexes; điểm danh nhúng tối đa 30 dòng trong buổi học.
-- `core.js`: xác thực, serialize ObjectId, phân quyền, version, transaction, audit.
-- `academic.js`: chỗ trống, xung đột lịch, đăng ký/rút và đổi slot.
-- `academic-routes.js`, `request-routes.js`, `catalog-routes.js`, `auth-routes.js`: API theo nghiệp vụ.
-- `importer.js`, `legacy-repair.js`: chuyển dữ liệu và chuẩn hóa lịch cũ.
-- `mobile/lib/main.dart` → `api_client.dart` → Express → Mongoose → MongoDB.
-- [API.md](API.md): API/payload; [requests.http](requests.http): gọi thử; [database.md](database.md): mô hình dữ liệu.
+Backend theo luồng **route → controller → service → repository → model → MongoDB**:
 
+- `backend/src/routes/`: URL, quyền và validator.
+- `backend/src/controllers/`: nhận request, gọi service và trả response.
+- `backend/src/services/`: nghiệp vụ, kiểm tra quyền theo dữ liệu, transaction và audit.
+- `backend/src/repositories/`: truy vấn/lưu MongoDB, repository riêng theo model, CRUD dùng chung.
+- `backend/src/models/`: schema và index Mongoose, một file cho mỗi thực thể.
+- `backend/src/validators/`, `middlewares/`, `utils/`: kiểm tra đầu vào và phần dùng chung.
+- `backend/src/jobs/`: áp dụng chuyển ngành đến hạn, đồng bộ thêm khi xác thực.
+- `backend/src/config/`, `scripts/`: kết nối DB, init/seed/import và công cụ dữ liệu.
+- [Kiến trúc backend](backend/README.md): trách nhiệm từng lớp và ví dụ luồng đăng ký.
+- `mobile/lib/core/profile/screens/profile_screen.dart` → `core/profile/repositories/profile_repository.dart` → `core/api/api_client.dart` → Express API.
+- [API.md](API.md), [requests.http](requests.http), [database.md](database.md), [Học vụ và profile](STUDENT_AFFAIRS.md).
 Không có API sửa/xóa tài khoản/danh mục hoặc đổi giảng viên của lớp. Thông tin tham chiếu được kiểm tra bởi service; không sửa trực tiếp DB trong lúc ứng dụng đang hoạt động. Khi mở rộng cần tiếp tục giữ các quy tắc này.
 
 ## Kiểm thử
@@ -94,12 +101,14 @@ cd backend
 npm test
 ```
 
-8 bài bảo mật/validation không cần DB. Workflow/import test phải dùng hai database **riêng, trống**, tên kết thúc bằng `_test`; không chạy trên myfap:
+8 bài bảo mật/validation không cần DB. Workflow/import/học vụ test phải dùng các database **riêng, trống**, tên kết thúc bằng `_test`; không chạy trên myfap:
 
 ```powershell
 $stamp = Get-Date -Format yyyyMMddHHmmss
 $env:MONGODB_URI = "mongodb://127.0.0.1:27018/myfap_workflow_${stamp}_test?replicaSet=myfap-rs"
 npm run test:workflow
+$env:MONGODB_URI = "mongodb://127.0.0.1:27018/myfap_affairs_${stamp}_test?replicaSet=myfap-rs"
+npm run test:affairs
 $env:MONGODB_URI = "mongodb://127.0.0.1:27018/myfap_import_${stamp}_test?replicaSet=myfap-rs"
 npm run test:import
 Remove-Item Env:MONGODB_URI
@@ -110,7 +119,7 @@ Test không xóa dữ liệu sau khi chạy; dùng tên mới cho mỗi đợt �
 
 Tài liệu chính thức: [Mongoose schemas](https://mongoosejs.com/docs/guide.html), [MongoDB replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/).
 
-## Xác minh bản chuyển MongoDB
+## Xác minh
 
 - MongoDB Server 8.3.x cục bộ, replica set myfap-rs, cổng 27018: đã chạy thật.
 - 8/8 kiểm tra bảo mật/validation đạt.
@@ -118,4 +127,5 @@ Tài liệu chính thức: [Mongoose schemas](https://mongoosejs.com/docs/guide.
 - Import/chuẩn hóa lịch cũ: đạt; có test rollback khi snapshot lỗi, giữ password hash/version/điểm danh, preview không ghi dữ liệu và import không nhân đôi.
 - Database myfap hiện có 4 tài khoản, 2 phòng, 1 lớp, 1 đăng ký và 2 buổi đã chuyển từ snapshot. Hai buổi cũ ngày 09/11 và 10/11/2026 đã chuẩn hóa về slot 4 (15:20–17:40), có lịch sử giờ cũ/mới.
 - Script start-local đã chạy; health xác nhận mongodb, đăng nhập tài khoản cũ và xem lịch/logout trên API cổng 3000 đạt. MySQL portable cổng 13379 đã dừng; dữ liệu/backup còn trong .local.
+- Học vụ/profile: 11 test tính cả suite cha đạt trên MongoDB test riêng; Flutter 13 widget test đạt, Dart analyze không có vấn đề. Test mốc chuyển ngành dùng thời gian giả lập trong service, widget dùng API fixture.
 - Prettier và git diff --check đạt. Chưa chạy Docker Compose, chưa kiểm thử frontend trên thiết bị/emulator hay build APK trong lần đổi backend này.

@@ -6,7 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiException implements Exception {
   final String message;
-  ApiException(this.message);
+  final int? statusCode;
+  ApiException(this.message, {this.statusCode});
   @override
   String toString() => message;
 }
@@ -16,9 +17,12 @@ class ApiClient {
     'API_BASE_URL',
     defaultValue: 'http://10.0.2.2:3000/api',
   );
-  final _storage = const FlutterSecureStorage();
-  final _client = http.Client();
+  final FlutterSecureStorage _storage;
+  final http.Client _client;
   String? _token;
+  ApiClient({http.Client? client, FlutterSecureStorage? storage})
+    : _client = client ?? http.Client(),
+      _storage = storage ?? const FlutterSecureStorage();
 
   Future<dynamic> request(
     String method,
@@ -30,9 +34,10 @@ class ApiClient {
       request.headers['Content-Type'] = 'application/json';
       if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
       if (body != null) request.body = jsonEncode(body);
-      final response = await http.Response.fromStream(
-        await _client.send(request),
-      ).timeout(const Duration(seconds: 15));
+      final response = await _client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(const Duration(seconds: 15));
       final dynamic data = response.body.isEmpty
           ? null
           : jsonDecode(response.body);
@@ -41,15 +46,14 @@ class ApiClient {
           data is Map
               ? data['message']?.toString() ?? 'Yêu cầu thất bại'
               : 'Yêu cầu thất bại',
+          statusCode: response.statusCode,
         );
       }
       return data;
     } on TimeoutException {
       throw ApiException('Kết nối quá thời gian');
     } on http.ClientException {
-      throw ApiException(
-        'Không kết nối được API. Kiểm tra server và API_BASE_URL',
-      );
+      throw ApiException('Không kết nối được máy chủ');
     } on FormatException {
       throw ApiException('Phản hồi máy chủ không hợp lệ');
     }
@@ -71,13 +75,25 @@ class ApiClient {
       }
       throw ApiException('Không thể lưu phiên đăng nhập an toàn');
     }
-    return data['user'] as Map<String, dynamic>;
+    return Map<String, dynamic>.from(data['user'] as Map);
+  }
+
+  Future<void> clearLocalSession() async {
+    _token = null;
+    try {
+      await _storage.delete(key: 'myfap_token');
+    } catch (_) {
+      // Token đã thu hồi ở máy chủ; lỗi xóa kho cục bộ không được chặn đăng xuất.
+    }
   }
 
   Future<void> logout() async {
-    await request('POST', '/auth/logout');
-    _token = null;
-    await _storage.delete(key: 'myfap_token');
+    try {
+      await request('POST', '/auth/logout');
+    } on ApiException catch (error) {
+      if (error.statusCode != 401) rethrow;
+    }
+    await clearLocalSession();
   }
 
   void dispose() => _client.close();

@@ -1,13 +1,16 @@
+import { bootstrapAcademicCalendar } from "../src/services/academic-bootstrap.service.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import request from "supertest";
-import { connect, initialize, disconnect } from "../src/db.js";
+import { connect, initialize, disconnect } from "../src/config/database.js";
 import {
   User,
   Department,
   ClassSession,
+  Section,
+  Semester,
   Enrollment,
   EnrollmentPeriod,
   Leave,
@@ -16,12 +19,12 @@ import {
   ImportBatch,
   AuthSession,
   Audit,
-} from "../src/models.js";
-import { importSnapshot } from "../src/importer.js";
-import { normalizeLegacySessions } from "../src/legacy-repair.js";
+} from "../src/models/index.js";
+import { importSnapshot } from "../src/services/import.service.js";
+import { normalizeLegacySessions } from "../src/services/legacy-repair.service.js";
 import { createApp } from "../src/app.js";
-import { hash } from "../src/core.js";
-import { localDate, slotTimes } from "../src/slots.js";
+import { hash } from "../src/utils/crypto.js";
+import { localDate, slotTimes } from "../src/utils/slots.js";
 test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent và chuẩn hóa buổi cũ", async () => {
   try {
     await connect();
@@ -219,6 +222,20 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
     );
     assert.equal(await SessionHistory.countDocuments(), 1);
     assert.deepEqual(await normalizeLegacySessions({ apply: true }), []);
+    const semesterCount = await Semester.countDocuments();
+    const termPreview = await bootstrapAcademicCalendar();
+    assert.equal(termPreview.length, 1);
+    assert.equal(await Semester.countDocuments(), semesterCount);
+    const normalized = await bootstrapAcademicCalendar({ apply: true });
+    assert.equal(normalized.length, 1);
+    const section = await Section.findOne();
+    const semester = await Semester.findById(section.semester_id);
+    assert.ok(semester.term);
+    assert.equal(
+      String((await Enrollment.findOne()).semester_id),
+      String(semester._id),
+    );
+    assert.deepEqual(await bootstrapAcademicCalendar({ apply: true }), []);
   } finally {
     await disconnect();
   }

@@ -1,0 +1,16 @@
+export { departmentRepository } from "./department.repository.js";
+export { courseRepository } from "./course.repository.js";
+export { semesterRepository } from "./semester.repository.js";
+export { userRepository } from "./user.repository.js";
+export { authSessionRepository } from "./auth-session.repository.js";
+export { roomRepository } from "./room.repository.js";
+export { sectionRepository } from "./section.repository.js";
+export { enrollmentRepository } from "./enrollment.repository.js";
+export { enrollmentPeriodRepository } from "./enrollment-period.repository.js";
+export { classSessionRepository } from "./class-session.repository.js";
+export { leaveRepository } from "./leave.repository.js";
+export { changeRepository } from "./change.repository.js";
+export { auditRepository } from "./audit.repository.js";
+export { sessionHistoryRepository } from "./session-history.repository.js";
+export { lockRepository } from "./lock.repository.js";
+export { importBatchRepository } from "./import-batch.repository.js";

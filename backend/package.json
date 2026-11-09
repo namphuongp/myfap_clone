@@ -9,16 +9,20 @@
   "scripts": {
     "dev": "node --env-file=.env --watch src/server.js",
     "start": "node --env-file=.env src/server.js",
-    "db:init": "node --env-file=.env src/init-db.js",
-    "db:replica": "node --env-file=.env src/init-replica.js",
-    "seed": "node --env-file=.env src/seed.js",
-    "import:legacy": "node --env-file=.env src/import-legacy.js",
-    "slots:preview": "node --env-file=.env src/repair-legacy-slots.js",
-    "slots:repair": "node --env-file=.env src/repair-legacy-slots.js --apply",
+    "db:init": "node --env-file=.env src/scripts/init-db.js",
+    "db:replica": "node --env-file=.env src/scripts/init-replica.js",
+    "seed": "node --env-file=.env src/scripts/seed.js",
+    "import:legacy": "node --env-file=.env src/scripts/import-legacy.js",
+    "slots:preview": "node --env-file=.env src/scripts/repair-legacy-slots.js",
+    "slots:repair": "node --env-file=.env src/scripts/repair-legacy-slots.js --apply",
     "test": "node --test test/security.test.js",
     "test:workflow": "node --env-file=.env --test test/workflow.test.js",
     "test:import": "node --env-file=.env --test test/import.test.js",
-    "format:check": "prettier --check src test"
+    "format:check": "prettier --check src test",
+    "test:affairs": "node --env-file=.env --test test/student-affairs.test.js",
+    "academics:preview": "node --env-file=.env src/scripts/academic-calendar.js",
+    "academics:normalize": "node --env-file=.env src/scripts/academic-calendar.js --apply",
+    "seed:affairs": "node --env-file=.env src/scripts/seed-student-affairs.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

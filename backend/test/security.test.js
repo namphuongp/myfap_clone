@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
 import { createApp } from "../src/app.js";
-import { checkVersion, hash, token, parse, id } from "../src/core.js";
-import { disconnect } from "../src/db.js";
+import { checkVersion } from "../src/utils/version.js";
+import { hash, token } from "../src/utils/crypto.js";
+import { parse, id } from "../src/validators/common.js";
+import { disconnect } from "../src/config/database.js";
 const app = createApp();
 test.after(() => disconnect());
 test("API riêng tư yêu cầu token", async () => {

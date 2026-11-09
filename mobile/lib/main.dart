@@ -9,6 +9,7 @@ class MyFapApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
     title: 'MyFAP Demo',
     theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
     home: const LoginScreen(),

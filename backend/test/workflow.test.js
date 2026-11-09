@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
-import { connect, initialize, disconnect } from "../src/db.js";
+import { connect, initialize, disconnect } from "../src/config/database.js";
 import mongoose from "mongoose";
 import {
   Department,
+  Major,
   Course,
   Semester,
   User,
@@ -16,11 +17,11 @@ import {
   ClassSession,
   Leave,
   Change,
-} from "../src/models.js";
-import { seed } from "../src/seed.js";
+} from "../src/models/index.js";
+import { seed } from "../src/services/seed.service.js";
 import { createApp } from "../src/app.js";
-import { token, hash } from "../src/core.js";
-import { localDate } from "../src/slots.js";
+import { token, hash } from "../src/utils/crypto.js";
+import { localDate } from "../src/utils/slots.js";
 
 test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử, phân quyền và đồng thời", async (t) => {
   try {
@@ -94,6 +95,7 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
     let counter = 0;
     const password_hash = (await User.findOne().select("+password_hash"))
       .password_hash;
+    const fixtureMajor = await Major.findOne();
     const newStudent = async () => {
       counter++;
       const user = await User.create({
@@ -102,6 +104,7 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
         email: `fixture${counter}@myfap.local`,
         password_hash,
         role: "STUDENT",
+        major_id: fixtureMajor._id,
         department_id: department._id,
       });
       const accessToken = token();
@@ -200,6 +203,10 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
             department_id: String(department._id),
           })
           .expect(201);
+        await Major.updateOne(
+          { _id: fixtureMajor._id },
+          { $addToSet: { course_ids: c.body.id } },
+        );
         const gv = await User.create({
           user_code: "GV2",
           name: "Giảng viên hai",
@@ -246,6 +253,10 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
             department_id: String(department._id),
           })
           .expect(201);
+        await Major.updateOne(
+          { _id: fixtureMajor._id },
+          { $addToSet: { course_ids: c.body.id } },
+        );
         const section = await createSection("LAST_SEAT", c.body.id);
         await createLesson(section, day(5), 1);
         for (let i = 0; i < 29; i++) {
@@ -352,7 +363,7 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
           .send({ session_id: String(future._id), reason: "Nghỉ slot mới" })
           .expect(201);
         const history = await as(
-          "head",
+          "lecturer",
           "get",
           `/sessions/${future._id}/history`,
         ).expect(200);
@@ -389,7 +400,7 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
           })
           .expect(200);
         const history = await as(
-          "head",
+          "lecturer",
           "get",
           `/sessions/${past._id}/attendance-history`,
         ).expect(200);
@@ -457,8 +468,8 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
           { _id: users.head.id },
           { $set: { department_id: other._id } },
         );
-        const list = await as("head", "get", "/sections").expect(200);
-        assert.equal(list.body.length, 0);
+        const list = await as("head", "get", "/department/summary").expect(200);
+        assert.equal(list.body.sections, 0);
         await as("head", "get", `/sessions/${past._id}/attendance`).expect(403);
         await User.updateOne(
           { _id: users.head.id },
@@ -478,10 +489,8 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
       async () => {
         const sem = await as("staff", "post", "/semesters")
           .send({
-            code: "NEXT",
-            name: "Kỳ sau",
-            start_at: new Date(Date.now() + 100 * 86400000).toISOString(),
-            end_at: new Date(Date.now() + 200 * 86400000).toISOString(),
+            term: "SPRING",
+            year: new Date().getUTCFullYear() + 1,
           })
           .expect(201);
         await as("staff", "post", "/sections")
