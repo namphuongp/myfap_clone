@@ -1,6 +1,6 @@
 # MyFAP Flutter và Express Mongoose MongoDB
 
-Dự án tại `D:\Study\Project\myfap_clone`. Frontend Dart/Flutter Android; backend Node.js/Express + Mongoose; MongoDB replica set dùng transaction. Không có chức năng điểm, không kết nối FAP thật.
+Dự án tại `D:\Study\Project\myfap_clone`. Frontend Dart/Flutter Android và Web; backend Node.js/Express + Mongoose; MongoDB replica set dùng transaction. Không có chức năng điểm, không kết nối FAP thật.
 
 ## Quy tắc đã triển khai
 
@@ -58,7 +58,9 @@ flutter devices
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 ```
 
-Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất, lịch, tổng quan HEAD và profile cho bốn role (avatar chữ, sửa liên hệ, đổi mật khẩu). UI đăng ký, điểm danh, thông báo và duyệt đơn còn cần xây tiếp theo API.
+Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất, lịch, đăng ký môn cho sinh viên, tổng quan HEAD và profile cho bốn role (avatar chữ, sửa liên hệ, đổi mật khẩu). UI điểm danh, thông báo và duyệt đơn còn cần xây tiếp theo API.
+
+Chạy trên Chrome (không cần Android emulator): mở API bằng `start-local.ps1`, sau đó trong thư mục `mobile` chạy `flutter run -d chrome --web-hostname=localhost --web-port=5173`. Web mặc định gọi `http://localhost:3000/api`; cổng web 5173 được cho phép trong `backend/.env.example`. Xem [mobile/README.md](mobile/README.md) để biết lệnh chạy đầy đủ.
 
 ## Chuyển dữ liệu cũ và chuẩn hóa lịch
 
