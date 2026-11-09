@@ -23,6 +23,8 @@ lib/
 
 Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình riêng. Mỗi màn hình hiện dùng widget lịch chung để giữ chức năng đang có. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
 
+Màn hình sinh viên có thanh điều hướng Lịch học, Đăng ký môn, Đơn từ và Thông báo học vụ. Lịch học dùng API đang có; ba mục còn lại hiện là màn hình khung trong `student/screens/`.
+
 ## Chạy trên Android emulator
 
 ```powershell

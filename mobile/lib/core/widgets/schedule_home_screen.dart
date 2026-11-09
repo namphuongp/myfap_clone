@@ -8,11 +8,13 @@ class ScheduleHomeScreen extends StatefulWidget {
     required this.user,
     required this.api,
     required this.onLoggedOut,
+    this.embedded = false,
   });
 
   final Map<String, dynamic> user;
   final ApiClient api;
   final VoidCallback onLoggedOut;
+  final bool embedded;
 
   @override
   State<ScheduleHomeScreen> createState() => _ScheduleHomeScreenState();
@@ -61,9 +63,8 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('MyFAP • môi trường phát triển')),
-    body: Center(
+  Widget build(BuildContext context) {
+    final content = Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
@@ -77,12 +78,15 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
               ),
               FilledButton(
                 onPressed: _busy ? null : _load,
-                child: const Text('Tải lịch học / lịch dạy'),
+                child: Text(
+                  widget.embedded ? 'Tải lịch học' : 'Tải lịch học / lịch dạy',
+                ),
               ),
-              OutlinedButton(
-                onPressed: _busy ? null : _logout,
-                child: const Text('Đăng xuất'),
-              ),
+              if (!widget.embedded)
+                OutlinedButton(
+                  onPressed: _busy ? null : _logout,
+                  child: const Text('Đăng xuất'),
+                ),
               if (_data is List)
                 ...(_data as List).map(
                   (dynamic row) => Card(
@@ -104,6 +108,11 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
           ),
         ),
       ),
-    ),
-  );
+    );
+    if (widget.embedded) return content;
+    return Scaffold(
+      appBar: AppBar(title: const Text('MyFAP • môi trường phát triển')),
+      body: content,
+    );
+  }
 }
