@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
-import '../../core/widgets/schedule_home_screen.dart';
 import 'announcements_screen.dart';
 import 'enrollment_screen.dart';
 import 'requests_screen.dart';
+import 'student_schedule_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({
@@ -63,12 +63,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     body: IndexedStack(
       index: _selectedIndex,
       children: [
-        ScheduleHomeScreen(
-          user: widget.user,
-          api: widget.api,
-          onLoggedOut: widget.onLoggedOut,
-          embedded: true,
-        ),
+        StudentScheduleScreen(api: widget.api),
         const EnrollmentScreen(),
         const RequestsScreen(),
         const AnnouncementsScreen(),
