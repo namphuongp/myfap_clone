@@ -1,0 +1,84 @@
+@base = http://localhost:3000/api
+@token = paste_accessToken_here
+@sessionId = 2
+@requestId = 1
+
+### Kiểm tra database
+GET {{base}}/health
+
+### Đăng nhập (đổi email theo vai trò cần thử)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"email":"student@myfap.local","password":"Demo@12345678"}
+
+### Thông tin tài khoản
+GET {{base}}/auth/me
+Authorization: Bearer {{token}}
+
+### Xem lịch (thay khoảng ngày phù hợp)
+GET {{base}}/schedule?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z
+Authorization: Bearer {{token}}
+
+### Phòng
+GET {{base}}/rooms
+Authorization: Bearer {{token}}
+
+### Lớp
+GET {{base}}/sections
+Authorization: Bearer {{token}}
+
+### Sinh viên gửi nghỉ
+POST {{base}}/leave-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"session_id":{{sessionId}},"reason":"Khám bệnh"}
+
+### Danh sách đơn nghỉ
+GET {{base}}/leave-requests?status=PENDING&page=1
+Authorization: Bearer {{token}}
+
+### Giảng viên duyệt nghỉ
+PATCH {{base}}/leave-requests/{{requestId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"decision":"APPROVED","note":"Đồng ý"}
+
+### Xem điểm danh và ghi chú nghỉ có phép
+GET {{base}}/sessions/{{sessionId}}/attendance
+Authorization: Bearer {{token}}
+
+### Giảng viên lưu điểm danh sau khi buổi bắt đầu
+PUT {{base}}/sessions/{{sessionId}}/attendance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"rows":[{"student_id":1,"status":"ABSENT"}]}
+
+### Giảng viên đề nghị đổi buổi
+POST {{base}}/change-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"session_id":{{sessionId}},"reason":"Đổi phòng","proposed_room_id":2,"proposed_start":"2026-12-01T01:00:00Z","proposed_end":"2026-12-01T03:00:00Z"}
+
+### Cán bộ xem đơn đổi lịch
+GET {{base}}/change-requests?status=PENDING&page=1
+Authorization: Bearer {{token}}
+
+### Cán bộ duyệt đổi lịch
+PATCH {{base}}/change-requests/{{requestId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"decision":"APPROVED","note":"Đã kiểm tra phòng và lịch"}
+
+### Trưởng bộ môn xem thống kê
+GET {{base}}/department/summary
+Authorization: Bearer {{token}}
+
+### Đăng xuất
+POST {{base}}/auth/logout
+Authorization: Bearer {{token}}

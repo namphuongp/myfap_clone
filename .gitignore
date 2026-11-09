@@ -1,0 +1,9 @@
+**/node_modules/
+**/.env
+**/.dart_tool/
+**/build/
+**/local.properties
+**/.gradle/
+*.log
+
+.local/
