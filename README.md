@@ -25,7 +25,7 @@ cd D:\Study\Project\myfap_clone
 
 API: `http://localhost:3000/api`; health trả `{"status":"ok","database":"mongodb"}`. Backend/.env trỏ tới `mongodb://127.0.0.1:27018/myfap?replicaSet=myfap-rs`.
 
-Tài khoản demo: `student@myfap.local`, `lecturer@myfap.local`, `head@myfap.local`, `staff@myfap.local`; mật khẩu **Demo@12345678**. Dữ liệu cũ đã được chuyển bằng importer; không chạy seed lại trên database này.
+Tài khoản demo: `student@myfap.local`, `lecturer@myfap.local`, `head@myfap.local`, `staff@myfap.local`; mật khẩu **Demo@12345678**. Chỉ chạy `npm run seed` khi database chưa có người dùng.
 
 ## Máy mới
 
@@ -42,6 +42,15 @@ npm run db:init
 npm run seed # Chỉ database chưa có người dùng
 npm run dev
 ```
+
+Sau khi đã chạy seed và API đang hoạt động, có thể bổ sung dữ liệu mẫu:
+
+```powershell
+cd backend
+npm run demo:expand
+```
+
+Lệnh này dùng API để thêm 3 môn, 3 lớp, lịch trong 3 tuần và đăng ký 2 lớp cho sinh viên demo. Chạy lại trong cùng tuần không tạo bản ghi trùng; sang tuần mới sẽ thêm các buổi học của tuần tiếp theo.
 
 Nếu dùng MongoDB Server trên Windows, chạy `start-local.ps1` sau `npm ci`. Script tự tìm mongod trong PATH hoặc `C:\Program Files\MongoDB\Server`; có thể đặt `$env:MONGOD_EXE` nếu cài nơi khác. Nếu dùng Atlas: đổi MONGODB_URI, chạy db:init/seed nếu database trống, rồi npm run dev; không dùng start-local hoặc db:replica.
 
@@ -116,6 +125,6 @@ Tài liệu chính thức: [Mongoose schemas](https://mongoosejs.com/docs/guide.
 - 8/8 kiểm tra bảo mật/validation đạt.
 - 9 nhóm workflow (10 test tính cả suite cha) đạt trên database test riêng; có tranh chỗ thứ 30 và ghi điểm danh đồng thời.
 - Import/chuẩn hóa lịch cũ: đạt; có test rollback khi snapshot lỗi, giữ password hash/version/điểm danh, preview không ghi dữ liệu và import không nhân đôi.
-- Database myfap hiện có 4 tài khoản, 2 phòng, 1 lớp, 1 đăng ký và 2 buổi đã chuyển từ snapshot. Hai buổi cũ ngày 09/11 và 10/11/2026 đã chuẩn hóa về slot 4 (15:20–17:40), có lịch sử giờ cũ/mới.
+- Lần xác minh importer trước đây có 4 tài khoản, 2 phòng, 1 lớp, 1 đăng ký và 2 buổi chuyển từ snapshot. Số lượng trên từng database local phụ thuộc việc chạy seed và `demo:expand`.
 - Script start-local đã chạy; health xác nhận mongodb, đăng nhập tài khoản cũ và xem lịch/logout trên API cổng 3000 đạt. MySQL portable cổng 13379 đã dừng; dữ liệu/backup còn trong .local.
 - Prettier và git diff --check đạt. Chưa chạy Docker Compose, chưa kiểm thử frontend trên thiết bị/emulator hay build APK trong lần đổi backend này.
