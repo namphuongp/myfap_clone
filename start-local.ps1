@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $backendRoot = Join-Path $projectRoot 'backend'
 $localRoot = Join-Path $projectRoot '.local'
