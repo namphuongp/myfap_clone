@@ -14,7 +14,7 @@ Frontend Flutter dùng bố cục tham khảo myFAP: header/nav xanh navy, đi�
 | Yêu cầu đã gửi | Trạng thái duyệt, lịch/phòng cũ và đề xuất, ý kiến cán bộ | GET /change-requests |
 | Hồ sơ | Avatar chữ, tên, vai trò, mã tài khoản và email chỉ đọc cho mọi role | GET /profile |
 
-Trang chủ có thanh điều hướng Trang chủ / Đơn từ / Hồ sơ. Có thể mở profile bằng icon tài khoản; mở các màn nghiệp vụ từ thẻ chức năng. Hồ sơ dùng chung chỉ có avatar chữ, tên, vai trò, mã tài khoản, email và ngành học riêng cho sinh viên; không hiển thị bộ môn hoặc thông tin liên hệ.
+Giao diện giảng viên không có thanh điều hướng dưới. Mở hồ sơ bằng icon tài khoản hoặc mục Hồ sơ của tôi; mở nghiệp vụ từ các thẻ chức năng và mục Yêu cầu đã gửi. Màn con có nút quay lại. Hồ sơ dùng chung chỉ có avatar chữ, tên, vai trò, mã tài khoản, email và ngành học riêng cho sinh viên; không hiển thị bộ môn hoặc thông tin liên hệ.
 
 ## Quy tắc tương tác
 

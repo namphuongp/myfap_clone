@@ -26,7 +26,6 @@ class LecturerHomeScreen extends StatefulWidget {
 class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
   late final LecturerRepository _repository;
   late ThemeData _theme;
-  int _index = 0;
   bool _loggingOut = false;
   @override
   void initState() {
@@ -76,91 +75,55 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     return Theme(
       data: _theme,
       child: Scaffold(
-        appBar: _index == 0
-            ? AppBar(
-                toolbarHeight: 96,
-                centerTitle: false,
-                titleSpacing: 20,
-                title: Row(
+        appBar: AppBar(
+          toolbarHeight: 96,
+          centerTitle: false,
+          titleSpacing: 20,
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.white.withValues(alpha: .13),
+                foregroundColor: Colors.white,
+                child: Text(
+                  initialsForName(widget.user['name'] as String),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white.withValues(alpha: .13),
-                      foregroundColor: Colors.white,
-                      child: Text(
-                        initialsForName(widget.user['name'] as String),
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                    Text(
+                      widget.user['name'] as String,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.user['name'] as String,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Giảng viên · MyFAP',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFFBACADD),
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Giảng viên · MyFAP',
+                      style: TextStyle(fontSize: 13, color: Color(0xFFBACADD)),
                     ),
                   ],
                 ),
-                actions: [
-                  IconButton(
-                    tooltip: 'Hồ sơ cá nhân',
-                    onPressed: _profile,
-                    icon: const Icon(Icons.account_circle_outlined),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              )
-            : null,
-        body: _index == 0
-            ? _dashboard()
-            : _index == 1
-            ? LecturerRequestsScreen(repository: _repository)
-            : ProfileScreen(
-                repository: ProfileRepository(widget.api),
-                onSignedOut: _signedOut,
-              ),
-        bottomNavigationBar: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (value) => setState(() => _index = value),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Trang chủ',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: 'Đơn từ',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'Hồ sơ',
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Hồ sơ cá nhân',
+              onPressed: _profile,
+              icon: const Icon(Icons.account_circle_outlined),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
+        body: _dashboard(),
       ),
     );
   }
