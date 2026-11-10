@@ -20,6 +20,7 @@ class LecturerApiFixture extends ApiClient {
   final List<(String, String, Json?)> calls = [];
   bool fail = false, conflict = false, reviewed = false;
   List<Json> recorded = [];
+  List<String>? initialStatuses;
   final user = <String, dynamic>{
     'id': 'lecturer-id',
     'name': 'Nguyễn Hoàng Minh',
@@ -101,7 +102,7 @@ class LecturerApiFixture extends ApiClient {
               'name': name,
               'user_code': 'HE19000$i',
               'status': recorded.isEmpty
-                  ? 'NOT_RECORDED'
+                  ? (initialStatuses?[i] ?? 'NOT_RECORDED')
                   : recorded[i]['status'],
               'note': i == 0 ? 'Nghỉ có phép' : null,
             },
@@ -237,6 +238,9 @@ void main() {
     expect(find.text('Điểm danh'), findsWidgets);
     expect(find.text('Mark Report'), findsNothing);
     expect(find.text('Thông báo'), findsNothing);
+    expect(find.text('BUỔI DẠY GẦN ĐÂY'), findsNothing);
+    expect(find.text('Tổng quan giảng dạy'), findsNothing);
+    expect(mock.calls, isEmpty);
     await capture(tester, 'home');
     await tester.tap(find.text('Lịch dạy').first);
     await tester.pumpAndSettle();
@@ -283,31 +287,41 @@ void main() {
           session: mock.session(past: true),
         ),
       );
-      expect(find.text('Nghỉ có phép'), findsOneWidget);
+      expect(find.text('Ghi chú: Đã duyệt đơn nghỉ'), findsOneWidget);
       await capture(tester, 'attendance');
-      await tester.ensureVisible(find.text('Lưu điểm danh'));
+      await tester.scrollUntilVisible(
+        find.text('Lưu điểm danh'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Lưu điểm danh'));
       await tester.pumpAndSettle();
       expect(mock.calls.where((c) => c.$1 == 'PUT'), isEmpty);
       for (var i = 0; i < 2; i++) {
-        final dropdown = find.byType(DropdownButtonFormField<String>).at(i);
-        await tester.ensureVisible(dropdown);
-        await tester.tap(dropdown);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(i == 0 ? 'Vắng có phép' : 'Có mặt').last);
+        final radio = find.byKey(
+          ValueKey('attendance-student-$i-${i == 0 ? 'ABSENT' : 'PRESENT'}'),
+        );
+        await tester.ensureVisible(radio);
+        await tester.tap(radio);
         await tester.pumpAndSettle();
       }
-      await tester.ensureVisible(find.text('Lưu điểm danh'));
+      await tester.scrollUntilVisible(
+        find.text('Lưu điểm danh'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Lưu điểm danh'));
       await tester.pumpAndSettle();
       final put = mock.calls.singleWhere((c) => c.$1 == 'PUT');
       expect(put.$3!['version'], 7);
       expect(jsonList(put.$3!['rows']).map((r) => r['status']), [
-        'EXCUSED',
+        'ABSENT',
         'PRESENT',
       ]);
       expect(find.text('Đã ghi nhận điểm danh'), findsOneWidget);
-      expect(find.text('Nghỉ có phép'), findsOneWidget);
+      expect(find.text('Ghi chú: Đã duyệt đơn nghỉ'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -320,7 +334,12 @@ void main() {
         session: mock.session(),
       ),
     );
-    await tester.ensureVisible(find.text('Lưu điểm danh'));
+    await tester.scrollUntilVisible(
+      find.text('Lưu điểm danh'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(
       tester
           .widget<FilledButton>(
@@ -439,14 +458,17 @@ void main() {
         ),
       );
       for (var i = 0; i < 2; i++) {
-        final dropdown = find.byType(DropdownButtonFormField<String>).at(i);
-        await tester.ensureVisible(dropdown);
-        await tester.tap(dropdown);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Có mặt').last);
+        final radio = find.byKey(ValueKey('attendance-student-$i-PRESENT'));
+        await tester.ensureVisible(radio);
+        await tester.tap(radio);
         await tester.pumpAndSettle();
       }
-      await tester.ensureVisible(find.text('Lưu điểm danh'));
+      await tester.scrollUntilVisible(
+        find.text('Lưu điểm danh'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Lưu điểm danh'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Dữ liệu đã thay đổi'), findsOneWidget);
@@ -460,6 +482,68 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('Trạng thái cũ được giữ khi không chọn lại radio', (
+    tester,
+  ) async {
+    final mock = api()..initialStatuses = ['EXCUSED', 'LATE'];
+    await pump(
+      tester,
+      LecturerAttendanceScreen(
+        repository: LecturerRepository(mock),
+        session: mock.session(past: true),
+      ),
+    );
+    expect(find.textContaining('Trạng thái cũ: Vắng có phép'), findsOneWidget);
+    expect(find.textContaining('Trạng thái cũ: Đi muộn'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<RadioGroup<String>>(find.byType(RadioGroup<String>))
+          .every((group) => group.groupValue == null),
+      isTrue,
+    );
+    await tester.scrollUntilVisible(
+      find.text('Lưu điểm danh'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lưu điểm danh'));
+    await tester.pumpAndSettle();
+    expect(mock.recorded.map((r) => r['status']), ['EXCUSED', 'LATE']);
+  });
+  testWidgets('Radio và note không tràn ở 320px với chữ lớn', (tester) async {
+    final mock = api();
+    await pump(
+      tester,
+      LecturerAttendanceScreen(
+        repository: LecturerRepository(mock),
+        session: mock.session(past: true),
+      ),
+      size: const Size(320, 740),
+      textScale: 1.3,
+    );
+    expect(
+      find.byKey(const ValueKey('attendance-student-0-ABSENT')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('attendance-student-0-PRESENT')),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('attendance-student-1-PRESENT')),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('attendance-student-1-ABSENT')),
+      findsOneWidget,
+    );
+    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+    await capture(tester, 'attendance-320');
+    expect(tester.takeException(), isNull);
+  });
   for (final size in [const Size(320, 740), const Size(1100, 800)]) {
     testWidgets('Layout giảng viên ${size.width} với cỡ chữ lớn', (
       tester,

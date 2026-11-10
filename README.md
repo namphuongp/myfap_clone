@@ -58,7 +58,7 @@ flutter devices
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 ```
 
-Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất, lịch, đăng ký môn cho sinh viên, tổng quan HEAD và profile cho bốn role (avatar chữ, sửa liên hệ, đổi mật khẩu). Giảng viên đã có trang chủ, lịch dạy, điểm danh, duyệt nghỉ, gửi/theo dõi đổi lịch/phòng và profile theo mẫu. Màn thông báo/đơn của sinh viên và quản trị STAFF còn cần tích hợp; xem [Giao diện giảng viên](LECTURER_UI.md).
+Máy thật dùng IP LAN của máy chạy API. Chỉ Android debug cho HTTP; release phải dùng HTTPS. Flutter hiện có đăng nhập/đăng xuất, lịch, đăng ký môn cho sinh viên, tổng quan HEAD và profile cho bốn role (avatar chữ, thông tin chỉ đọc). Giảng viên đã có trang chủ, lịch dạy, điểm danh, duyệt nghỉ, gửi/theo dõi đổi lịch/phòng và profile theo mẫu. Màn thông báo/đơn của sinh viên và quản trị STAFF còn cần tích hợp; xem [Giao diện giảng viên](LECTURER_UI.md).
 
 Chạy trên Chrome (không cần Android emulator): mở API bằng `start-local.ps1`, sau đó trong thư mục `mobile` chạy `flutter run -d chrome --web-hostname=localhost --web-port=5173`. Web mặc định gọi `http://localhost:3000/api`; cổng web 5173 được cho phép trong `backend/.env.example`. Xem [mobile/README.md](mobile/README.md) để biết lệnh chạy đầy đủ.
 

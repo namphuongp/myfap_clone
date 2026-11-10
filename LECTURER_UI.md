@@ -6,25 +6,25 @@ Frontend Flutter dùng bố cục tham khảo myFAP: header/nav xanh navy, đi�
 
 | Màn | Hành vi | API |
 |---|---|---|
-| Trang chủ | Số buổi hôm nay, đơn nghỉ chờ duyệt, phím vào chức năng, buổi dạy trong 7 ngày tới | GET /schedule, GET /leave-requests |
+| Trang chủ | Thẻ chức năng và tài khoản; không có tổng quan/buổi dạy gần đây | Không tải lịch/đơn tại trang chủ |
 | Lịch dạy | Chọn học kỳ, tuần và ngày; xem slot/phòng/lớp, vào điểm danh hoặc đổi lịch | GET /semesters, GET /schedule |
-| Điểm danh | Toàn bộ roster của buổi, ghi chú nghỉ có phép, lưu có version | GET/PUT /sessions/:id/attendance |
+| Điểm danh | Radio Absent/Present, ô note, toàn bộ roster, lưu có version | GET/PUT /sessions/:id/attendance |
 | Đơn nghỉ | Lọc trạng thái, phân trang, xem lý do và duyệt/từ chối kèm phản hồi | GET /leave-requests, PATCH /leave-requests/:id/decision |
 | Đổi lịch/phòng | Chọn buổi tương lai, ngày trong học kỳ, slot, phòng và lý do | GET /rooms, POST /change-requests |
 | Yêu cầu đã gửi | Trạng thái duyệt, lịch/phòng cũ và đề xuất, ý kiến cán bộ | GET /change-requests |
-| Hồ sơ | Avatar chữ, thông tin tài khoản/bộ môn, sửa liên hệ, đổi mật khẩu | GET/PATCH /profile, PATCH /profile/password |
+| Hồ sơ | Avatar chữ, thông tin tài khoản/bộ môn/liên hệ chỉ đọc cho mọi role | GET /profile |
 
 Trang chủ có thanh điều hướng Trang chủ / Đơn từ / Hồ sơ. Có thể mở profile bằng icon tài khoản; mở các màn nghiệp vụ từ thẻ chức năng. Các màn khác của STUDENT/HEAD/STAFF được giữ nguyên.
 
 ## Quy tắc tương tác
 
 - Ngày và truy vấn lịch dùng UTC+7, không phụ thuộc múi giờ Windows/browser. Giữ 4 slot cố định 07:30–09:50, 10:00–12:20, 12:50–15:10, 15:20–17:40.
-- Roster chỉ lấy từ API, không mặc định sinh viên Có mặt; phải chọn đủ trạng thái trước khi lưu. Buổi tương lai/hủy chỉ xem. Đơn nghỉ đã duyệt chỉ thêm ghi chú, không tự đổi trạng thái điểm danh.
+- Roster chỉ lấy từ API, không mặc định sinh viên Có mặt; radio chỉ chọn Absent/Present và ô note hiển thị Đã duyệt đơn nghỉ. LATE/EXCUSED cũ được giữ và hiển thị ở note đến khi chọn lại; phải chọn đủ trạng thái trước khi lưu. Buổi tương lai/hủy chỉ xem. Đơn nghỉ đã duyệt chỉ thêm ghi chú, không tự đổi trạng thái điểm danh.
 - Lưu điểm danh gửi đủ lớp và version. Nếu dữ liệu xung đột, giữ bản đang sửa để người dùng xem, yêu cầu tải lại; không tự ghi đè. Khi tải lại hoặc rời màn với thay đổi chưa lưu, có xác nhận bỏ thay đổi.
 - Duyệt đơn gửi version và phản hồi bắt buộc; khóa thao tác trong lúc gửi. Khi thất bại, đóng hộp thoại/tải lại trước khi duyệt tiếp để tránh dùng đơn cũ.
 - Đổi phòng có thể giữ ngày/slot hiện tại; đổi lịch có thể giữ phòng. Chặn đề xuất không thay đổi. Backend vẫn kiểm tra xung đột, thời gian và quyền; gửi đơn không tự sửa lịch.
 - Khi tạo đơn từ trang chủ, danh sách gồm buổi phù hợp trong 92 ngày tới. Buổi xa hơn mở từ Lịch dạy theo học kỳ/tuần.
-- Đơn phân trang 50 dòng. Bộ đếm chờ duyệt hiện 50+ nếu trang đầu đầy, không suy diễn tổng số. Lịch trống và lỗi tải có trạng thái riêng/thử lại; tải tuần nhanh có kiểm soát phản hồi cũ.
+- Đơn phân trang 50 dòng. Lịch trống và lỗi tải có trạng thái riêng/thử lại; tải tuần nhanh có kiểm soát phản hồi cũ.
 
 ## Chuỗi mã nguồn
 

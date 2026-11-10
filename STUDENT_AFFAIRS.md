@@ -2,7 +2,7 @@
 
 ## Phạm vi đã triển khai
 
-- STUDENT: API xem lịch, đăng ký môn trong ngành, gửi nghỉ/chuyển ngành, đọc thông báo; profile xem/sửa liên hệ, đổi mật khẩu.
+- STUDENT: API xem lịch, đăng ký môn trong ngành, gửi nghỉ/chuyển ngành, đọc thông báo; profile chỉ đọc.
 - LECTURER: lịch dạy, duyệt nghỉ đúng lớp, gửi đổi lịch/phòng, điểm danh; profile.
 - HEAD: báo cáo bộ môn và profile. Không còn truy cập roster, lịch cá nhân/lớp hoặc danh sách đơn. Danh mục bộ môn/môn/học kỳ chỉ phục vụ bộ lọc báo cáo.
 - STAFF: thông báo, duyệt đổi lịch/phòng/chuyển ngành, profile; giữ quyền quản trị người dùng, ngành/chương trình, học kỳ, lớp, phòng và lịch để vận hành.
@@ -47,7 +47,7 @@ STAFF tạo nháp, kiểm tra đối tượng rồi phát hành. Audience: tất
 
 Mọi role mở bằng icon tài khoản trên thanh trên hoặc nút Hồ sơ của tôi sau đăng nhập. Màn hình có avatar chữ cái đầu tên, tên/mã/email/vai trò/bộ môn; sinh viên có thêm ngành học. Không thêm trường ảnh, file ảnh hay upload avatar.
 
-Cho sửa số điện thoại, địa chỉ, ngày sinh; không tự sửa tên, email, mã, role, bộ môn/ngành. Lưu dùng version để chặn ghi đè. Đổi mật khẩu cần mật khẩu hiện tại; thu hồi toàn bộ phiên và quay về đăng nhập. Flutter có trạng thái tải/lỗi/thử lại, khóa điều khiển khi lưu và xử lý conflict.
+Màn profile chỉ hiển thị tên, mã, email, role, bộ môn/ngành, số điện thoại, địa chỉ và ngày sinh cho cả 4 role. Không có trường nhập, nút lưu hoặc đổi mật khẩu. Flutter có trạng thái tải/lỗi/thử lại và xử lý phiên hết hạn.
 
 Luồng: `mobile/lib/core/profile/screens/profile_screen.dart` → `mobile/lib/core/profile/repositories/profile_repository.dart` → `mobile/lib/core/api/api_client.dart` → `profile.routes/controller/service` → repository → Mongoose.
 
@@ -74,4 +74,4 @@ Remove-Item Env:MONGODB_URI
 
 Test học vụ có kiểm tra 4 role/profile, chặn sửa quyền/ảnh, thông báo đúng đối tượng/idempotence, duyệt đồng thời, áp dụng đúng đầu kỳ, giữ môn chung và lịch sử, báo cáo có phạm vi, đổi mật khẩu thu hồi phiên. Thời điểm đầu kỳ được truyền có kiểm soát trong test service trên DB fixture; không phải đã chờ đến kỳ thực hoặc chạy production.
 
-Trong mobile chạy `flutter analyze` và `flutter test`. Widget test profile dùng API fixture, bao phủ 4 role/avatar chữ, lưu/version, lỗi/nhập sai và đổi mật khẩu. Ảnh kiểm tra layout được render từ Flutter test với font thật; chưa thay thế kiểm thử trên thiết bị/emulator hoặc APK release.
+Trong mobile chạy `flutter analyze` và `flutter test`. Widget test profile dùng API fixture, bao phủ 4 role/avatar chữ, chỉ đọc (không gửi request ghi), lỗi/thử lại và phiên hết hạn. Ảnh kiểm tra layout được render từ Flutter test với font thật; chưa thay thế kiểm thử trên thiết bị/emulator hoặc APK release.

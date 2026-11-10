@@ -1,3 +1,5 @@
+import "../widgets/attendance_choice_row.dart";
+
 import 'package:flutter/material.dart';
 
 import '../models/lecturer_data.dart';
@@ -218,40 +220,16 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
                               row['user_code'] as String,
                               style: const TextStyle(color: lecturerMuted),
                             ),
-                            if (row['note'] != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: StatusPill(
-                                  row['note'] as String,
-                                  color: lecturerGreen,
-                                ),
-                              ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<String>(
-                              key: ValueKey('${row['student_id']}-$_version'),
-                              initialValue:
-                                  attendanceLabels.containsKey(row['status'])
-                                  ? row['status'] as String
-                                  : null,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Trạng thái điểm danh',
-                              ),
-                              hint: const Text('Chưa ghi nhận'),
-                              items: attendanceLabels.entries
-                                  .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e.key,
-                                      child: Text(e.value),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: !_canEdit || _saving
-                                  ? null
-                                  : (value) => setState(() {
-                                      row['status'] = value;
-                                      _dirty = true;
-                                    }),
+                            const SizedBox(height: 8),
+                            AttendanceChoiceRow(
+                              studentId: row['student_id'] as String,
+                              status: row['status'] as String,
+                              note: row['note'] as String?,
+                              enabled: _canEdit && !_saving,
+                              onChanged: (value) => setState(() {
+                                row['status'] = value;
+                                _dirty = true;
+                              }),
                             ),
                           ],
                         ),

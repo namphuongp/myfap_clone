@@ -12,10 +12,10 @@ import 'package:myfap/core/profile/screens/profile_screen.dart';
 
 class FakeProfileApi extends ApiClient {
   Map<String, dynamic> profile;
-  bool failLoad = false, conflict = false, cleared = false;
-  int patches = 0, passwordChanges = 0;
-  final List<int> versions = [];
+  bool failLoad = false, cleared = false;
   final List<String> paths = [];
+  final List<String> methods = [];
+  bool expired = false;
   FakeProfileApi(String role)
     : profile = {
         'id': '507f1f77bcf86cd799439011',
@@ -37,24 +37,16 @@ class FakeProfileApi extends ApiClient {
     Map<String, dynamic>? body,
   ]) async {
     paths.add(path);
+    methods.add(method);
     if (path == '/department/summary') {
       return {'sections': 2, 'sessions': 8, 'recorded_sessions': 3};
     }
     if (method == 'GET') {
+      if (expired) throw ApiException('Phiên đã hết hạn', statusCode: 401);
       if (failLoad) throw ApiException('Không tải được hồ sơ');
       return Map<String, dynamic>.from(profile);
     }
-    if (path == '/profile/password') {
-      passwordChanges++;
-      return {'message': 'OK'};
-    }
-    patches++;
-    if (conflict) {
-      throw ApiException('Dữ liệu đã thay đổi, hãy tải lại', statusCode: 409);
-    }
-    versions.add(body!['version'] as int);
-    profile = {...profile, ...body, 'version': (body['version'] as int) + 1};
-    return Map<String, dynamic>.from(profile);
+    throw StateError('Màn hồ sơ chỉ được gọi GET');
   }
 
   @override
@@ -177,6 +169,16 @@ void main() {
       expect(find.text('NP'), findsOneWidget);
       expect(find.text('demo@myfap.local'), findsOneWidget);
       expect(find.byType(Image), findsNothing);
+      expect(find.byType(TextFormField), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text('Lưu thay đổi'), findsNothing);
+      expect(find.text('Đổi mật khẩu'), findsNothing);
+      expect(find.text('0901234567'), findsOneWidget);
+      expect(find.text('01/01/2000'), findsOneWidget);
+      expect(find.text('Thành phố Hồ Chí Minh'), findsOneWidget);
+      await tester.tap(find.byTooltip('Tải lại hồ sơ'));
+      await tester.pumpAndSettle();
+      expect(api.methods.every((method) => method == 'GET'), isTrue);
       expect(
         tester.widget<CircleAvatar>(find.byType(CircleAvatar)).backgroundImage,
         isNull,
@@ -185,78 +187,27 @@ void main() {
       await preview(tester, 'profile-$role');
     });
   }
-  testWidgets(
-    'Lưu thông tin liên hệ dùng version mới, không sửa trường định danh',
-    (tester) async {
-      final api = FakeProfileApi('STUDENT');
-      await pumpProfile(tester, api);
-      await tester.enterText(
-        find.byKey(const Key('profile-phone')),
-        '0912345678',
-      );
-      await tester.ensureVisible(find.text('Lưu thay đổi'));
-      await tester.tap(find.text('Lưu thay đổi'));
-      await tester.pumpAndSettle();
-      expect(api.profile['phone'], '0912345678');
-      expect(api.versions, [1]);
-      expect(api.profile['role'], 'STUDENT');
-      expect(find.text('Đã cập nhật hồ sơ'), findsOneWidget);
-      await tester.tap(find.text('Lưu thay đổi'));
-      await tester.pumpAndSettle();
-      expect(api.versions, [1, 2]);
-      await preview(tester, 'profile-saved-contact');
-    },
-  );
-  testWidgets('Số điện thoại sai không gọi API lưu', (tester) async {
-    final api = FakeProfileApi('LECTURER');
-    await pumpProfile(tester, api);
-    await tester.enterText(find.byKey(const Key('profile-phone')), 'abc');
-    await tester.ensureVisible(find.text('Lưu thay đổi'));
-    await tester.tap(find.text('Lưu thay đổi'));
-    await tester.pumpAndSettle();
-    expect(api.patches, 0);
-    expect(find.text('Số điện thoại không hợp lệ'), findsOneWidget);
-  });
-  testWidgets('Lỗi tải có thử lại và conflict không tự ghi đè', (tester) async {
+  testWidgets('Hồ sơ lỗi có thử lại, thông tin thiếu hiển thị rõ', (
+    tester,
+  ) async {
     final api = FakeProfileApi('HEAD')..failLoad = true;
+    api.profile['phone'] = null;
     await pumpProfile(tester, api);
     expect(find.text('Thử lại'), findsOneWidget);
     api.failLoad = false;
     await tester.tap(find.text('Thử lại'));
     await tester.pumpAndSettle();
-    api.conflict = true;
-    await tester.ensureVisible(find.text('Lưu thay đổi'));
-    await tester.tap(find.text('Lưu thay đổi'));
-    await tester.pumpAndSettle();
-    expect(find.text('Dữ liệu đã thay đổi, hãy tải lại'), findsOneWidget);
-    expect(api.profile['version'], 1);
-    expect(tester.takeException(), isNull);
+    expect(find.text('Chưa cập nhật'), findsOneWidget);
+    expect(api.methods.every((method) => method == 'GET'), isTrue);
   });
-  testWidgets('Đổi mật khẩu kiểm tra nhập lại và yêu cầu đăng nhập lại', (
+  testWidgets('Hồ sơ hết phiên xóa phiên và quay lại đăng nhập', (
     tester,
   ) async {
-    final api = FakeProfileApi('STAFF');
+    final api = FakeProfileApi('STAFF')..expired = true;
     var signedOut = false;
     await pumpProfile(tester, api, onSignedOut: () => signedOut = true);
-    await tester.ensureVisible(find.text('Đổi mật khẩu'));
-    await tester.tap(find.text('Đổi mật khẩu'));
-    await tester.pumpAndSettle();
-    final fields = find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.byType(TextFormField),
-    );
-    await tester.enterText(fields.at(0), 'Demo@12345678');
-    await tester.enterText(fields.at(1), 'Changed@12345678');
-    await tester.enterText(fields.at(2), 'NotMatching@12345678');
-    await tester.tap(find.text('Xác nhận'));
-    await tester.pumpAndSettle();
-    expect(api.passwordChanges, 0);
-    expect(find.text('Mật khẩu nhập lại không khớp'), findsOneWidget);
-    await tester.enterText(fields.at(2), 'Changed@12345678');
-    await tester.tap(find.text('Xác nhận'));
-    await tester.pumpAndSettle();
-    expect(api.passwordChanges, 1);
     expect(api.cleared, isTrue);
     expect(signedOut, isTrue);
+    expect(api.methods.every((method) => method == 'GET'), isTrue);
   });
 }
