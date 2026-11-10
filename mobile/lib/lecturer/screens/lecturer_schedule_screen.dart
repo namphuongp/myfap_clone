@@ -39,11 +39,7 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
       if (!mounted) return;
       _terms = terms;
       final current = terms.where((s) => s.includes(vnDay())).firstOrNull;
-      _termId = current?.id ?? terms.firstOrNull?.id;
-      if (current == null && terms.isNotEmpty) {
-        _day = vnDay(terms.first.start);
-        _week = monday(_day);
-      }
+      _termId = current?.id;
       await _load();
     } catch (error) {
       if (mounted) {
@@ -78,15 +74,6 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
         setState(() => _loading = false);
       }
     }
-  }
-
-  void _selectTerm(AcademicTerm term) {
-    setState(() {
-      _termId = term.id;
-      _day = term.includes(vnDay()) ? vnDay() : vnDay(term.start);
-      _week = monday(_day);
-    });
-    _load();
   }
 
   void _moveWeek(int direction) {
@@ -129,23 +116,46 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
           padding: const EdgeInsets.all(18),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            SizedBox(
-              height: 52,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _terms
-                    .map(
-                      (term) => Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: ChoiceChip(
-                          label: Text(term.code),
-                          selected: term.id == _termId,
-                          selectedColor: const Color(0xFFFFE2AF),
-                          onSelected: (_) => _selectTerm(term),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE2AF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.school_outlined,
+                    size: 20,
+                    color: lecturerNavy,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Học kỳ hiện tại',
+                          style: TextStyle(fontSize: 12, color: lecturerMuted),
                         ),
-                      ),
-                    )
-                    .toList(),
+                        const SizedBox(height: 2),
+                        Text(
+                          _terms
+                                  .where((term) => term.id == _termId)
+                                  .firstOrNull
+                                  ?.code ??
+                              (_loading
+                                  ? 'Đang tải…'
+                                  : 'Chưa có học kỳ hiện tại'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: lecturerNavy,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),

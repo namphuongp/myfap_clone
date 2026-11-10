@@ -65,12 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _dateLabel(String? value) {
-    if (value == null) return 'Chưa cập nhật';
-    final parts = value.split('-');
-    return parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : value;
-  }
-
   Widget _info(String label, String? value, IconData icon) => ListTile(
     contentPadding: EdgeInsets.zero,
     leading: Icon(icon),
@@ -175,50 +169,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Icons.badge_outlined,
                               ),
                               _info('Email', profile.email, Icons.mail_outline),
-                              _info(
-                                'Bộ môn',
-                                profile.departmentName,
-                                Icons.school_outlined,
-                              ),
                               if (profile.role == 'STUDENT')
                                 _info(
                                   'Ngành học',
                                   profile.majorName,
                                   Icons.menu_book_outlined,
                                 ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Thông tin liên hệ',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
-                          ),
-                          child: Column(
-                            children: [
-                              _info(
-                                'Số điện thoại',
-                                profile.phone,
-                                Icons.phone_outlined,
-                              ),
-                              _info(
-                                'Ngày sinh',
-                                _dateLabel(profile.dateOfBirth),
-                                Icons.cake_outlined,
-                              ),
-                              _info(
-                                'Địa chỉ liên hệ',
-                                profile.address,
-                                Icons.location_on_outlined,
-                              ),
                             ],
                           ),
                         ),

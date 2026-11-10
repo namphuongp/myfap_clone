@@ -245,6 +245,8 @@ void main() {
     await tester.tap(find.text('Lịch dạy').first);
     await tester.pumpAndSettle();
     expect(find.text('FALL-2026'), findsOneWidget);
+    expect(find.text('Học kỳ hiện tại'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
     await capture(tester, 'schedule');
     await tester.pageBack();
     await tester.pumpAndSettle();

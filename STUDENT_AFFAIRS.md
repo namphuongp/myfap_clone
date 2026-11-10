@@ -45,9 +45,9 @@ STAFF tạo nháp, kiểm tra đối tượng rồi phát hành. Audience: tất
 
 ## Profile Flutter
 
-Mọi role mở bằng icon tài khoản trên thanh trên hoặc nút Hồ sơ của tôi sau đăng nhập. Màn hình có avatar chữ cái đầu tên, tên/mã/email/vai trò/bộ môn; sinh viên có thêm ngành học. Không thêm trường ảnh, file ảnh hay upload avatar.
+Mọi role mở bằng icon tài khoản trên thanh trên hoặc nút Hồ sơ của tôi sau đăng nhập. Màn hình có avatar chữ cái đầu tên, tên/mã/email/vai trò; sinh viên có thêm ngành học. Không thêm trường ảnh, file ảnh hay upload avatar.
 
-Màn profile chỉ hiển thị tên, mã, email, role, bộ môn/ngành, số điện thoại, địa chỉ và ngày sinh cho cả 4 role. Không có trường nhập, nút lưu hoặc đổi mật khẩu. Flutter có trạng thái tải/lỗi/thử lại và xử lý phiên hết hạn.
+Màn profile chỉ hiển thị tên, mã, email và role cho cả 4 role; sinh viên có thêm ngành học. Đã bỏ bộ môn và toàn bộ mục thông tin liên hệ. Không có trường nhập, nút lưu hoặc đổi mật khẩu. Flutter có trạng thái tải/lỗi/thử lại và xử lý phiên hết hạn.
 
 Luồng: `mobile/lib/core/profile/screens/profile_screen.dart` → `mobile/lib/core/profile/repositories/profile_repository.dart` → `mobile/lib/core/api/api_client.dart` → `profile.routes/controller/service` → repository → Mongoose.
 

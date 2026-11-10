@@ -173,9 +173,12 @@ void main() {
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Lưu thay đổi'), findsNothing);
       expect(find.text('Đổi mật khẩu'), findsNothing);
-      expect(find.text('0901234567'), findsOneWidget);
-      expect(find.text('01/01/2000'), findsOneWidget);
-      expect(find.text('Thành phố Hồ Chí Minh'), findsOneWidget);
+      expect(find.text('Thông tin liên hệ'), findsNothing);
+      expect(find.text('Bộ môn'), findsNothing);
+      expect(find.text('0901234567'), findsNothing);
+      expect(find.text('Ngày sinh'), findsNothing);
+      expect(find.text('Địa chỉ liên hệ'), findsNothing);
+      expect(find.text('Mã tài khoản'), findsOneWidget);
       await tester.tap(find.byTooltip('Tải lại hồ sơ'));
       await tester.pumpAndSettle();
       expect(api.methods.every((method) => method == 'GET'), isTrue);
@@ -187,9 +190,7 @@ void main() {
       await preview(tester, 'profile-$role');
     });
   }
-  testWidgets('Hồ sơ lỗi có thử lại, thông tin thiếu hiển thị rõ', (
-    tester,
-  ) async {
+  testWidgets('Hồ sơ lỗi có thử lại', (tester) async {
     final api = FakeProfileApi('HEAD')..failLoad = true;
     api.profile['phone'] = null;
     await pumpProfile(tester, api);
@@ -197,7 +198,7 @@ void main() {
     api.failLoad = false;
     await tester.tap(find.text('Thử lại'));
     await tester.pumpAndSettle();
-    expect(find.text('Chưa cập nhật'), findsOneWidget);
+    expect(find.text('DEMO-HEAD'), findsOneWidget);
     expect(api.methods.every((method) => method == 'GET'), isTrue);
   });
   testWidgets('Hồ sơ hết phiên xóa phiên và quay lại đăng nhập', (
