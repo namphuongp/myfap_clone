@@ -12,6 +12,10 @@ import {
   classSessionRepository,
   leaveRepository,
   changeRepository,
+  userRepository,
+  sectionRepository,
+  courseRepository,
+  roomRepository,
 } from "../repositories/index.js";
 const requestRepositories = {
   leave: leaveRepository,
@@ -64,6 +68,13 @@ export async function createChange(user, data) {
       timing.end_at.getTime() === lesson.end_at.getTime()
     )
       fail(400, "Lịch đề xuất không thay đổi");
+    if (
+      await changeRepository.exists(
+        { session_id: lesson._id, status: "PENDING" },
+        { session },
+      )
+    )
+      fail(409, "Buổi học đã có yêu cầu chờ duyệt; hãy chờ cán bộ xử lý");
     await ensureSlot(
       session,
       section,
@@ -115,15 +126,69 @@ export async function listRequests(user, q, kind) {
       }),
     };
   }
+  const [requests, total] = await Promise.all([
+    repository.find(filter, {
+      sort: { created_at: -1, _id: -1 },
+      skip: (q.page - 1) * 50,
+      limit: 50,
+    }),
+    repository.countDocuments(filter),
+  ]);
+  const lessons = await classSessionRepository.find({
+    _id: { $in: requests.map((r) => r.session_id) },
+  });
+  const [people, sections, rooms] = await Promise.all([
+    userRepository.find({
+      _id: {
+        $in: requests.flatMap((r) =>
+          [r.requester_id, r.reviewer_id].filter(Boolean),
+        ),
+      },
+    }),
+    sectionRepository.find({ _id: { $in: lessons.map((r) => r.section_id) } }),
+    roomRepository.find({
+      _id: {
+        $in: [
+          ...lessons.map((r) => r.room_id),
+          ...requests.map((r) => r.proposed_room_id).filter(Boolean),
+          ...requests.map((r) => r.original_room_id).filter(Boolean),
+        ],
+      },
+    }),
+  ]);
+  const courses = await courseRepository.find({
+    _id: { $in: sections.map((r) => r.course_id) },
+  });
+  const byId = (rows) => new Map(rows.map((r) => [String(r._id), r]));
+  const lessonMap = byId(lessons),
+    peopleMap = byId(people),
+    sectionMap = byId(sections),
+    courseMap = byId(courses),
+    roomMap = byId(rooms);
   return {
     page: q.page,
-    items: clean(
-      await repository.find(filter, {
-        sort: { created_at: -1, _id: -1 },
-        skip: (q.page - 1) * 50,
-        limit: 50,
-      }),
-    ),
+    total,
+    has_more: q.page * 50 < total,
+    items: requests.map((row) => {
+      const lesson = lessonMap.get(String(row.session_id));
+      const section = sectionMap.get(String(lesson?.section_id));
+      const person = peopleMap.get(String(row.requester_id));
+      return {
+        ...clean(row),
+        requester_name: person?.name ?? null,
+        requester_code: person?.user_code ?? null,
+        reviewer_name: peopleMap.get(String(row.reviewer_id))?.name ?? null,
+        section_code: section?.code ?? null,
+        course: courseMap.get(String(section?.course_id))?.name ?? null,
+        session_date: lesson?.session_date ?? null,
+        slot_id: kind === "leave" ? row.slot_id : (lesson?.slot_id ?? null),
+        room_name: roomMap.get(String(lesson?.room_id))?.name ?? null,
+        proposed_room_name:
+          roomMap.get(String(row.proposed_room_id))?.name ?? null,
+        original_room_name:
+          roomMap.get(String(row.original_room_id))?.name ?? null,
+      };
+    }),
   };
 }
 export async function reviewRequest(user, requestId, data, kind) {

@@ -121,6 +121,10 @@ STAFF đổi lịch trực tiếp:
 
 ## Đơn nghỉ và đổi lịch/phòng
 
+Danh sách đơn trả `{page, total, has_more, items}` với 50 đơn/trang, mới nhất trước. Mỗi đơn giữ các trường gốc và bổ sung `requester_name`, `requester_code`, `reviewer_name`, `section_code`, `course`, `session_date`, `slot_id`, `room_name`, `proposed_room_name`. `slot_id` của đơn nghỉ là ca tại thời điểm xin nghỉ. Không trả dữ liệu điểm danh hoặc thông tin đăng nhập trong danh sách này. Giảng viên chỉ đọc đơn nghỉ thuộc lớp mình và đơn đổi lịch do mình gửi.
+
+Mỗi buổi chỉ có một yêu cầu đổi lịch/phòng `PENDING`; gửi trùng trả 409. Yêu cầu phải thay đổi ít nhất ngày, ca hoặc phòng. Chỉ đổi phòng thì giữ nguyên `proposed_date` và `proposed_slot_id`. Backend kiểm tra xung đột cả khi gửi và lúc cán bộ duyệt; gửi đơn chưa làm thay đổi lịch.
+
 | Method | Đường dẫn | Quyền |
 |---|---|---|
 | POST | /leave-requests | STUDENT gửi nghỉ |

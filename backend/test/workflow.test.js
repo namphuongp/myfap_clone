@@ -288,6 +288,26 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
         const leave = await as("student", "post", "/leave-requests")
           .send({ session_id: String(future._id), reason: "Khám bệnh" })
           .expect(201);
+        const inbox = await as(
+          "lecturer",
+          "get",
+          "/leave-requests?status=PENDING&page=1",
+        ).expect(200);
+        const listed = inbox.body.items.find((r) => r.id === leave.body.id);
+        assert.equal(listed.requester_name, users.student.name);
+        assert.equal(listed.requester_code, users.student.user_code);
+        assert.equal(listed.course, course.name);
+        assert.equal(listed.slot_id, future.slot_id);
+        assert.equal(listed.password_hash, undefined);
+        assert.equal(listed.attendance, undefined);
+        assert.equal(inbox.body.total, 1);
+        assert.equal(inbox.body.has_more, false);
+        const emptyPage = await as(
+          "lecturer",
+          "get",
+          "/leave-requests?page=2",
+        ).expect(200);
+        assert.equal(emptyPage.body.items.length, 0);
         await as("staff", "patch", `/leave-requests/${leave.body.id}/decision`)
           .send({ version: 0, decision: "APPROVED", note: "OK" })
           .expect(403);
@@ -314,6 +334,22 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
             proposed_slot_id: 1,
           })
           .expect(201);
+        const outbox = await as(
+          "lecturer",
+          "get",
+          "/change-requests?status=PENDING",
+        ).expect(200);
+        assert.equal(outbox.body.items[0].proposed_room_name, rooms[1].name);
+        assert.equal(outbox.body.items[0].reviewer_name, null);
+        await as("lecturer", "post", "/change-requests")
+          .send({
+            session_id: String(future._id),
+            reason: "Gửi lại khi đang chờ",
+            proposed_room_id: String(rooms[1]._id),
+            proposed_date: future.session_date,
+            proposed_slot_id: 1,
+          })
+          .expect(409);
         await as(
           "staff",
           "patch",
