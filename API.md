@@ -2,6 +2,42 @@
 
 Base URL `http://localhost:3000/api`. Android emulator dùng `http://10.0.2.2:3000/api`. Ngoài health/login, cần `Authorization: Bearer <accessToken>`. ID là ObjectId 24 ký tự hex, lấy trường `id` từ response. `version` bắt đầu 0, luôn đọc phiên bản mới trước khi cập nhật. `slot_id` là số 1–4.
 
+## Chức năng HEAD
+
+HEAD có bốn màn hình: Báo cáo bộ môn, Quản lý môn học, Phân công giảng dạy và Gửi đơn chuyển phòng. Không có màn theo dõi chuyên cần từng sinh viên. Bộ môn lấy từ tài khoản đã xác thực, không nhận `department_id` từ client.
+
+### GET /head/options
+
+Chỉ HEAD. Trả `{courses,lecturers,semesters}`. Môn và giảng viên đang hoạt động thuộc bộ môn HEAD; học kỳ chuẩn dùng chung. Giảng viên chỉ có thông tin hiển thị, không trả mật khẩu/token.
+
+### GET /head/courses
+
+Chỉ HEAD. Query `search` tìm chuỗi thường trong mã/tên môn và `page` mặc định 1. Trả `{page,total,has_more,items}`, 50 môn/trang, chỉ trong bộ môn. `GET /courses` của HEAD cũng giới hạn cùng bộ môn.
+
+### POST /head/courses
+
+Chỉ HEAD. Body `{"code":"HEAD101","name":"Học phần mới"}`; backend tự gán bộ môn. Trả 201 cùng `id` và `version`; mã môn duy nhất toàn hệ thống, trùng mã/tên trong bộ môn trả 409. Transaction và audit `HEAD_CREATE_COURSE`. STAFF vẫn tạo môn qua endpoint cũ và quản lý chương trình ngành.
+
+### PATCH /head/courses/:id
+
+Chỉ HEAD cùng bộ môn. Body `{"version":0,"code":"HEAD101","name":"Tên cập nhật"}`. Không đổi bộ môn; mã môn đã có lớp không được thay đổi. Version cũ/trùng mã trả 409; khác bộ môn trả 403. Trả môn với version mới và ghi audit. Không mở API xóa môn.
+
+### GET /head/sections
+
+Chỉ HEAD. Query `page`, `search` theo mã lớp, `semester_id`, `course_id`. Trả `{page,total,has_more,items}`, 50 lớp/trang, có tên/mã môn, tên/mã giảng viên, mã kỳ và `session_count`. Lọc môn ngoài bộ môn trả 403.
+
+### PATCH /head/sections/:id/lecturer
+
+Chỉ HEAD cùng bộ môn. Body `{"version":0,"lecturer_id":"507f1f77bcf86cd799439011"}`. Lớp do STAFF mở trước; giảng viên nhận phân công phải hoạt động và cùng bộ môn. Không đổi khi kỳ đã kết thúc hoặc lớp đã có bất kỳ buổi nào, kể cả buổi hủy. Transaction chung với xếp lịch, kiểm tra version và audit `HEAD_ASSIGN_LECTURER`. STAFF tiếp tục tạo lớp/xếp lịch; các lớp cũ giữ nguyên phân công.
+
+### Báo cáo và chuyển phòng
+
+HEAD dùng `GET /department/summary`, `GET /reports/attendance`, `GET /reports/requests` để xem số liệu tổng hợp trong bộ môn. Không cấp quyền đọc/sửa `/sessions/:id/attendance` hoặc duyệt đơn nghỉ của sinh viên.
+
+HEAD được `GET /schedule?from=...&to=...` trong bộ môn và `GET /rooms`. HEAD gửi `POST /change-requests` theo body hiện có nhưng `proposed_date` và `proposed_slot_id` phải giữ nguyên; thay ngày/ca trả 403. Chỉ buổi tương lai SCHEDULED chưa điểm danh; phòng phải khác phòng cũ, đủ chỗ và không trùng lịch. `GET /change-requests` của HEAD chỉ trả đơn tự gửi cho buổi thuộc bộ môn hiện tại.
+
+Chỉ STAFF được `PATCH /change-requests/:id/decision`. PENDING chưa cập nhật lịch. APPROVED kiểm tra lại version và xung đột, đổi phòng nhưng giữ ngày/ca và đơn nghỉ đã duyệt. REJECTED giữ lịch cũ. Mỗi buổi chỉ một PENDING dùng chung cho HEAD và LECTURER.
+
 ## Tài khoản và profile
 
 | Method | Đường dẫn | Quyền |

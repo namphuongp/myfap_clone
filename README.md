@@ -4,7 +4,7 @@ Dự án tại `D:\Study\Project\myfap_clone`. Frontend Dart/Flutter Android và
 
 ## Quy tắc đã triển khai
 
-- STUDENT: lịch, đăng ký môn thuộc ngành, đơn nghỉ/chuyển ngành, thông báo. LECTURER: lịch dạy, duyệt nghỉ, yêu cầu đổi lịch/phòng, điểm danh. HEAD: báo cáo bộ môn. STAFF: thông báo, duyệt đổi lịch/chuyển ngành và quản trị dữ liệu vận hành. Mọi role có profile.
+- STUDENT: lịch, đăng ký môn thuộc ngành, đơn nghỉ/chuyển ngành, thông báo. LECTURER: lịch dạy, duyệt nghỉ, yêu cầu đổi lịch/phòng, điểm danh. HEAD: báo cáo bộ môn, quản lý môn, phân công giảng dạy trước khi có lịch và gửi đơn chuyển phòng cho STAFF duyệt. STAFF: thông báo, duyệt đổi lịch/chuyển ngành và quản trị dữ liệu vận hành. Mọi role có profile.
 - Ngành có chương trình môn riêng và môn chung. Chuyển ngành được duyệt có hiệu lực từ đầu kỳ sau ngày gửi; rút môn chỉ thuộc ngành cũ ở kỳ hiệu lực trở đi, giữ môn chung và lịch sử.
 - Năm học bắt đầu Fall (tháng 9–11), Spring (1–3), Summer (5–7); nghỉ tháng 12, 4, 8. API nhận term/year và tự tính mốc UTC+7.
 - Một môn có nhiều lớp ở nhiều học kỳ. Mỗi lớp cố định **30 sinh viên**. Cán bộ xếp lịch trước; sinh viên xem lịch/chỗ còn rồi tự đăng ký. STAFF cũng có thể đăng ký/rút thay sinh viên. Không đăng ký hai lớp cùng môn trong cùng kỳ.
@@ -94,7 +94,7 @@ Backend theo luồng **route → controller → service → repository → model
 - [Kiến trúc backend](backend/README.md): trách nhiệm từng lớp và ví dụ luồng đăng ký.
 - `mobile/lib/core/profile/screens/profile_screen.dart` → `core/profile/repositories/profile_repository.dart` → `core/api/api_client.dart` → Express API.
 - [API.md](API.md), [requests.http](requests.http), [database.md](database.md), [Học vụ và profile](STUDENT_AFFAIRS.md).
-Không có API sửa/xóa tài khoản/danh mục hoặc đổi giảng viên của lớp. Thông tin tham chiếu được kiểm tra bởi service; không sửa trực tiếp DB trong lúc ứng dụng đang hoạt động. Khi mở rộng cần tiếp tục giữ các quy tắc này.
+HEAD có API sửa môn và đổi giảng viên lớp chưa có buổi học trong bộ môn. Không có API xóa môn hoặc sửa/xóa tài khoản. Thông tin tham chiếu được kiểm tra bởi service; không sửa trực tiếp DB trong lúc ứng dụng đang hoạt động. Khi mở rộng cần tiếp tục giữ các quy tắc này.
 
 ## Kiểm thử
 

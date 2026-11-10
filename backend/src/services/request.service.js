@@ -54,6 +54,15 @@ export async function createChange(user, data) {
   const result = await transaction(async (session) => {
     const lesson = await get(classSessionRepository, data.session_id, session);
     const section = await authorizeLesson(lesson, user, session);
+    if (
+      user.role === "HEAD" &&
+      (data.proposed_date !== lesson.session_date ||
+        data.proposed_slot_id !== lesson.slot_id)
+    )
+      fail(
+        403,
+        "Trưởng bộ môn chỉ được yêu cầu chuyển phòng, giữ nguyên ngày và ca",
+      );
     const timing = slotTimes(data.proposed_date, data.proposed_slot_id);
     if (
       lesson.status !== "SCHEDULED" ||
@@ -115,10 +124,19 @@ export async function listRequests(user, q, kind) {
   if (q.status) filter.status = q.status;
   if (
     user.role === "STUDENT" ||
-    (repository === changeRepository && user.role === "LECTURER")
+    (repository === changeRepository &&
+      ["LECTURER", "HEAD"].includes(user.role))
   )
     filter.requester_id = user._id;
   else if (user.role !== "STAFF") {
+    const sections = await scopedSectionIds(user);
+    filter.session_id = {
+      $in: await classSessionRepository.distinct("_id", {
+        section_id: { $in: sections },
+      }),
+    };
+  }
+  if (user.role === "HEAD") {
     const sections = await scopedSectionIds(user);
     filter.session_id = {
       $in: await classSessionRepository.distinct("_id", {

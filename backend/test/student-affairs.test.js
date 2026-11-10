@@ -132,16 +132,16 @@ test("Học vụ: profile 4 role, lịch 3 kỳ, thông báo, chuyển ngành v�
       },
     );
     await t.test(
-      "HEAD chỉ xem báo cáo/profile và bộ lọc; sinh viên/giảng viên không có quyền cán bộ",
+      "HEAD xem lịch bộ môn và đơn chuyển phòng riêng; không nhận quyền cán bộ hoặc duyệt nghỉ",
       async () => {
         await as(
           "head",
           "get",
           "/schedule?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z",
-        ).expect(403);
+        ).expect(200);
         await as("head", "get", "/sections").expect(403);
         await as("head", "get", "/leave-requests").expect(403);
-        await as("head", "get", "/change-requests").expect(403);
+        await as("head", "get", "/change-requests").expect(200);
         await as("head", "get", "/notices").expect(403);
         await as("student", "get", "/reports/attendance").expect(403);
         await as("lecturer", "post", "/notices").send({}).expect(403);

@@ -65,3 +65,7 @@ Khóa chung phù hợp quy mô đồ án; khi tải ghi lớn có thể tách kh
 Audit/SessionHistory chỉ được thêm qua ứng dụng, không có API sửa/xóa. Tài khoản DB có quyền rộng vẫn có thể sửa nên khi triển khai cần giới hạn đặc quyền. Khôi phục lịch sử trước khi có snapshot là không thể; importer không bịa original_* cho đơn cũ.
 
 Học kỳ Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Ngày kết thúc là mốc đầu tháng nghỉ (exclusive). Kỳ legacy được giữ để đối chiếu. Chuyển ngành chỉ áp dụng từ đầu kỳ sau ngày gửi: đóng đăng ký môn riêng ngành cũ ở kỳ hiệu lực trở đi, không xóa điểm danh/khoảng đăng ký cũ hoặc môn chung. Chi tiết và lệnh chuẩn hóa: [STUDENT_AFFAIRS.md](STUDENT_AFFAIRS.md).
+
+## Quyền HEAD bổ sung
+
+HEAD dùng lại Course, Section và Change, không thêm collection. Tạo/sửa môn thuộc bộ môn; cập nhật Section.lecturer_id chỉ trước khi lớp có buổi học; gửi Change chỉ đổi phòng, giữ ngày/ca. Change.requester_id tham chiếu User nên hỗ trợ HEAD, reviewer vẫn là STAFF. Các thao tác ghi dùng transaction/version/audit. Không đổi dữ liệu phân công cũ tự động và không mở quyền sửa attendance cho HEAD.

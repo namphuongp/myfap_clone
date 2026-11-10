@@ -62,7 +62,7 @@ export function academicRoutes() {
   );
   router.get(
     "/schedule",
-    roles("STUDENT", "LECTURER", "STAFF"),
+    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
     validate(sessionSchemas.personalScheduleSchema, "query"),
     sessionController.personalSchedule,
   );

@@ -37,6 +37,21 @@ class FakeProfileApi extends ApiClient {
     Map<String, dynamic>? body,
   ]) async {
     paths.add(path);
+    if (path == '/head/options') {
+      return {
+        'courses': <dynamic>[],
+        'lecturers': <dynamic>[],
+        'semesters': <dynamic>[],
+      };
+    }
+    if (path.startsWith('/reports/attendance')) return {'items': <dynamic>[]};
+    if (path.startsWith('/reports/requests')) {
+      return {
+        'leave_requests': <dynamic>[],
+        'change_requests': <dynamic>[],
+        'major_transfers': <dynamic>[],
+      };
+    }
     if (path == '/department/summary') {
       return {'sections': 2, 'sessions': 8, 'recorded_sessions': 3};
     }

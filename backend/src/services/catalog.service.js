@@ -23,13 +23,15 @@ const catalogRepositories = {
 export async function timeSlots() {
   return SLOTS;
 }
-export async function listCatalog(kind) {
+export async function listCatalog(kind, user) {
   const repository = catalogRepositories[kind];
   return clean(
     await repository.find(
       kind === "semesters"
         ? { legacy: { $ne: true }, term: { $ne: null } }
-        : {},
+        : kind === "courses" && user?.role === "HEAD"
+          ? { department_id: user.department_id }
+          : {},
       { sort: { _id: 1 }, limit: 200 },
     ),
   );

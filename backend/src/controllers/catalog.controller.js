@@ -4,7 +4,7 @@ export const timeSlots = async (req, res) => {
   res.json(result);
 };
 export const listCatalog = (kind) => async (req, res) => {
-  const result = await service.listCatalog(kind);
+  const result = await service.listCatalog(kind, req.user);
   res.json(result);
 };
 export const createCatalog = (kind) => async (req, res) => {

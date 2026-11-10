@@ -6,6 +6,7 @@
 lib/
   main.dart                         Khởi tạo ứng dụng
   core/
+    academic/                        Lịch và danh sách đơn dùng chung
     api/api_client.dart              Gọi API và lưu token
     auth/screens/login_screen.dart   Đăng nhập
     profile/screens/                 Hồ sơ dùng chung, avatar chữ
@@ -23,7 +24,7 @@ lib/
     screens/  widgets/  utils/
 ```
 
-Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình riêng. Sinh viên có lịch theo tuần và thanh điều hướng Lịch học, Đăng ký môn, Đơn từ, Thông báo. Đăng ký môn cho xem lớp còn chỗ và lịch lớp trước khi đăng ký, xem lớp đang học và rút lớp; hai mục sau hiện là màn hình khung. Giảng viên có bốn màn hình riêng; HEAD và STAFF dùng màn hình chung hiện có. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
+Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình riêng. Sinh viên có lịch theo tuần và thanh điều hướng Lịch học, Đăng ký môn, Đơn từ, Thông báo. Đăng ký môn cho xem lớp còn chỗ và lịch lớp trước khi đăng ký, xem lớp đang học và rút lớp; hai mục sau hiện là màn hình khung. Giảng viên và HEAD đều có bốn màn hình riêng; STAFF dùng màn hình chung hiện có. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
 
 Backend hiện dùng trạng thái lớp `OPEN/CLOSED` để cho phép đăng ký, chưa có mốc thời gian mở và đóng đăng ký. Nếu cần đợt đăng ký theo giờ, backend phải lưu mốc thời gian và kiểm tra khi nhận yêu cầu đăng ký; chỉ đếm ngược ở Flutter không đủ để chặn đăng ký ngoài thời gian.
 
@@ -68,3 +69,13 @@ Giảng viên có bốn màn hình riêng trong `lib/lecturer/screens/`:
 Dữ liệu được gọi qua `lecturer/repositories/lecturer_repository.dart` và `core/api/api_client.dart`; không dùng dữ liệu giả trong ứng dụng. API vẫn phân quyền và kiểm tra nghiệp vụ tại backend. Xem `../API.md` cho hợp đồng endpoint.
 
 Kiểm tra: `flutter analyze`, `flutter test`, `flutter build web`, `flutter build apk --debug`. Widget test dùng fixture; workflow backend dùng MongoDB replica set và database riêng có hậu tố `_test`.
+
+## Chức năng HEAD
+
+Bốn màn riêng: Báo cáo bộ môn, Quản lý môn học, Phân công giảng dạy và Gửi đơn chuyển phòng. Không có màn theo dõi chuyên cần từng sinh viên. HEAD chỉ thao tác trong bộ môn của tài khoản.
+
+Báo cáo có bộ lọc kỳ/môn/giảng viên, nhóm theo lớp/môn/giảng viên và tổng hợp đơn từ. Quản lý môn có tìm kiếm, phân trang, tạo/sửa; không đổi mã đã có lớp. Phân công thực hiện trên lớp do STAFF mở, chỉ chọn giảng viên hoạt động cùng bộ môn khi lớp chưa có buổi học. Không thay đổi phân công các lớp đã có lịch.
+
+Đơn chuyển phòng chọn buổi thuộc bộ môn, giữ ngày/ca ở dạng chỉ đọc, chọn phòng khác đủ 30 chỗ, nhập lý do và xác nhận gửi STAFF duyệt; có tab theo dõi đơn và phản hồi. Gửi đơn chưa đổi lịch. Sau STAFF duyệt, lịch sinh viên/giảng viên cập nhật phòng nhưng giữ đơn nghỉ đã duyệt.
+
+Repository HEAD nằm ở `head/repositories/head_repository.dart`; lịch và danh sách đơn dùng chung với giảng viên qua `core/academic/`. API chi tiết trong `../API.md`. Backend test: `npm.cmd run test:head` với MONGODB_URI trỏ database mới có hậu tố `_test`; không dùng database myfap.

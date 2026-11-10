@@ -17,7 +17,7 @@ export function catalogRoutes() {
       `/${kind}`,
       roles(
         ...(kind === "rooms"
-          ? ["STUDENT", "LECTURER", "STAFF"]
+          ? ["STUDENT", "LECTURER", "HEAD", "STAFF"]
           : ["STUDENT", "LECTURER", "HEAD", "STAFF"]),
       ),
       catalogController.listCatalog(kind),
