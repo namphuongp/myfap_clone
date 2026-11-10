@@ -51,9 +51,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     ),
   );
   void _schedule() => _open(LecturerScheduleScreen(repository: _repository));
-  void _requests({bool leave = true}) => _open(
-    LecturerRequestsScreen(repository: _repository, initialLeave: leave),
-  );
+  void _requests() => _open(LecturerRequestsScreen(repository: _repository));
   Future<void> _logout() async {
     setState(() => _loggingOut = true);
     try {
@@ -210,17 +208,6 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                   subtitle: const Text('Xem thông tin cá nhân'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _profile,
-                ),
-                const Divider(height: 1, indent: 18, endIndent: 18),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 6,
-                  ),
-                  leading: const Icon(Icons.history, color: lecturerNavy),
-                  title: const Text('Yêu cầu đã gửi'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _requests(leave: false),
                 ),
               ],
             ),

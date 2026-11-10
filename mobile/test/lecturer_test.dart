@@ -429,25 +429,19 @@ void main() {
     expect(post.$3!['proposed_slot_id'], 1);
     expect(post.$3!['proposed_date'], dateKey(mock.session().day));
   });
-  testWidgets(
-    'Lỗi kết nối có tải lại và trạng thái đơn đổi lịch có phòng cũ/mới',
-    (tester) async {
-      final mock = api()..fail = true;
-      await pump(
-        tester,
-        LecturerRequestsScreen(
-          repository: LecturerRepository(mock),
-          initialLeave: false,
-        ),
-      );
-      expect(find.text('Không kết nối được máy chủ'), findsOneWidget);
-      mock.fail = false;
-      await tester.tap(find.text('Tải lại'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('BE-301 → BE-302'), findsOneWidget);
-      await capture(tester, 'change-history');
-    },
-  );
+  testWidgets('Danh sách đơn nghỉ lỗi kết nối có thể tải lại', (tester) async {
+    final mock = api()..fail = true;
+    await pump(
+      tester,
+      LecturerRequestsScreen(repository: LecturerRepository(mock)),
+    );
+    expect(find.text('Không kết nối được máy chủ'), findsOneWidget);
+    mock.fail = false;
+    await tester.tap(find.text('Tải lại'));
+    await tester.pumpAndSettle();
+    expect(find.text('Trần Ngọc Anh'), findsOneWidget);
+    await capture(tester, 'leave-requests-retry');
+  });
   testWidgets(
     'Conflict điểm danh không tự ghi đè và hỏi trước khi bỏ thay đổi',
     (tester) async {

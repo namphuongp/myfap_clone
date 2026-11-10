@@ -32,20 +32,11 @@ class LecturerRepository {
     });
   }
 
-  Future<RequestPage> requests({
-    required bool leave,
-    String? status,
-    int page = 1,
-  }) async {
+  Future<RequestPage> leaveRequests({String? status, int page = 1}) async {
     final query = Uri(queryParameters: {'page': '$page', 'status': ?status})
         .query;
     return RequestPage(
-      jsonObject(
-        await api.request(
-          'GET',
-          '/${leave ? 'leave' : 'change'}-requests?$query',
-        ),
-      ),
+      jsonObject(await api.request('GET', '/leave-requests?$query')),
     );
   }
 
