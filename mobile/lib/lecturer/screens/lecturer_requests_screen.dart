@@ -4,15 +4,22 @@ import '../models/lecturer_data.dart';
 import '../repositories/lecturer_repository.dart';
 import '../utils/lecturer_dates.dart';
 import '../widgets/lecturer_ui.dart';
+import 'lecturer_change_screen.dart';
 
 class LecturerRequestsScreen extends StatefulWidget {
   final LecturerRepository repository;
-  const LecturerRequestsScreen({super.key, required this.repository});
+  final bool initialLeave;
+  const LecturerRequestsScreen({
+    super.key,
+    required this.repository,
+    this.initialLeave = true,
+  });
   @override
   State<LecturerRequestsScreen> createState() => _LecturerRequestsScreenState();
 }
 
 class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
+  late bool _leave;
   String? _status = 'PENDING', _error;
   int _page = 1, _generation = 0;
   bool _loading = true;
@@ -20,6 +27,7 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
   @override
   void initState() {
     super.initState();
+    _leave = widget.initialLeave;
     _load();
   }
 
@@ -30,7 +38,8 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
       _error = null;
     });
     try {
-      final data = await widget.repository.leaveRequests(
+      final data = await widget.repository.requests(
+        leave: _leave,
         status: _status,
         page: _page,
       );
@@ -62,9 +71,24 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
     }
   }
 
+  Future<void> _create() async {
+    final changed = await pushLecturer<bool>(
+      context,
+      LecturerChangeScreen(repository: widget.repository),
+    );
+    if (changed == true && mounted) {
+      setState(() {
+        _leave = false;
+        _status = 'PENDING';
+        _page = 1;
+      });
+      _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) => LecturerPage(
-    title: 'Duyệt đơn nghỉ',
+    title: 'Đơn từ',
     actions: [
       IconButton(
         tooltip: 'Tải lại đơn',
@@ -78,8 +102,24 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
         padding: const EdgeInsets.all(18),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Đơn nghỉ')),
+              ButtonSegment(value: false, label: Text('Đổi lịch / phòng')),
+            ],
+            selected: {_leave},
+            onSelectionChanged: (values) {
+              setState(() {
+                _leave = values.first;
+                _status = 'PENDING';
+                _page = 1;
+              });
+              _load();
+            },
+          ),
+          const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            key: ValueKey(_status),
+            key: ValueKey('$_leave-$_status'),
             initialValue: _status ?? 'ALL',
             isExpanded: true,
             decoration: const InputDecoration(labelText: 'Trạng thái đơn'),
@@ -88,9 +128,11 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
                 value: 'ALL',
                 child: Text('Tất cả trạng thái'),
               ),
-              ...requestStatusLabels.entries.map(
-                (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
-              ),
+              ...requestStatusLabels.entries
+                  .where((e) => _leave || e.key != 'INVALIDATED')
+                  .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  ),
             ],
             onChanged: (value) {
               setState(() {
@@ -100,7 +142,18 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
               _load();
             },
           ),
-          const SectionHeading('Đơn nghỉ của sinh viên'),
+          if (!_leave)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: FilledButton.icon(
+                onPressed: _create,
+                icon: const Icon(Icons.add),
+                label: const Text('Tạo yêu cầu đổi lịch / phòng'),
+              ),
+            ),
+          SectionHeading(
+            _leave ? 'Đơn nghỉ của sinh viên' : 'Yêu cầu bạn đã gửi',
+          ),
           if (_loading)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -109,19 +162,21 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
           else if (_error != null)
             ErrorPanel(_error!, onRetry: _load)
           else if (_data?.items.isEmpty ?? true)
-            const EmptyPanel(
+            EmptyPanel(
               title: 'Không có đơn phù hợp',
-              message:
-                  'Đơn xin nghỉ của lớp bạn phụ trách sẽ xuất hiện tại đây.',
+              message: _leave
+                  ? 'Đơn xin nghỉ của lớp bạn phụ trách sẽ xuất hiện tại đây.'
+                  : 'Các yêu cầu gửi cán bộ duyệt sẽ xuất hiện tại đây.',
               icon: Icons.assignment_outlined,
             )
           else
             ..._data!.items.map(
               (row) => Padding(
                 padding: const EdgeInsets.only(bottom: 14),
-                child: LeaveRequestCard(
+                child: RequestCard(
                   row: row,
-                  onReview: row['status'] == 'PENDING'
+                  leave: _leave,
+                  onReview: _leave && row['status'] == 'PENDING'
                       ? () => _review(row)
                       : null,
                 ),
@@ -160,10 +215,16 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
   );
 }
 
-class LeaveRequestCard extends StatelessWidget {
+class RequestCard extends StatelessWidget {
   final Json row;
+  final bool leave;
   final VoidCallback? onReview;
-  const LeaveRequestCard({super.key, required this.row, this.onReview});
+  const RequestCard({
+    super.key,
+    required this.row,
+    required this.leave,
+    this.onReview,
+  });
   @override
   Widget build(BuildContext context) {
     final lesson = row['lesson'] is Map
@@ -173,7 +234,7 @@ class LeaveRequestCard extends StatelessWidget {
         ? jsonObject(row['requester'])
         : <String, dynamic>{};
     final status = row['status'] as String;
-    final date = row['session_date'] as String?;
+    final date = row[leave ? 'session_date' : 'original_date'] as String?;
     return Card(
       child: Container(
         decoration: BoxDecoration(
@@ -199,14 +260,17 @@ class LeaveRequestCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              requester['name']?.toString() ?? 'Sinh viên',
+              leave
+                  ? requester['name']?.toString() ?? 'Sinh viên'
+                  : lesson['section_code']?.toString() ??
+                        'Yêu cầu đổi lịch / phòng',
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 17,
                 color: lecturerNavy,
               ),
             ),
-            if (requester['user_code'] != null)
+            if (leave && requester['user_code'] != null)
               Text(
                 requester['user_code'] as String,
                 style: const TextStyle(color: lecturerMuted),
@@ -223,8 +287,15 @@ class LeaveRequestCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Xin nghỉ: ${dateLabel(DateTime.parse(date))} · Slot ${row['slot_id']}',
+                  '${leave ? 'Xin nghỉ' : 'Lịch cũ'}: ${dateLabel(DateTime.parse(date))} · Slot ${row[leave ? 'slot_id' : 'original_slot_id']}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            if (!leave && row['proposed_date'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Đề xuất: ${dateLabel(DateTime.parse(row['proposed_date'] as String))} · Slot ${row['proposed_slot_id']}\nPhòng ${row['original_room_name'] ?? '—'} → ${row['proposed_room_name'] ?? '—'}',
                 ),
               ),
             const SizedBox(height: 12),

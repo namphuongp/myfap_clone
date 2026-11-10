@@ -11,9 +11,10 @@ Frontend Flutter dùng bố cục tham khảo myFAP: header/nav xanh navy, đi�
 | Điểm danh | Radio Absent/Present, ô note, toàn bộ roster, lưu có version | GET/PUT /sessions/:id/attendance |
 | Đơn nghỉ | Lọc trạng thái, phân trang, xem lý do và duyệt/từ chối kèm phản hồi | GET /leave-requests, PATCH /leave-requests/:id/decision |
 | Đổi lịch/phòng | Chọn buổi tương lai, ngày trong học kỳ, slot, phòng và lý do | GET /rooms, POST /change-requests |
+| Yêu cầu đã gửi | Trạng thái duyệt, lịch/phòng cũ và đề xuất, ý kiến cán bộ | GET /change-requests |
 | Hồ sơ | Avatar chữ, tên, vai trò, mã tài khoản và email chỉ đọc cho mọi role | GET /profile |
 
-Giao diện giảng viên không có thanh điều hướng dưới. Mở hồ sơ bằng icon tài khoản hoặc mục Hồ sơ của tôi; mở nghiệp vụ từ các thẻ chức năng. Màn con có nút quay lại. Hồ sơ dùng chung chỉ có avatar chữ, tên, vai trò, mã tài khoản, email và ngành học riêng cho sinh viên; không hiển thị bộ môn hoặc thông tin liên hệ.
+Giao diện giảng viên không có thanh điều hướng dưới. Mở hồ sơ bằng icon tài khoản hoặc mục Hồ sơ của tôi; mở nghiệp vụ từ các thẻ chức năng và mục Yêu cầu đã gửi. Màn con có nút quay lại. Hồ sơ dùng chung chỉ có avatar chữ, tên, vai trò, mã tài khoản, email và ngành học riêng cho sinh viên; không hiển thị bộ môn hoặc thông tin liên hệ.
 
 ## Quy tắc tương tác
 
@@ -51,6 +52,6 @@ flutter test
 flutter build web
 ```
 
-`test/lecturer_test.dart` dùng fixture API, có kiểm tra điều hướng/profile, lịch, payload/version, đủ roster, future readonly, conflict/bỏ thay đổi, duyệt nghỉ, đổi phòng, retry, layout 320/1100 px với chữ lớn. Không có màn theo dõi yêu cầu đổi lịch/phòng đã gửi. Có thể render ảnh với font thật bằng PROFILE_FONT_ROOT và LECTURER_PREVIEW_DIR. Đây là widget/fixture test, không phải kiểm thử trên Android/Windows thật.
+`test/lecturer_test.dart` dùng fixture API, có kiểm tra điều hướng/profile, lịch, payload/version, đủ roster, future readonly, conflict/bỏ thay đổi, duyệt nghỉ, đổi phòng, retry, layout 320/1100 px với chữ lớn. Có thể render ảnh với font thật bằng PROFILE_FONT_ROOT và LECTURER_PREVIEW_DIR. Đây là widget/fixture test, không phải kiểm thử trên Android/Windows thật.
 
 Backend: `npm test` và `npm run test:workflow` trên database riêng kết thúc `_test` theo README. Workflow xác minh thêm tên người gửi/lớp/phòng, không lộ bí mật và giữ các kiểm tra quyền, đồng thời, lịch sử trước đây.
