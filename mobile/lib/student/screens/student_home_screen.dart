@@ -95,7 +95,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           studentId: widget.user['id'] as String,
           onEnrollmentChanged: () => setState(() => _scheduleRevision++),
         ),
-        const RequestsScreen(),
+        RequestsScreen(api: widget.api),
         const AnnouncementsScreen(),
       ],
     ),
