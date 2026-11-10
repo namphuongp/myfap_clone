@@ -63,17 +63,36 @@ class SectionSessionPreview {
     required this.startAt,
     required this.endAt,
     required this.status,
+    this.slotId,
+    this.roomName,
+    this.attendanceSaved = false,
+    this.attendanceStatus,
+    this.attendanceNote,
   });
 
   final DateTime startAt;
   final DateTime endAt;
   final String status;
+  final int? slotId;
+  final String? roomName;
+  final bool attendanceSaved;
+  final String? attendanceStatus;
+  final String? attendanceNote;
 
   factory SectionSessionPreview.fromJson(Map<String, dynamic> json) =>
       SectionSessionPreview(
         startAt: DateTime.parse(json['start_at'] as String).toUtc(),
         endAt: DateTime.parse(json['end_at'] as String).toUtc(),
         status: json['status']?.toString() ?? 'SCHEDULED',
+        slotId: json['slot_id'] as int?,
+        roomName: json['room_name']?.toString(),
+        attendanceSaved: json['attendance_saved'] == true,
+        attendanceStatus: json['my_attendance'] is Map
+            ? json['my_attendance']['status']?.toString()
+            : null,
+        attendanceNote: json['my_attendance'] is Map
+            ? json['my_attendance']['note']?.toString()
+            : null,
       );
 }
 

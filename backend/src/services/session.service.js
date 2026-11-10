@@ -52,6 +52,16 @@ export async function personalSchedule(user, q) {
   return rows.map((s) => {
     const section = sections.find((c) => same(c._id, s.section_id));
     const dto = clean(s);
+    let myAttendance = null;
+    if (user.role === "STUDENT" && s.attendance) {
+      const myRecord = s.attendance.find((a) => same(a.student_id, user._id));
+      if (myRecord) {
+        myAttendance = {
+          status: myRecord.status,
+          note: myRecord.note ?? null,
+        };
+      }
+    }
     delete dto.attendance;
     return {
       ...dto,
@@ -61,6 +71,7 @@ export async function personalSchedule(user, q) {
       course: courses.find((c) => same(c._id, section.course_id))?.name,
       course_code: courses.find((c) => same(c._id, section.course_id))?.code,
       room_name: rooms.find((r) => same(r._id, s.room_id))?.name,
+      my_attendance: myAttendance,
     };
   });
 }
@@ -76,7 +87,18 @@ export async function sectionSessions(user, sectionId) {
       { sort: { start_at: 1 }, limit: 1000 },
     ),
   );
-  for (const row of rows) delete row.attendance;
+  for (const row of rows) {
+    if (user.role === "STUDENT" && row.attendance) {
+      const myRecord = row.attendance.find((a) => same(a.student_id, user._id));
+      if (myRecord) {
+        row.my_attendance = {
+          status: myRecord.status,
+          note: myRecord.note ?? null,
+        };
+      }
+    }
+    delete row.attendance;
+  }
   return rows;
 }
 export async function createSession(user, data) {
