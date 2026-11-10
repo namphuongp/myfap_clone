@@ -1,7 +1,21 @@
 import '../utils/schedule_date.dart';
 
+class StudentAttendanceRecord {
+  const StudentAttendanceRecord({required this.status, this.note});
+
+  final String status;
+  final String? note;
+
+  factory StudentAttendanceRecord.fromJson(Map<String, dynamic> json) =>
+      StudentAttendanceRecord(
+        status: json['status']?.toString() ?? 'PRESENT',
+        note: json['note']?.toString(),
+      );
+}
+
 class ScheduleSession {
   const ScheduleSession({
+    this.id,
     required this.course,
     required this.sectionCode,
     required this.roomName,
@@ -9,8 +23,11 @@ class ScheduleSession {
     required this.endAt,
     required this.status,
     required this.slotId,
+    this.attendanceSaved = false,
+    this.myAttendance,
   });
 
+  final String? id;
   final String course;
   final String sectionCode;
   final String roomName;
@@ -18,11 +35,14 @@ class ScheduleSession {
   final DateTime endAt;
   final String status;
   final int? slotId;
+  final bool attendanceSaved;
+  final StudentAttendanceRecord? myAttendance;
 
   DateTime get day => vietnamCalendarDate(startAt);
 
   factory ScheduleSession.fromJson(Map<String, dynamic> json) =>
       ScheduleSession(
+        id: json['id']?.toString() ?? json['_id']?.toString(),
         course: json['course']?.toString() ?? 'Môn học',
         sectionCode: json['section_code']?.toString() ?? 'Chưa có mã lớp',
         roomName: json['room_name']?.toString() ?? 'Chưa có phòng',
@@ -30,5 +50,11 @@ class ScheduleSession {
         endAt: DateTime.parse(json['end_at'] as String).toUtc(),
         status: json['status']?.toString() ?? 'SCHEDULED',
         slotId: json['slot_id'] as int?,
+        attendanceSaved: json['attendance_saved'] == true,
+        myAttendance: json['my_attendance'] is Map
+            ? StudentAttendanceRecord.fromJson(
+                Map<String, dynamic>.from(json['my_attendance'] as Map),
+              )
+            : null,
       );
 }

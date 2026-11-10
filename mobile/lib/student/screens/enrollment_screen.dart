@@ -622,23 +622,45 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
               ),
               if (row.isActive) ...[
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFDC2626),
-                      side: const BorderSide(color: Color(0xFFFECACA)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF7047EB),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
+                      onPressed: () => _showAttendanceHistory(
+                        row,
+                        data.mySections[row.sectionId]?.courseName ??
+                            data.courseNames[row.courseId] ??
+                            'Môn học',
+                      ),
+                      icon: const Icon(Icons.fact_check_outlined, size: 16),
+                      label: const Text(
+                        'Xem điểm danh',
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    onPressed: _submitting ? null : () => _withdraw(row),
-                    child: const Text('Rút lớp'),
-                  ),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFDC2626),
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                      ),
+                      onPressed: _submitting ? null : () => _withdraw(row),
+                      child: const Text('Rút lớp'),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -889,6 +911,301 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
             ),
           ),
     ];
+  }
+
+  void _showAttendanceHistory(EnrollmentRecord enrollment, String courseName) {
+    final section = _data?.mySections[enrollment.sectionId];
+    final sessionsFuture = _repository.sessions(enrollment.sectionId);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+            ),
+            child: FutureBuilder<List<SectionSessionPreview>>(
+              future: sessionsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const SizedBox(
+                    height: 240,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF7047EB),
+                      ),
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(snapshot.error.toString()),
+                  );
+                }
+                final list = snapshot.data ?? [];
+                final recorded = list.where((s) => s.attendanceSaved).toList();
+                final presentCount = recorded
+                    .where((s) => s.attendanceStatus == 'PRESENT')
+                    .length;
+                final absentCount = recorded
+                    .where((s) => s.attendanceStatus == 'ABSENT')
+                    .length;
+                final lateCount = recorded
+                    .where((s) => s.attendanceStatus == 'LATE')
+                    .length;
+                final excusedCount = recorded
+                    .where((s) => s.attendanceStatus == 'EXCUSED')
+                    .length;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      courseName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E1A3C),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${section?.code ?? 'Lớp'} · ${section?.semesterCode ?? ''}',
+                      style: const TextStyle(
+                        color: Color(0xFF757288),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Thẻ thống kê
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8B64F6), Color(0xFF6B40E8)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _statCol('Tổng buổi', '${list.length}'),
+                          _statCol(
+                            'Có mặt',
+                            '$presentCount',
+                            const Color(0xFF86EFAC),
+                          ),
+                          _statCol(
+                            'Vắng',
+                            '$absentCount',
+                            const Color(0xFFFCA5A5),
+                          ),
+                          _statCol(
+                            'Đi muộn',
+                            '$lateCount',
+                            const Color(0xFFFDE047),
+                          ),
+                          _statCol(
+                            'Có phép',
+                            '$excusedCount',
+                            const Color(0xFFDDD6FE),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Chi tiết từng buổi học',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E1A3C),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: list.isEmpty
+                          ? const Center(
+                              child: Text('Chưa có lịch buổi học cho lớp này.'),
+                            )
+                          : ListView.separated(
+                              itemCount: list.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(
+                                    height: 1,
+                                    color: Color(0xFFEDE9F7),
+                                  ),
+                              itemBuilder: (context, index) {
+                                final s = list[index];
+                                final day = vietnamCalendarDate(s.startAt);
+                                final (
+                                  statusText,
+                                  statusColor,
+                                  statusBg,
+                                ) = switch (s) {
+                                  _
+                                      when s.attendanceSaved &&
+                                          s.attendanceStatus == 'PRESENT' =>
+                                    (
+                                      'Có mặt',
+                                      const Color(0xFF16A34A),
+                                      const Color(0xFFE8F7EE),
+                                    ),
+                                  _
+                                      when s.attendanceSaved &&
+                                          s.attendanceStatus == 'ABSENT' =>
+                                    (
+                                      'Vắng mặt',
+                                      const Color(0xFFDC2626),
+                                      const Color(0xFFFEE2E2),
+                                    ),
+                                  _
+                                      when s.attendanceSaved &&
+                                          s.attendanceStatus == 'LATE' =>
+                                    (
+                                      'Đi muộn',
+                                      const Color(0xFFD97706),
+                                      const Color(0xFFFEF3C7),
+                                    ),
+                                  _
+                                      when s.attendanceSaved &&
+                                          s.attendanceStatus == 'EXCUSED' =>
+                                    (
+                                      'Có phép',
+                                      const Color(0xFF7047EB),
+                                      const Color(0xFFEDE8FE),
+                                    ),
+                                  _ when s.attendanceSaved => (
+                                    'Đã điểm danh',
+                                    const Color(0xFF16A34A),
+                                    const Color(0xFFE8F7EE),
+                                  ),
+                                  _ => (
+                                    'Chưa diễn ra',
+                                    const Color(0xFF757288),
+                                    const Color(0xFFF3F2F7),
+                                  ),
+                                };
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 32,
+                                        height: 32,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1EEFD),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF7047EB),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${fullWeekdays[day.weekday - 1]}, ${day.day}/${day.month}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color: Color(0xFF1E1A3C),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              'Ca ${s.slotId ?? 1} (${formatVietnamTime(s.startAt)} – ${formatVietnamTime(s.endAt)})',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF757288),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: statusBg,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          statusText,
+                                          style: TextStyle(
+                                            color: statusColor,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statCol(
+    String label,
+    String value, [
+    Color valueColor = Colors.white,
+  ]) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.85),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _emptyState(IconData icon, String message, {Widget? action}) =>
