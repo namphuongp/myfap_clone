@@ -23,6 +23,7 @@ class TeachingSession {
       start.isAfter(DateTime.now()) &&
       data['attendance_saved'] != true;
   bool get canRecord => status != 'CANCELLED' && !start.isAfter(DateTime.now());
+  bool get canRecordToday => canRecord && dateKey(day) == dateKey(vnDay());
 }
 
 class AcademicTerm {

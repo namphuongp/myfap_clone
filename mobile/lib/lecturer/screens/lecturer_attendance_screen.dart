@@ -33,7 +33,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
   bool _loading = true, _saving = false, _dirty = false, _saved = false;
   String? _error, _sessionStatus;
   bool get _canEdit =>
-      widget.session.canRecord && _sessionStatus != 'CANCELLED';
+      widget.session.canRecordToday && _sessionStatus != 'CANCELLED';
   @override
   void initState() {
     super.initState();
@@ -187,7 +187,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
                   const Padding(
                     padding: EdgeInsets.only(top: 16),
                     child: Text(
-                      'Chỉ ghi điểm danh khi buổi học đã bắt đầu và chưa bị hủy.',
+                      'Chỉ ghi điểm danh trong ngày diễn ra buổi học, sau khi buổi học bắt đầu và trước khi buổi học bị hủy.',
                       style: TextStyle(color: lecturerMuted),
                     ),
                   ),
