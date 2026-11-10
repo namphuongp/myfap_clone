@@ -102,6 +102,9 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -115,7 +118,11 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return const SizedBox(
                     height: 240,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF7047EB),
+                      ),
+                    ),
                   );
                 }
                 if (snapshot.hasError) {
@@ -131,45 +138,133 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   Widget _noticeDetail(BuildContext context, StudentNotice notice) {
-    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(notice.title, style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            notice.title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E1A3C),
+            ),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               if (notice.publishedAt != null)
-                Chip(
-                  avatar: const Icon(Icons.schedule, size: 16),
-                  label: Text(_formatDate(notice.publishedAt!)),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1EEFD),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 14,
+                        color: Color(0xFF7047EB),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _formatDate(notice.publishedAt!),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF7047EB),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              Chip(
-                avatar: const Icon(Icons.groups_outlined, size: 16),
-                label: Text(_audienceLabel(notice.audience)),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE8FE),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.groups_outlined,
+                      size: 14,
+                      color: Color(0xFF7047EB),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _audienceLabel(notice.audience),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF7047EB),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (notice.expiresAt != null)
-                Chip(
-                  avatar: const Icon(Icons.event_busy_outlined, size: 16),
-                  label: Text('Hết hạn ${_formatDate(notice.expiresAt!)}'),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.event_busy_outlined,
+                        size: 14,
+                        color: Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Hết hạn ${_formatDate(notice.expiresAt!)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFDC2626),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
-          const Divider(height: 28),
+          const Divider(height: 28, color: Color(0xFFEDE9F7)),
           SelectableText(
             notice.content,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
+            style: const TextStyle(
+              fontSize: 15,
+              color: Color(0xFF383450),
+              height: 1.6,
+            ),
           ),
           const SizedBox(height: 24),
-          Align(
+          const Align(
             alignment: Alignment.centerRight,
             child: Text(
               'Thông báo học vụ',
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(color: colors.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF9E9BAE),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -183,11 +278,22 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_outlined, size: 40),
+          const Icon(
+            Icons.wifi_off_rounded,
+            size: 40,
+            color: Color(0xFF7047EB),
+          ),
           const SizedBox(height: 12),
-          const Text('Không tải được thông báo.'),
+          const Text(
+            'Không tải được thông báo.',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 6),
-          Text(error, textAlign: TextAlign.center),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF757288), fontSize: 13),
+          ),
         ],
       ),
     ),
@@ -208,55 +314,89 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   Widget build(BuildContext context) {
     final filtered = _filteredNotices;
     return RefreshIndicator(
+      color: const Color(0xFF7047EB),
       onRefresh: _loadFirstPage,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          Text(
+          const Text(
             'Thông báo dành cho sinh viên theo trường, bộ môn hoặc ngành.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B6680)),
           ),
           const SizedBox(height: 14),
-          TextField(
-            controller: _searchController,
-            onChanged: (value) => setState(() => _query = value),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: 'Tìm trong thông báo đã tải',
-              border: const OutlineInputBorder(),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Xóa tìm kiếm',
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _query = '');
-                      },
-                      icon: const Icon(Icons.close),
-                    ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFECE7F7), width: 1.2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x06000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFF7047EB),
+                ),
+                hintText: 'Tìm trong thông báo đã tải',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF9E9BAE),
+                  fontSize: 14,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Xóa tìm kiếm',
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF9E9BAE),
+                        ),
+                      ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           if (_loading && _notices.isEmpty)
             const Padding(
               padding: EdgeInsets.all(48),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF7047EB)),
+              ),
             )
           else if (_error != null && _notices.isEmpty)
             _emptyState(
               context,
-              icon: Icons.wifi_off_outlined,
+              icon: Icons.wifi_off_rounded,
               message: _error!,
               action: TextButton(
                 onPressed: _loadFirstPage,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF7047EB),
+                ),
                 child: const Text('Thử tải lại'),
               ),
             )
           else if (filtered.isEmpty)
             _emptyState(
               context,
-              icon: Icons.notifications_none,
+              icon: Icons.notifications_none_rounded,
               message: _notices.isEmpty
                   ? 'Hiện chưa có thông báo học vụ dành cho bạn.'
                   : 'Không tìm thấy thông báo phù hợp.',
@@ -268,19 +408,33 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   'Không tải thêm được thông báo: $_error',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style: const TextStyle(color: Color(0xFFDC2626)),
                 ),
               ),
             if (_hasMore && _query.isEmpty)
-              OutlinedButton.icon(
-                onPressed: _loadingMore ? null : _loadMore,
-                icon: _loadingMore
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.expand_more),
-                label: Text(_loadingMore ? 'Đang tải...' : 'Tải thêm'),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF7047EB),
+                    side: const BorderSide(color: Color(0xFFDED8FA)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: _loadingMore ? null : _loadMore,
+                  icon: _loadingMore
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF7047EB),
+                          ),
+                        )
+                      : const Icon(Icons.expand_more_rounded),
+                  label: Text(_loadingMore ? 'Đang tải...' : 'Tải thêm'),
+                ),
               ),
           ],
         ],
@@ -289,67 +443,121 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   Widget _noticeCard(BuildContext context, StudentNotice notice) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openNotice(notice),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.notifications_active_outlined,
-                    color: colors.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      notice.title,
-                      style: Theme.of(context).textTheme.titleMedium,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFEDE9F7), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _openNotice(notice),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE8FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_outlined,
+                        color: Color(0xFF7047EB),
+                        size: 20,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            notice.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E1A3C),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1EEFD),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _audienceLabel(notice.audience),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7047EB),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF9E9BAE),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  notice.content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6B6680),
+                    height: 1.4,
                   ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                notice.content,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 16,
-                    color: colors.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 14,
+                      color: Color(0xFF9E9BAE),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
                       notice.publishedAt == null
                           ? 'Thông báo học vụ'
                           : _formatDate(notice.publishedAt!),
-                      style: Theme.of(context).textTheme.labelMedium
-                          ?.copyWith(color: colors.onSurfaceVariant),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF9E9BAE),
+                      ),
                     ),
-                  ),
-                  Text(
-                    _audienceLabel(notice.audience),
-                    style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: colors.primary),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -365,10 +573,14 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     padding: const EdgeInsets.symmetric(vertical: 42, horizontal: 16),
     child: Column(
       children: [
-        Icon(icon, size: 46, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 46, color: const Color(0xFF7047EB)),
         const SizedBox(height: 12),
-        Text(message, textAlign: TextAlign.center),
-        ?action,
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF645E7A), fontSize: 14),
+        ),
+        if (action != null) ...[const SizedBox(height: 8), action],
       ],
     ),
   );

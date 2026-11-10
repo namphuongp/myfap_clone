@@ -15,10 +15,19 @@ export function createApp() {
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
-  const origins = (process.env.CORS_ORIGINS ?? "").split(",").filter(Boolean);
+  const origins = (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.use(
     cors({
-      origin: (origin, cb) => cb(null, !origin || origins.includes(origin)),
+      origin: (origin, cb) => {
+        if (!origin || origins.includes(origin)) return cb(null, true);
+        if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return cb(null, true);
+        }
+        cb(null, false);
+      },
     }),
   );
   app.use(express.json({ limit: "64kb" }));

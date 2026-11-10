@@ -25,13 +25,6 @@ class StudentHomeScreen extends StatefulWidget {
 }
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
-  static const _titles = [
-    'Lịch học',
-    'Đăng ký môn',
-    'Đơn từ',
-    'Thông báo học vụ',
-  ];
-
   int _selectedIndex = 0;
   int _scheduleRevision = 0;
   bool _loggingOut = false;
@@ -66,51 +59,246 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
   }
 
+  Widget _buildTopHeader() {
+    final tabsMeta = [
+      (
+        Icons.calendar_month_rounded,
+        'Lịch học',
+        'Quản lý thời khóa biểu của bạn',
+      ),
+      (Icons.school_rounded, 'Đăng ký môn', 'Quản lý học phần và môn học'),
+      (Icons.description_rounded, 'Đơn từ', 'Quản lý yêu cầu sinh viên'),
+      (
+        Icons.notifications_rounded,
+        'Thông báo học vụ',
+        'Cập nhật tin tức mới nhất',
+      ),
+    ];
+
+    final (icon, title, subtitle) = tabsMeta[_selectedIndex];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFA582F7), Color(0xFF7248EA)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x307248EA),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E1A3C),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF78758D),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE5E2F5), width: 1.2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x08000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              tooltip: 'Hồ sơ cá nhân',
+              onPressed: _loggingOut ? null : _openProfile,
+              icon: const Icon(
+                Icons.person_outline_rounded,
+                color: Color(0xFF332F4C),
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE5E2F5), width: 1.2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x08000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              tooltip: 'Đăng xuất',
+              onPressed: _loggingOut ? null : _logout,
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: Color(0xFF332F4C),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    final items = [
+      (Icons.calendar_month_rounded, 'Lịch'),
+      (Icons.school_outlined, 'Đăng ký'),
+      (Icons.description_outlined, 'Đơn từ'),
+      (Icons.notifications_none_outlined, 'Thông báo'),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFEDE9F7), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final (icon, label) = items[index];
+          final isSelected = _selectedIndex == index;
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedIndex = index),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFFEDE8FE)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: isSelected
+                          ? const Color(0xFF7047EB)
+                          : const Color(0xFF6B6680),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? const Color(0xFF7047EB)
+                            : const Color(0xFF6B6680),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(_titles[_selectedIndex]),
-      actions: [
-        IconButton(
-          tooltip: 'Hồ sơ cá nhân',
-          onPressed: _loggingOut ? null : _openProfile,
-          icon: const Icon(Icons.account_circle_outlined),
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [0.0, 0.22, 1.0],
+          colors: [Color(0xFFEDE9FE), Color(0xFFF7F5FE), Color(0xFFFAF9FD)],
         ),
-        IconButton(
-          tooltip: 'Đăng xuất',
-          onPressed: _loggingOut ? null : _logout,
-          icon: const Icon(Icons.logout),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildTopHeader(),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  StudentScheduleScreen(
+                    key: ValueKey(_scheduleRevision),
+                    api: widget.api,
+                  ),
+                  EnrollmentScreen(
+                    api: widget.api,
+                    studentId: widget.user['id'] as String,
+                    onEnrollmentChanged: () =>
+                        setState(() => _scheduleRevision++),
+                  ),
+                  RequestsScreen(api: widget.api),
+                  AnnouncementsScreen(api: widget.api),
+                ],
+              ),
+            ),
+            _buildBottomBar(),
+          ],
         ),
-      ],
-    ),
-    body: IndexedStack(
-      index: _selectedIndex,
-      children: [
-        StudentScheduleScreen(
-          key: ValueKey(_scheduleRevision),
-          api: widget.api,
-        ),
-        EnrollmentScreen(
-          api: widget.api,
-          studentId: widget.user['id'] as String,
-          onEnrollmentChanged: () => setState(() => _scheduleRevision++),
-        ),
-        RequestsScreen(api: widget.api),
-        AnnouncementsScreen(api: widget.api),
-      ],
-    ),
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Lịch'),
-        NavigationDestination(icon: Icon(Icons.school), label: 'Đăng ký'),
-        NavigationDestination(icon: Icon(Icons.description), label: 'Đơn từ'),
-        NavigationDestination(
-          icon: Icon(Icons.notifications),
-          label: 'Thông báo',
-        ),
-      ],
+      ),
     ),
   );
 }

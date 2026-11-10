@@ -49,7 +49,15 @@ class _RequestsScreenState extends State<RequestsScreen> {
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
   }
 
   Set<String> get _activeSessionRequests => {
@@ -82,6 +90,9 @@ class _RequestsScreenState extends State<RequestsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => SafeArea(
           child: Padding(
@@ -96,32 +107,33 @@ class _RequestsScreenState extends State<RequestsScreen> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  Text(
-                    'Gửi đơn xin nghỉ',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
                   const Text(
-                    'Chọn một buổi học sắp tới. Giảng viên phụ trách sẽ xem xét đơn.',
+                    'Gửi đơn xin nghỉ',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E1A3C),
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: sessionId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Buổi học',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'Buổi học xin nghỉ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    items: [
-                      for (final session in eligible)
-                        DropdownMenuItem(
-                          value: session.id,
-                          child: Text(
-                            session.choiceLabel,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    items: eligible.map((session) {
+                      final day = vietnamCalendarDate(session.startAt);
+                      return DropdownMenuItem(
+                        value: session.id,
+                        child: Text(
+                          '${session.course} · ${day.day}/${day.month} · Ca ${session.slotId ?? 1}',
+                          overflow: TextOverflow.ellipsis,
                         ),
-                    ],
+                      );
+                    }).toList(),
                     onChanged: submitting
                         ? null
                         : (value) {
@@ -133,52 +145,68 @@ class _RequestsScreenState extends State<RequestsScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: reasonController,
-                    enabled: !submitting,
-                    maxLength: 1000,
-                    minLines: 3,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
+                    maxLines: 3,
+                    decoration: InputDecoration(
                       labelText: 'Lý do xin nghỉ',
-                      hintText: 'Nhập lý do để giảng viên xem xét',
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(),
+                      hintText: 'Nhập chi tiết lý do...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập lý do xin nghỉ.';
+                      if (value == null || value.trim().length < 5) {
+                        return 'Lý do cần tối thiểu 5 ký tự';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF7047EB),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                     onPressed: submitting
                         ? null
                         : () async {
-                            if (!formKey.currentState!.validate()) return;
+                            if (!formKey.currentState!.validate()) {
+                              return;
+                            }
                             setSheetState(() => submitting = true);
                             try {
                               await _repository.createLeave(
                                 sessionId: sessionId,
-                                reason: reasonController.text,
+                                reason: reasonController.text.trim(),
                               );
                               if (sheetContext.mounted) {
-                                Navigator.of(sheetContext).pop(true);
+                                Navigator.pop(sheetContext, true);
                               }
                             } catch (error) {
-                              if (mounted) _showMessage(error.toString());
                               if (sheetContext.mounted) {
-                                setSheetState(() => submitting = false);
+                                _showMessage(error.toString());
                               }
+                              setSheetState(() => submitting = false);
                             }
                           },
-                    icon: submitting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                    child: submitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : const Icon(Icons.send_outlined),
-                    label: Text(submitting ? 'Đang gửi...' : 'Gửi đơn'),
+                        : const Text(
+                            'Gửi đơn',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -187,9 +215,9 @@ class _RequestsScreenState extends State<RequestsScreen> {
         ),
       ),
     );
-    reasonController.dispose();
-    if (submitted == true && mounted) {
-      _showMessage('Đã gửi đơn xin nghỉ cho giảng viên.');
+
+    if (submitted == true) {
+      _showMessage('Đã gửi đơn xin nghỉ thành công.');
       await _load();
     }
   }
@@ -198,59 +226,91 @@ class _RequestsScreenState extends State<RequestsScreen> {
   Widget build(BuildContext context) {
     final data = _data;
     return RefreshIndicator(
+      color: const Color(0xFF7047EB),
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(
-                value: 0,
-                icon: Icon(Icons.event_busy_outlined),
-                label: Text('Xin nghỉ'),
-              ),
-              ButtonSegment(
-                value: 1,
-                icon: Icon(Icons.swap_horiz),
-                label: Text('Chuyển ngành'),
-              ),
-            ],
-            selected: {_tab},
-            onSelectionChanged: (selection) =>
-                setState(() => _tab = selection.first),
-          ),
+          _buildTabs(),
           const SizedBox(height: 16),
           if (_tab == 1)
             _transferUnavailable(context)
           else if (_loading && data == null)
             const Padding(
               padding: EdgeInsets.all(48),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF7047EB)),
+              ),
             )
           else if (data == null)
             _messageCard(
               context,
-              icon: Icons.wifi_off,
+              icon: Icons.wifi_off_rounded,
               message: _error ?? 'Không tải được đơn từ.',
               action: TextButton(
                 onPressed: _load,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF7047EB),
+                ),
                 child: const Text('Thử lại'),
               ),
             )
           else ...[
             _summaryCard(context, data),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _loading ? null : _openLeaveForm,
-              icon: const Icon(Icons.add),
-              label: const Text('Tạo đơn xin nghỉ'),
+            const SizedBox(height: 14),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF835DF8), Color(0xFF6B41EB)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x306B41EB),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: _loading ? null : _openLeaveForm,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Tạo đơn xin nghỉ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
-            Text('Đơn đã gửi', style: Theme.of(context).textTheme.titleMedium),
+            const Text(
+              'Đơn đã gửi',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E1A3C),
+              ),
+            ),
             const SizedBox(height: 10),
             _filterChips(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             ..._filteredRequests(data)
                 .map((request) => _requestCard(context, request)),
             if (_filteredRequests(data).isEmpty)
@@ -266,13 +326,15 @@ class _RequestsScreenState extends State<RequestsScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'Không tải được dữ liệu mới: $_error',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style: const TextStyle(color: Color(0xFFDC2626)),
                 ),
               ),
             if (_loading)
               const Padding(
                 padding: EdgeInsets.all(12),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFF7047EB)),
+                ),
               ),
           ],
           if (_tab == 0 && data != null) ...[
@@ -284,32 +346,177 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
   }
 
+  Widget _buildTabs() {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFEBFA),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _tab = 0),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  gradient: _tab == 0
+                      ? const LinearGradient(
+                          colors: [Color(0xFF835DF8), Color(0xFF6B41EB)],
+                        )
+                      : null,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: _tab == 0
+                      ? const [
+                          BoxShadow(
+                            color: Color(0x356B41EB),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.event_busy_outlined,
+                      size: 16,
+                      color: _tab == 0 ? Colors.white : const Color(0xFF645E7A),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Xin nghỉ',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _tab == 0
+                            ? Colors.white
+                            : const Color(0xFF645E7A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _tab = 1),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  gradient: _tab == 1
+                      ? const LinearGradient(
+                          colors: [Color(0xFF835DF8), Color(0xFF6B41EB)],
+                        )
+                      : null,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: _tab == 1
+                      ? const [
+                          BoxShadow(
+                            color: Color(0x356B41EB),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 18,
+                      color: _tab == 1 ? Colors.white : const Color(0xFF645E7A),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Chuyển ngành',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _tab == 1
+                            ? Colors.white
+                            : const Color(0xFF645E7A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _summaryCard(BuildContext context, StudentRequestsData data) {
     final pending = data.leaves.where((row) => row.status == 'PENDING').length;
     final processed = data.leaves.length - pending;
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const Icon(Icons.description_outlined, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Theo dõi đơn xin nghỉ',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text('$pending chờ duyệt · $processed đã xử lý'),
-                ],
-              ),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF8B64F6), Color(0xFF6B40E8)],
         ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x286B40E8),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Theo dõi đơn xin nghỉ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$pending chờ duyệt · $processed đã xử lý',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,11 +534,25 @@ class _RequestsScreenState extends State<RequestsScreen> {
     ),
   );
 
-  Widget _filterChip(int value, String label) => ChoiceChip(
-    label: Text(label),
-    selected: _filter == value,
-    onSelected: (_) => setState(() => _filter = value),
-  );
+  Widget _filterChip(int value, String label) {
+    final isSelected = _filter == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: const Color(0xFFEDE8FE),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF7047EB) : const Color(0xFF645E7A),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF7047EB) : const Color(0xFFECE7F7),
+        ),
+      ),
+      onSelected: (_) => setState(() => _filter = value),
+    );
+  }
 
   List<StudentLeaveRequest> _filteredRequests(StudentRequestsData data) {
     final rows = data.leaves.where((request) {
@@ -347,21 +568,37 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   Widget _requestCard(BuildContext context, StudentLeaveRequest request) {
-    final colors = Theme.of(context).colorScheme;
-    final (label, color, icon) = switch (request.status) {
-      'APPROVED' => ('Đã duyệt', colors.primary, Icons.check_circle_outline),
-      'REJECTED' => ('Bị từ chối', colors.error, Icons.cancel_outlined),
+    final (label, color, bg, icon) = switch (request.status) {
+      'APPROVED' => (
+        'Đã duyệt',
+        const Color(0xFF16A34A),
+        const Color(0xFFE8F7EE),
+        Icons.check_circle_outline_rounded,
+      ),
+      'REJECTED' => (
+        'Bị từ chối',
+        const Color(0xFFDC2626),
+        const Color(0xFFFEE2E2),
+        Icons.cancel_outlined,
+      ),
       'INVALIDATED' => (
         'Không còn hiệu lực',
-        colors.error,
+        const Color(0xFFDC2626),
+        const Color(0xFFFEE2E2),
         Icons.event_busy_outlined,
       ),
       'CANCELLED' => (
         'Đã hủy',
-        colors.onSurfaceVariant,
+        const Color(0xFF757288),
+        const Color(0xFFF3F2F7),
         Icons.do_not_disturb_on_outlined,
       ),
-      _ => ('Chờ giảng viên duyệt', colors.tertiary, Icons.hourglass_top),
+      _ => (
+        'Chờ duyệt',
+        const Color(0xFFD97706),
+        const Color(0xFFFEF3C7),
+        Icons.hourglass_top_rounded,
+      ),
     };
     final lesson = request.lesson ?? const <String, dynamic>{};
     final classDate = _formatDate(lesson['session_date']?.toString());
@@ -374,62 +611,139 @@ class _RequestsScreenState extends State<RequestsScreen> {
     final section = lesson['section_code']?.toString();
     final slot = lesson['slot_id']?.toString();
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    course,
-                    style: Theme.of(context).textTheme.titleMedium,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFEDE9F7), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  course,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E1A3C),
                   ),
                 ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 14, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            [
+              ?section,
+              if (classDate.isNotEmpty) classDate,
+              if (time.isNotEmpty) time,
+              if (slot != null) 'Ca $slot',
+            ].join(' · '),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF757288)),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF9FE),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.notes_rounded,
+                  size: 16,
+                  color: Color(0xFF7047EB),
+                ),
                 const SizedBox(width: 8),
-                Icon(icon, size: 18, color: color),
-                const SizedBox(width: 5),
-                Flexible(
+                Expanded(
                   child: Text(
-                    label,
-                    textAlign: TextAlign.end,
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: color, fontWeight: FontWeight.w600),
+                    'Lý do: ${request.reason}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF383450),
+                    ),
                   ),
                 ),
               ],
             ),
+          ),
+          if (request.reviewNote?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
-            Text(
-              [
-                if (section != null) section,
-                if (classDate.isNotEmpty) classDate,
-                if (time.isNotEmpty) time,
-                if (slot != null) 'Ca $slot',
-              ].join(' · '),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.chat_outlined,
+                    size: 16,
+                    color: Color(0xFF16A34A),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Phản hồi giảng viên: ${request.reviewNote}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            Text('Lý do: ${request.reason}'),
-            if (request.reviewNote?.isNotEmpty == true) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Phản hồi giảng viên: ${request.reviewNote}',
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            ],
-            if (request.createdAt != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                'Gửi ngày ${_formatDate(_dateOnly(request.createdAt!))}',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: colors.onSurfaceVariant),
-              ),
-            ],
           ],
-        ),
+          if (request.createdAt != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Gửi ngày ${_formatDate(_dateOnly(request.createdAt!))}',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9E9BAE)),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -454,27 +768,39 @@ class _RequestsScreenState extends State<RequestsScreen> {
   Widget _transferUnavailable(BuildContext context) =>
       _transferInfoCard(context);
 
-  Widget _transferInfoCard(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: Theme.of(context).colorScheme.primary,
+  Widget _transferInfoCard(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xFFEDE9F7), width: 1.2),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x08000000),
+          blurRadius: 10,
+          offset: Offset(0, 4),
+        ),
+      ],
+    ),
+    child: const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline_rounded, color: Color(0xFF7047EB), size: 24),
+        SizedBox(height: 10),
+        Text(
+          'Đơn chuyển ngành chưa khả dụng',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E1A3C),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Đơn chuyển ngành chưa khả dụng',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Backend trên main hiện không có API tạo và theo dõi đơn chuyển ngành. Chức năng này cần được bổ sung ở backend trước khi có thể gửi đơn từ ứng dụng.',
-          ),
-        ],
-      ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          'Backend trên main hiện không có API tạo và theo dõi đơn chuyển ngành. Chức năng này cần được bổ sung ở backend trước khi có thể gửi đơn từ ứng dụng.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF6B6680), height: 1.4),
+        ),
+      ],
     ),
   );
 
@@ -487,10 +813,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
     padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
     child: Column(
       children: [
-        Icon(icon, size: 44, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 44, color: const Color(0xFF7047EB)),
         const SizedBox(height: 12),
-        Text(message, textAlign: TextAlign.center),
-        ?action,
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF645E7A), fontSize: 14),
+        ),
+        if (action != null) ...[const SizedBox(height: 8), action],
       ],
     ),
   );
