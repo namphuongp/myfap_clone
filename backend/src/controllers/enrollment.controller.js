@@ -3,10 +3,6 @@ export const myEnrollments = async (req, res) => {
   const result = await service.myEnrollments(req.user);
   res.json(result);
 };
-export const listEnrollments = async (req, res) => {
-  const result = await service.listEnrollments(req.user, req.params.id);
-  res.json(result);
-};
 export const registerStudent = async (req, res) => {
   const result = await service.registerStudent(
     req.user,

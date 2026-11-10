@@ -1,4 +1,3 @@
-import { applyDueTransfers } from "./major.service.js";
 import { transaction } from "../repositories/transaction.js";
 import { fail } from "../utils/api-error.js";
 import { clean } from "../utils/serialize.js";
@@ -24,7 +23,6 @@ export async function login(data) {
       "$2b$12$YgJE9YWOVcrTGLlX7ybzXu5xFxIx7Kf1T7QmZvJ6VCCbZz04HfA3O",
   );
   if (!user?.active || !valid) fail(401, "Email hoặc mật khẩu không đúng");
-  await applyDueTransfers({ studentId: user._id });
   const accessToken = token();
   const hours = Number(process.env.SESSION_HOURS ?? 8);
   const expiresAt = new Date(
@@ -55,7 +53,6 @@ export async function resolveSession(bearer) {
     expires_at: { $gt: new Date() },
   });
   if (!auth) fail(401, "Phiên đã hết hạn");
-  await applyDueTransfers({ studentId: auth.user_id });
   const user = await userRepository.findOne({
     _id: auth.user_id,
     active: true,

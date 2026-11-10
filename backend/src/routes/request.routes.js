@@ -25,7 +25,7 @@ export function requestRoutes() {
     const readPolicy =
       kind === "change"
         ? [roles("LECTURER", "STAFF")]
-        : [roles("STUDENT", "LECTURER", "STAFF")];
+        : [roles("STUDENT", "LECTURER")];
     router.get(
       `/${path}`,
       ...readPolicy,

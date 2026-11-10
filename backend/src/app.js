@@ -1,5 +1,4 @@
 import { reportRoutes } from "./routes/report.routes.js";
-import { majorRoutes } from "./routes/major.routes.js";
 import { noticeRoutes } from "./routes/notice.routes.js";
 import { profileRoutes } from "./routes/profile.routes.js";
 import express from "express";
@@ -29,7 +28,6 @@ export function createApp() {
   app.use("/api", sessionRoutes());
   app.use("/api", profileRoutes());
   app.use("/api", noticeRoutes());
-  app.use("/api", majorRoutes());
   app.use("/api", reportRoutes());
   app.use("/api", catalogRoutes());
   app.use("/api", academicRoutes());

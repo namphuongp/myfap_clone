@@ -1,315 +1,456 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import request from "supertest";
-import { connect, initialize, disconnect } from "../src/config/database.js";
-import mongoose from "mongoose";
+import { fixture } from "./fixtures.js";
 import {
-  Department,
-  Major,
+  ClassSession,
   Course,
-  Semester,
-  User,
-  AuthSession,
-  Room,
-  Section,
+  Department,
   Enrollment,
   EnrollmentPeriod,
-  ClassSession,
   Leave,
   Change,
+  Section,
+  Audit,
+  SessionHistory,
 } from "../src/models/index.js";
-import { seed } from "../src/services/seed.service.js";
-import { createApp } from "../src/app.js";
-import { token, hash } from "../src/utils/crypto.js";
-import { localDate } from "../src/utils/slots.js";
-
-test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử, phân quyền và đồng thời", async (t) => {
+import { databaseRepository } from "../src/repositories/database.repository.js";
+test("Scope MVP: HEAD, phân công theo buổi, lịch sử, đăng ký, điểm danh và đơn", async (t) => {
+  let f;
   try {
-    await connect();
-    assert.match(
-      mongoose.connection.name,
-      /_test$/,
-      "Database phải có hậu tố _test",
-    );
-    assert.equal(await User.countDocuments(), 0, "Cần database test trống");
-    await initialize();
-    process.env.SEED_PASSWORD = "Demo@12345678";
-    await seed();
-    const app = createApp(),
-      tokens = {},
-      users = {};
-    for (const role of ["student", "lecturer", "head", "staff"]) {
-      const r = await request(app)
-        .post("/api/auth/login")
-        .send({
-          email: `${role}@myfap.local`,
-          password: process.env.SEED_PASSWORD,
-        })
-        .expect(200);
-      tokens[role] = r.body.accessToken;
-      users[role] = r.body.user;
-      assert.equal(r.body.user.password_hash, undefined);
-    }
-    const as = (role, method, path) =>
-      request(app)
-        [method](`/api${path}`)
-        .set("Authorization", `Bearer ${tokens[role]}`);
-    const course = await Course.findOne(),
-      semester = await Semester.findOne(),
-      department = await Department.findOne(),
-      rooms = await Room.find().sort({ _id: 1 });
-    const lessons = await ClassSession.find().sort({ start_at: 1 });
-    const [past, future] = lessons;
-    const day = (offset) => localDate(new Date(Date.now() + offset * 86400000));
-    const createSection = async (
-      code,
-      courseId = String(course._id),
-      lecturerId = users.lecturer.id,
-    ) => {
-      const r = await as("staff", "post", "/sections")
-        .send({
-          code,
-          course_id: courseId,
-          semester_id: String(semester._id),
-          lecturer_id: lecturerId,
-        })
-        .expect(201);
-      return r.body;
-    };
-    const createLesson = async (
+    f = await fixture();
+    const {
+      as,
+      users,
+      course,
+      semester,
+      department,
+      rooms,
       section,
-      date,
-      slot,
-      room = String(rooms[0]._id),
-    ) => {
-      const r = await as("staff", "post", "/sessions")
-        .send({
-          section_id: section.id,
-          room_id: room,
-          session_date: date,
-          slot_id: slot,
-        })
-        .expect(201);
-      return r.body;
-    };
-    let counter = 0;
-    const password_hash = (await User.findOne().select("+password_hash"))
-      .password_hash;
-    const fixtureMajor = await Major.findOne();
-    const newStudent = async () => {
-      counter++;
-      const user = await User.create({
-        user_code: `FIXTURE-${counter}`,
-        name: `Sinh viên ${counter}`,
-        email: `fixture${counter}@myfap.local`,
-        password_hash,
-        role: "STUDENT",
-        major_id: fixtureMajor._id,
-        department_id: department._id,
-      });
-      const accessToken = token();
-      await AuthSession.create({
-        user_id: user._id,
-        token_hash: hash(accessToken),
-        expires_at: new Date(Date.now() + 3600000),
-      });
-      const role = `fixture${counter}`;
-      tokens[role] = accessToken;
-      return { id: String(user._id), role };
-    };
+      past,
+      future,
+    } = f;
+    const otherDept = await Department.create({
+      code: "OTHER",
+      name: "Bộ môn khác",
+    });
+    const b = await f.person("LECTURER"),
+      outsider = await f.person("LECTURER", otherDept._id);
+    let one, two, first, second;
+    const assign = async (target, rows, expected = 200) =>
+      as("head", "put", `/sections/${target}/assignments`)
+        .send({ reason: "Phân công kiểm thử", assignments: rows })
+        .expect(expected);
     await t.test(
-      "Đúng 4 slot, lớp 30 chỗ, phòng đủ sức chứa và giờ UTC+7",
+      "API ngoài phạm vi trả 404, hồ sơ chỉ đọc ở server",
       async () => {
-        const r = await as("student", "get", "/time-slots").expect(200);
-        assert.deepEqual(
-          r.body.map((s) => [s.start_minute, s.end_minute]),
-          [
-            [450, 590],
-            [600, 740],
-            [770, 910],
-            [920, 1060],
-          ],
+        for (const [method, path] of [
+          ["patch", "/profile"],
+          ["patch", "/profile/password"],
+          ["get", "/auth/me"],
+          ["post", "/majors"],
+          ["get", "/major-transfer-requests"],
+          ["post", "/major-transfer-requests"],
+          ["get", "/departments"],
+          ["post", "/departments"],
+          ["post", "/semesters"],
+          ["post", "/rooms"],
+          ["post", "/users"],
+          ["post", "/sessions"],
+          ["patch", `/sessions/${future._id}/schedule`],
+          ["patch", `/sessions/${future._id}/status`],
+          ["get", `/sessions/${past._id}/history`],
+          ["get", `/sessions/${past._id}/attendance-history`],
+          ["get", `/sections/${section._id}/enrollments`],
+          ["get", "/reports/requests"],
+        ]) {
+          let r = as("staff", method, path);
+          if (method !== "get") r = r.send({});
+          await r.expect(404);
+        }
+        for (const role of ["student", "lecturer", "head", "staff"]) {
+          const r = await as(role, "get", "/profile").expect(200);
+          assert.equal(r.body.role, role.toUpperCase());
+          assert.equal(r.body.password_hash, undefined);
+          assert.equal(r.body.phone, undefined);
+          assert.equal(r.body.department, undefined);
+          assert.equal(r.body.pending_major_transfer, undefined);
+        }
+      },
+    );
+    await t.test(
+      "HEAD CRUD môn trong bộ môn, chặn giả mạo quyền và version cũ",
+      async () => {
+        await as("staff", "post", "/courses")
+          .send({ code: "DENY", name: "Denied" })
+          .expect(403);
+        await as("head", "post", "/courses")
+          .send({
+            code: "SPOOF",
+            name: "Spoof",
+            department_id: String(otherDept._id),
+          })
+          .expect(400);
+        const r = await as("head", "post", "/courses")
+          .send({
+            code: "NEW",
+            name: "Môn mới",
+            major_ids: [String(f.major._id)],
+          })
+          .expect(201);
+        assert.equal(r.body.department_id, String(department._id));
+        assert.ok(
+          (await f.major.constructor.findById(f.major._id)).course_ids.some(
+            (id) => String(id) === r.body.id,
+          ),
         );
-        const section = await createSection("FIXED30");
-        assert.equal(section.capacity, 30);
-        await as("staff", "post", "/sections")
+        const majors = await as("head", "get", "/majors").expect(200);
+        assert.ok(majors.body.some((m) => m.id === String(f.major._id)));
+        await as("student", "get", "/majors").expect(403);
+        await as("head", "patch", `/courses/${r.body.id}`)
+          .send({ version: 0, name: "Đã sửa" })
+          .expect(200);
+        await as("head", "patch", `/courses/${r.body.id}`)
+          .send({ version: 0, name: "Ghi đè" })
+          .expect(409);
+        const membership = await as("head", "patch", `/courses/${r.body.id}`)
+          .send({ version: 1, major_ids: [] })
+          .expect(200);
+        assert.equal(membership.body.version, 2);
+        assert.ok(
+          !(await f.major.constructor.findById(f.major._id)).course_ids.some(
+            (id) => String(id) === r.body.id,
+          ),
+        );
+        await as("head", "patch", `/courses/${r.body.id}`)
+          .send({ version: 1, major_ids: [String(f.major._id)] })
+          .expect(409);
+        const foreign = await Course.create({
+          code: "OTHER",
+          name: "Môn ngoài",
+          department_id: otherDept._id,
+        });
+        await as("head", "patch", `/courses/${foreign._id}`)
+          .send({ version: 0, active: false })
+          .expect(403);
+        const list = await as("head", "get", "/courses").expect(200);
+        assert.ok(
+          list.body.every((c) => c.department_id === String(department._id)),
+        );
+      },
+    );
+    await t.test(
+      "Migration chỉ thay index giảng viên, không thay document hoặc index khác",
+      async () => {
+        const before = await ClassSession.find().lean();
+        await ClassSession.collection.dropIndex(
+          "session_lecturer_slot_assigned",
+        );
+        await ClassSession.collection.createIndex(
+          { lecturer_id: 1, session_date: 1, slot_id: 1 },
+          {
+            unique: true,
+            partialFilterExpression: {
+              status: { $in: ["SCHEDULED", "COMPLETED"] },
+              slot_id: { $type: "number" },
+            },
+          },
+        );
+        await databaseRepository.initialize();
+        await databaseRepository.initialize();
+        assert.deepEqual(await ClassSession.find().lean(), before);
+        const indexes = await ClassSession.collection.indexes();
+        assert.ok(
+          indexes.some((i) => i.name === "session_lecturer_slot_assigned"),
+        );
+        assert.ok(indexes.some((i) => i.key.room_id));
+      },
+    );
+    await t.test(
+      "Tạo lớp chưa có giảng viên, chỉ mở đăng ký sau khi có lịch; null không trùng nhau",
+      async () => {
+        const make = async (code) =>
+          (
+            await as("head", "post", "/sections")
+              .send({
+                code,
+                course_id: String(course._id),
+                semester_id: String(semester._id),
+              })
+              .expect(201)
+          ).body;
+        one = await make("UNASSIGNED-A");
+        two = await make("UNASSIGNED-B");
+        assert.equal(one.status, "CLOSED");
+        assert.equal(one.lecturer_id, undefined);
+        assert.equal(one.capacity, 30);
+        await as("head", "post", "/sections")
           .send({
             code: "BAD",
             course_id: String(course._id),
             semester_id: String(semester._id),
-            lecturer_id: users.lecturer.id,
-            capacity: 31,
+            lecturer_id: String(users.lecturer._id),
           })
           .expect(400);
-        const small = await as("staff", "post", "/rooms")
-          .send({ name: "SMALL", capacity: 29 })
-          .expect(201);
-        await as("staff", "post", "/sessions")
-          .send({
-            section_id: section.id,
-            room_id: small.body.id,
-            session_date: day(2),
-            slot_id: 1,
-          })
+        await as("head", "patch", `/sections/${one.id}/status`)
+          .send({ version: 0, status: "OPEN" })
           .expect(409);
-        const lesson = await createLesson(section, day(2), 1);
-        assert.equal(lesson.start_at, `${day(2)}T00:30:00.000Z`);
-        assert.equal(lesson.end_at, `${day(2)}T02:50:00.000Z`);
-        await as("staff", "post", "/sessions")
-          .send({
-            section_id: section.id,
-            room_id: String(rooms[0]._id),
-            session_date: day(2),
-            slot_id: 5,
-          })
-          .expect(400);
-      },
-    );
-    await t.test(
-      "Đăng ký sau khi có lịch; chặn giả mạo và trùng môn trong kỳ",
-      async () => {
-        const section = await createSection("ENROLL_AFTER_SCHEDULE");
-        const student = await newStudent();
-        await as(student.role, "post", `/sections/${section.id}/enrollments`)
+        first = await f.lesson(one.id, 3, 3);
+        second = await f.lesson(two.id, 3, 3, rooms[1]._id);
+        const unassignedStudent = await f.person("STUDENT");
+        await as(
+          unassignedStudent.key,
+          "post",
+          `/sections/${two.id}/enrollments`,
+        )
           .send({})
           .expect(409);
-        await createLesson(section, day(3), 1);
-        await as(student.role, "post", `/sections/${section.id}/enrollments`)
-          .send({ student_id: users.student.id })
-          .expect(400);
-        await as(student.role, "post", `/sections/${section.id}/enrollments`)
-          .send({})
-          .expect(201);
-        const r = await as(
-          student.role,
-          "get",
-          `/sections/available?semester_id=${semester._id}`,
-        ).expect(200);
-        assert.equal(r.body.find((s) => s.id === section.id).remaining, 29);
-        const other = await createSection("OTHER_SAME_COURSE");
-        await createLesson(other, day(3), 2);
-        await as(student.role, "post", `/sections/${other.id}/enrollments`)
-          .send({})
-          .expect(409);
-      },
-    );
-    await t.test(
-      "Chặn đăng ký trùng lịch, chọn lịch khác thành công",
-      async () => {
-        const c = await as("staff", "post", "/courses")
-          .send({
-            code: "SECOND",
-            name: "Môn khác",
-            department_id: String(department._id),
-          })
-          .expect(201);
-        await Major.updateOne(
-          { _id: fixtureMajor._id },
-          { $addToSet: { course_ids: c.body.id } },
+        assert.equal(first.lecturer_id, null);
+        assert.equal(second.lecturer_id, null);
+        await assert.rejects(
+          f.lesson(two.id, 3, 3, rooms[0]._id),
+          (e) => e.status === 409,
         );
-        const gv = await User.create({
-          user_code: "GV2",
-          name: "Giảng viên hai",
-          email: "gv2@myfap.local",
-          password_hash,
-          role: "LECTURER",
-          department_id: department._id,
-        });
-        const section = await createSection(
-          "COLLISION",
-          c.body.id,
-          String(gv._id),
-        );
-        const lesson = await createLesson(
-          section,
-          future.session_date,
-          1,
-          String(rooms[1]._id),
-        );
-        await as("student", "post", `/sections/${section.id}/enrollments`)
-          .send({})
-          .expect(409);
-        await as("staff", "patch", `/sessions/${lesson.id}/schedule`)
-          .send({
-            version: 0,
-            room_id: String(rooms[1]._id),
-            session_date: day(4),
-            slot_id: 1,
-            reason: "Chọn lịch khác",
-          })
+        await as("head", "patch", `/sections/${one.id}/status`)
+          .send({ version: 0, status: "OPEN" })
           .expect(200);
-        await as("student", "post", `/sections/${section.id}/enrollments`)
+        await as("head", "patch", `/sections/${two.id}/status`)
+          .send({ version: 0, status: "OPEN" })
+          .expect(200);
+        await as("staff", "get", "/sections").expect(403);
+        await as(
+          unassignedStudent.key,
+          "post",
+          `/sections/${two.id}/enrollments`,
+        )
           .send({})
           .expect(201);
+        await as(
+          unassignedStudent.key,
+          "post",
+          `/sections/${two.id}/enrollments/${unassignedStudent.row._id}/withdraw`,
+        )
+          .send({ version: 0 })
+          .expect(200);
       },
     );
     await t.test(
-      "Hai đăng ký đồng thời tranh chỗ thứ 30: đúng một thành công",
+      "Phân công theo buổi: quyền, giới hạn bộ môn, version, buổi quá khứ",
       async () => {
-        const c = await as("staff", "post", "/courses")
+        await as("lecturer", "put", `/sections/${one.id}/assignments`)
           .send({
-            code: "CAPACITY",
-            name: "Kiểm tra chỗ",
-            department_id: String(department._id),
+            reason: "Không có quyền",
+            assignments: [
+              {
+                session_id: first.id,
+                lecturer_id: String(users.lecturer._id),
+                version: 0,
+              },
+            ],
           })
-          .expect(201);
-        await Major.updateOne(
-          { _id: fixtureMajor._id },
-          { $addToSet: { course_ids: c.body.id } },
+          .expect(403);
+        await assign(
+          one.id,
+          [
+            {
+              session_id: first.id,
+              lecturer_id: String(outsider.row._id),
+              version: 0,
+            },
+          ],
+          400,
         );
-        const section = await createSection("LAST_SEAT", c.body.id);
-        await createLesson(section, day(5), 1);
-        for (let i = 0; i < 29; i++) {
-          const student = await newStudent();
-          await as(student.role, "post", `/sections/${section.id}/enrollments`)
-            .send({})
-            .expect(201);
-        }
-        const a = await newStudent(),
-          b = await newStudent();
+        await assign(
+          one.id,
+          [
+            {
+              session_id: second.id,
+              lecturer_id: String(users.lecturer._id),
+              version: 0,
+            },
+          ],
+          403,
+        );
+        await assign(
+          section._id,
+          [
+            {
+              session_id: String(past._id),
+              lecturer_id: String(b.row._id),
+              version: 0,
+            },
+          ],
+          409,
+        );
+        await assign(one.id, [
+          {
+            session_id: first.id,
+            lecturer_id: String(users.lecturer._id),
+            version: 0,
+          },
+        ]);
+        await assign(
+          one.id,
+          [
+            {
+              session_id: first.id,
+              lecturer_id: String(b.row._id),
+              version: 0,
+            },
+          ],
+          409,
+        );
+        const people = await as("head", "get", "/lecturers").expect(200);
+        assert.ok(!people.body.some((p) => p.id === String(outsider.row._id)));
+        assert.ok(people.body.every((p) => !p.password_hash && !p.email));
+      },
+    );
+    await t.test(
+      "Đổi phân công kiểm tra trùng lịch và rollback toàn bộ đợt",
+      async () => {
+        const another = await f.lesson(two.id, 4, 2, rooms[1]._id);
+        await assign(
+          two.id,
+          [
+            {
+              session_id: another.id,
+              lecturer_id: String(users.lecturer._id),
+              version: 0,
+            },
+            {
+              session_id: second.id,
+              lecturer_id: String(users.lecturer._id),
+              version: 0,
+            },
+          ],
+          409,
+        );
+        const stored = await ClassSession.findById(another.id);
+        assert.equal(stored.lecturer_id, null);
+        assert.equal(stored.version, 0);
+        await assign(two.id, [
+          { session_id: second.id, lecturer_id: String(b.row._id), version: 0 },
+        ]);
+      },
+    );
+    await t.test(
+      "Hai người phân công cùng version chỉ một thay đổi thành công",
+      async () => {
         const results = await Promise.all(
-          [a, b].map((s) =>
-            as(s.role, "post", `/sections/${section.id}/enrollments`).send({}),
+          [b.row._id, null].map((lecturer_id) =>
+            as("head", "put", `/sections/${one.id}/assignments`).send({
+              reason: "Đồng thời",
+              assignments: [
+                {
+                  session_id: first.id,
+                  lecturer_id: lecturer_id ? String(lecturer_id) : null,
+                  version: 1,
+                },
+              ],
+            }),
           ),
         );
-        assert.deepEqual(results.map((r) => r.status).sort(), [201, 409]);
-        assert.equal(
-          await Enrollment.countDocuments({
-            section_id: section.id,
-            status: "ACTIVE",
-          }),
-          30,
-        );
+        assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+        const stored = await ClassSession.findById(first.id);
+        await assign(one.id, [
+          {
+            session_id: first.id,
+            lecturer_id: String(users.lecturer._id),
+            version: stored.version,
+          },
+        ]);
       },
     );
     await t.test(
-      "Nghỉ có phép: đổi phòng giữ đơn, đổi slot vô hiệu đơn và được gửi mới",
+      "Cùng lớp nhiều giảng viên; dữ liệu cũ trên Section không cấp quyền buổi khác",
+      async () => {
+        const another = await f.lesson(
+          one.id,
+          4,
+          1,
+          rooms[0]._id,
+          String(b.row._id),
+        );
+        await Section.updateOne(
+          { _id: one.id },
+          { $set: { lecturer_id: users.lecturer._id } },
+        );
+        await as(
+          "lecturer",
+          "get",
+          `/sessions/${another.id}/attendance`,
+        ).expect(403);
+        await as(b.key, "get", `/sessions/${another.id}/attendance`).expect(
+          200,
+        );
+        const list = await as(
+          "lecturer",
+          "get",
+          `/sections/${one.id}/sessions`,
+        ).expect(200);
+        assert.ok(
+          list.body.every((s) => s.lecturer_id === String(users.lecturer._id)),
+        );
+        const own = await as(
+          b.key,
+          "get",
+          `/schedule?from=${new Date(Date.now() - 86400000).toISOString()}&to=${new Date(Date.now() + 7 * 86400000).toISOString()}`,
+        ).expect(200);
+        assert.ok(own.body.every((s) => s.lecturer_id === String(b.row._id)));
+      },
+    );
+    await t.test(
+      "Điểm danh đủ lớp, giữ legacy, chặn tương lai và ghi đè đồng thời",
+      async () => {
+        await as("lecturer", "put", `/sessions/${future._id}/attendance`)
+          .send({
+            version: 0,
+            rows: [
+              { student_id: String(users.student._id), status: "PRESENT" },
+            ],
+          })
+          .expect(409);
+        const results = await Promise.all(
+          ["PRESENT", "ABSENT"].map((status) =>
+            as("lecturer", "put", `/sessions/${past._id}/attendance`).send({
+              version: 0,
+              rows: [{ student_id: String(users.student._id), status }],
+            }),
+          ),
+        );
+        assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+        assert.equal(
+          await Audit.countDocuments({
+            action: "SAVE_ATTENDANCE",
+            entity_id: past._id,
+          }),
+          1,
+        );
+        await as("lecturer", "put", `/sessions/${past._id}/attendance`)
+          .send({
+            version: 1,
+            rows: [{ student_id: String(users.student._id), status: "LATE" }],
+          })
+          .expect(400);
+        await ClassSession.updateOne(
+          { _id: past._id },
+          { $set: { "attendance.0.status": "EXCUSED" } },
+        );
+        await as("lecturer", "put", `/sessions/${past._id}/attendance`)
+          .send({
+            version: 1,
+            rows: [
+              { student_id: String(users.student._id), status: "EXCUSED" },
+            ],
+          })
+          .expect(200);
+      },
+    );
+    await t.test(
+      "Đổi người phụ trách giữ đơn nghỉ, hủy đề xuất cũ, lịch sử người cũ vẫn xem được",
       async () => {
         const leave = await as("student", "post", "/leave-requests")
           .send({ session_id: String(future._id), reason: "Khám bệnh" })
           .expect(201);
-        const visibleLeaves = await as(
-          "lecturer",
-          "get",
-          "/leave-requests?status=PENDING&page=1",
-        ).expect(200);
-        const listedLeave = visibleLeaves.body.items.find(
-          (r) => r.id === leave.body.id,
-        );
-        assert.deepEqual(Object.keys(listedLeave.requester).sort(), [
-          "name",
-          "user_code",
-        ]);
-        assert.equal(
-          listedLeave.lesson.section_code,
-          (await Section.findById(future.section_id)).code,
-        );
-        assert.ok(listedLeave.lesson.course);
-        assert.ok(listedLeave.lesson.room_name);
-        assert.ok(!JSON.stringify(listedLeave).includes("password_hash"));
-        await as("staff", "patch", `/leave-requests/${leave.body.id}/decision`)
-          .send({ version: 0, decision: "APPROVED", note: "OK" })
-          .expect(403);
         await as(
           "lecturer",
           "patch",
@@ -317,224 +458,180 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
         )
           .send({ version: 0, decision: "APPROVED", note: "Đồng ý" })
           .expect(200);
-        let attendance = await as(
-          "student",
-          "get",
-          `/sessions/${future._id}/attendance`,
-        ).expect(200);
-        assert.equal(attendance.body.rows[0].note, "Nghỉ có phép");
-        assert.equal(attendance.body.rows[0].status, "NOT_RECORDED");
         const change = await as("lecturer", "post", "/change-requests")
           .send({
             session_id: String(future._id),
-            reason: "Đổi phòng",
             proposed_room_id: String(rooms[1]._id),
             proposed_date: future.session_date,
             proposed_slot_id: 1,
+            reason: "Đổi phòng",
           })
           .expect(201);
-        const ownChanges = await as(
+        await assign(section._id, [
+          {
+            session_id: String(future._id),
+            lecturer_id: String(b.row._id),
+            version: 0,
+          },
+        ]);
+        assert.equal((await Leave.findById(leave.body.id)).status, "APPROVED");
+        assert.equal(
+          (await Change.findById(change.body.id)).status,
+          "CANCELLED",
+        );
+        const old = await as("lecturer", "get", "/change-requests").expect(200);
+        assert.ok(
+          old.body.items.some(
+            (r) => r.id === change.body.id && r.status === "CANCELLED",
+          ),
+        );
+        await as(
           "lecturer",
           "get",
-          "/change-requests?status=PENDING&page=1",
-        ).expect(200);
-        const listedChange = ownChanges.body.items.find(
-          (r) => r.id === change.body.id,
+          `/sessions/${future._id}/attendance`,
+        ).expect(403);
+        await as("lecturer", "get", `/sessions/${past._id}/attendance`).expect(
+          200,
         );
-        assert.equal(listedChange.original_room_name, rooms[0].name);
-        assert.equal(listedChange.proposed_room_name, rooms[1].name);
-        await as(
-          "staff",
-          "patch",
-          `/change-requests/${change.body.id}/decision`,
-        )
-          .send({ version: 0, decision: "APPROVED", note: "OK" })
-          .expect(200);
-        assert.equal((await Leave.findById(leave.body.id)).status, "APPROVED");
-        const change2 = await as("lecturer", "post", "/change-requests")
-          .send({
-            session_id: String(future._id),
-            reason: "Đổi slot",
-            proposed_room_id: String(rooms[1]._id),
-            proposed_date: future.session_date,
-            proposed_slot_id: 2,
-          })
-          .expect(201);
-        await as(
-          "staff",
-          "patch",
-          `/change-requests/${change2.body.id}/decision`,
-        )
-          .send({ version: 0, decision: "APPROVED", note: "OK" })
-          .expect(200);
-        assert.equal(
-          (await Leave.findById(leave.body.id)).status,
-          "INVALIDATED",
-        );
-        attendance = await as(
-          "student",
+        const current = await as(
+          b.key,
           "get",
           `/sessions/${future._id}/attendance`,
         ).expect(200);
-        assert.equal(attendance.body.rows[0].note, null);
-        await as(
-          "lecturer",
-          "patch",
-          `/leave-requests/${leave.body.id}/decision`,
-        )
-          .send({
-            version: 1,
-            decision: "APPROVED",
-            note: "Không được duyệt lại",
-          })
-          .expect(409);
-        await as("student", "post", "/leave-requests")
-          .send({ session_id: String(future._id), reason: "Nghỉ slot mới" })
-          .expect(201);
-        const history = await as(
-          "lecturer",
+        assert.equal(current.body.rows[0].note, "Nghỉ có phép");
+        const summary = await as(
+          "head",
           "get",
-          `/sessions/${future._id}/history`,
+          "/reports/attendance?group_by=LECTURER",
         ).expect(200);
-        assert.equal(history.body.length, 2);
-        assert.ok(history.body[0].before_data);
-        assert.ok(history.body[0].after_data);
-        const stored = await Change.findById(change2.body.id);
-        assert.equal(stored.original_slot_id, 1);
-        assert.equal(stored.proposed_slot_id, 2);
+        const a = summary.body.items.find(
+            (r) => r.id === String(users.lecturer._id),
+          ),
+          rb = summary.body.items.find((r) => r.id === String(b.row._id));
+        assert.ok(a.sessions > 0 && rb.sessions > 0);
+        assert.ok(a.recorded_sessions > 0);
+        assert.equal(rb.recorded_sessions, 0);
+        assert.ok(
+          await SessionHistory.exists({
+            session_id: future._id,
+            action: "ASSIGN_LECTURER",
+          }),
+        );
       },
     );
     await t.test(
-      "Điểm danh đủ lớp, lưu before/after và chống ghi đè đồng thời",
+      "Cán bộ duyệt đổi phòng giữ nghỉ phép; đổi slot vô hiệu đơn, có tên hiển thị",
       async () => {
-        await as("lecturer", "put", `/sessions/${future._id}/attendance`)
-          .send({
-            version: 2,
-            rows: [{ student_id: users.student.id, status: "PRESENT" }],
-          })
-          .expect(409);
-        const writes = await Promise.all(
-          [1, 2].map(() =>
-            as("lecturer", "put", `/sessions/${past._id}/attendance`).send({
-              version: 0,
-              rows: [{ student_id: users.student.id, status: "ABSENT" }],
-            }),
+        for (const slot of [1, 2]) {
+          const r = await as(b.key, "post", "/change-requests")
+            .send({
+              session_id: String(future._id),
+              proposed_room_id: String(rooms[1]._id),
+              proposed_date: future.session_date,
+              proposed_slot_id: slot,
+              reason: "Thay đổi",
+            })
+            .expect(201);
+          await as("head", "patch", `/change-requests/${r.body.id}/decision`)
+            .send({ version: 0, decision: "APPROVED", note: "Sai quyền" })
+            .expect(403);
+          await as("staff", "patch", `/change-requests/${r.body.id}/decision`)
+            .send({ version: 0, decision: "APPROVED", note: "Đã kiểm tra" })
+            .expect(200);
+          const l = await Leave.findOne({ session_id: future._id });
+          assert.equal(l.status, slot === 1 ? "APPROVED" : "INVALIDATED");
+        }
+        const list = await as(b.key, "get", "/change-requests").expect(200);
+        assert.ok(list.body.items[0].lesson.course);
+        assert.ok(list.body.items[0].proposed_room_name);
+      },
+    );
+    await t.test("Rút/đăng ký lại giữ lịch và điểm danh quá khứ", async () => {
+      const enrollment = await Enrollment.findOne({
+        student_id: users.student._id,
+        section_id: section._id,
+      });
+      await as(
+        "student",
+        "post",
+        `/sections/${section._id}/enrollments/${users.student._id}/withdraw`,
+      )
+        .send({ version: enrollment.version })
+        .expect(200);
+      assert.equal(
+        (await ClassSession.findById(past._id)).attendance.length,
+        1,
+      );
+      const range = `from=${new Date(Date.now() - 3 * 86400000).toISOString()}&to=${new Date(Date.now() + 3 * 86400000).toISOString()}`;
+      const old = await as("student", "get", `/schedule?${range}`).expect(200);
+      assert.ok(old.body.some((s) => s.id === String(past._id)));
+      assert.ok(!old.body.some((s) => s.id === String(future._id)));
+      await as("student", "post", `/sections/${section._id}/enrollments`)
+        .send({})
+        .expect(201);
+      assert.equal(
+        await EnrollmentPeriod.countDocuments({
+          student_id: users.student._id,
+          section_id: section._id,
+        }),
+        2,
+      );
+    });
+    await t.test(
+      "Lớp 30 chỗ, không cần giảng viên để đăng ký, tranh chỗ cuối nguyên tử",
+      async () => {
+        for (let i = 0; i < 29; i++) {
+          const p = await f.person("STUDENT");
+          await as(p.key, "post", `/sections/${one.id}/enrollments`)
+            .send({})
+            .expect(201);
+        }
+        const x = await f.person("STUDENT"),
+          y = await f.person("STUDENT");
+        const results = await Promise.all(
+          [x, y].map((p) =>
+            as(p.key, "post", `/sections/${one.id}/enrollments`).send({}),
           ),
         );
-        assert.deepEqual(writes.map((r) => r.status).sort(), [200, 409]);
-        await as("lecturer", "put", `/sessions/${past._id}/attendance`)
-          .send({
-            version: 1,
-            rows: [{ student_id: users.student.id, status: "PRESENT" }],
-          })
-          .expect(200);
-        const history = await as(
-          "lecturer",
-          "get",
-          `/sessions/${past._id}/attendance-history`,
-        ).expect(200);
-        assert.equal(history.body.length, 2);
-        assert.equal(history.body[0].before_data.rows[0].status, "ABSENT");
-        await as(
-          "student",
-          "get",
-          `/sessions/${past._id}/attendance-history`,
-        ).expect(403);
-      },
-    );
-    await t.test(
-      "Rút/đăng ký lại giữ điểm danh cũ và khoảng lịch sử",
-      async () => {
-        const e = await Enrollment.findOne({
-          section_id: past.section_id,
-          student_id: users.student.id,
-        });
-        await as(
-          "student",
-          "post",
-          `/sections/${past.section_id}/enrollments/${users.student.id}/withdraw`,
-        )
-          .send({ version: e.version })
-          .expect(200);
-        const r = await as(
-          "student",
-          "get",
-          `/sessions/${past._id}/attendance`,
-        ).expect(200);
-        assert.equal(r.body.rows[0].status, "PRESENT");
-        await as("student", "post", `/sections/${past.section_id}/enrollments`)
+        assert.deepEqual(results.map((r) => r.status).sort(), [201, 409]);
+        assert.equal(
+          await Enrollment.countDocuments({
+            section_id: one.id,
+            status: "ACTIVE",
+          }),
+          30,
+        );
+        const p = await f.person("STUDENT");
+        await as(p.key, "post", `/sections/${two.id}/enrollments`)
           .send({})
           .expect(201);
-        const periods = await EnrollmentPeriod.find({
-          section_id: past.section_id,
-          student_id: users.student.id,
-        }).sort({ starts_at: 1 });
-        assert.equal(periods.length, 2);
-        assert.ok(periods[0].ends_at);
-        assert.equal(periods[1].ends_at, null);
-      },
-    );
-    await t.test(
-      "Hủy buổi giải phóng slot; HEAD chỉ thấy bộ môn mình; lịch không lộ điểm danh",
-      async () => {
-        const section = await createSection("CANCEL");
-        const lesson = await createLesson(section, day(6), 1);
-        await as("staff", "patch", `/sessions/${lesson.id}/status`)
-          .send({ version: 0, status: "CANCELLED", reason: "Nghỉ" })
-          .expect(200);
-        await as("lecturer", "put", `/sessions/${lesson.id}/attendance`)
-          .send({
-            version: 1,
-            rows: [{ student_id: users.student.id, status: "PRESENT" }],
-          })
+        await as(p.key, "post", `/sections/${one.id}/enrollments`)
+          .send({})
           .expect(409);
-        await createLesson(section, day(6), 1);
-        const other = await Department.create({
-          code: "OTHER",
-          name: "Bộ môn khác",
-        });
-        await User.updateOne(
-          { _id: users.head.id },
-          { $set: { department_id: other._id } },
-        );
-        const list = await as("head", "get", "/department/summary").expect(200);
-        assert.equal(list.body.sections, 0);
-        await as("head", "get", `/sessions/${past._id}/attendance`).expect(403);
-        await User.updateOne(
-          { _id: users.head.id },
-          { $set: { department_id: department._id } },
-        );
-        const schedule = await as(
-          "student",
-          "get",
-          `/schedule?from=${encodeURIComponent(new Date(Date.now() - 7 * 86400000).toISOString())}&to=${encodeURIComponent(new Date(Date.now() + 30 * 86400000).toISOString())}`,
-        ).expect(200);
-        assert.ok(schedule.body.length > 0);
-        assert.equal(schedule.body[0].attendance, undefined);
       },
     );
     await t.test(
-      "Một môn có nhiều kỳ/lớp và logout thu hồi token",
+      "Ngừng môn chặn đăng ký mới, giữ lớp và lịch sử; báo cáo không vượt bộ môn",
       async () => {
-        const sem = await as("staff", "post", "/semesters")
-          .send({
-            term: "SPRING",
-            year: new Date().getUTCFullYear() + 1,
-          })
-          .expect(201);
-        await as("staff", "post", "/sections")
-          .send({
-            code: "SE20A-PRM393",
-            course_id: String(course._id),
-            semester_id: sem.body.id,
-            lecturer_id: users.lecturer.id,
-          })
-          .expect(201);
-        await as("student", "post", "/auth/logout").expect(204);
-        await as("student", "get", "/auth/me").expect(401);
+        await as("head", "patch", `/courses/${course._id}`)
+          .send({ version: 0, active: false })
+          .expect(200);
+        const p = await f.person("STUDENT");
+        await as(p.key, "post", `/sections/${two.id}/enrollments`)
+          .send({})
+          .expect(409);
+        const list = await as(p.key, "get", "/sections/available").expect(200);
+        assert.ok(list.body.every((s) => s.course_id !== String(course._id)));
+        assert.ok(await ClassSession.exists({ _id: past._id }));
+        await as(
+          "head",
+          "get",
+          `/reports/attendance?lecturer_id=${outsider.row._id}`,
+        ).expect(403);
+        await as("student", "get", "/reports/attendance").expect(403);
       },
     );
   } finally {
-    await disconnect();
+    if (f) await f.disconnect();
   }
 });

@@ -1,67 +1,33 @@
-# Mô hình dữ liệu MongoDB Mongoose
+# Database MongoDB — scope MVP
 
-Schema thực thi ở `backend/src/models/*.model.js`; registry tại `backend/src/models/index.js`. Không còn schema SQL/FK; tham chiếu được kiểm tra trong service, index kiểm soát duy nhất và transaction replica set bảo vệ thao tác nhiều collection.
+Schema thực thi trong backend/src/models, registry tại models/index.js. Các tham chiếu được service kiểm tra; transaction dùng replica set và AcademicLock tuần tự hóa thao tác học vụ. Không có SQL FK.
 
-| Model | Nội dung chính |
+| Model | Vai trò |
 |---|---|
-| Department | code/name duy nhất theo mã bộ môn |
-| Course | code/name, department_id |
-| Semester | code/name, term, year, academic_year, start_at/end_at chuẩn UTC+7, legacy; unique(term,year) cho kỳ chuẩn |
-| User | user_code, email duy nhất; password_hash ẩn; role, department_id, major_id, active; phone/address/date_of_birth; không có trường ảnh |
-| Major | code/name, department_id, course_ids (môn có thể thuộc nhiều ngành), active |
-| MajorTransfer | ngành/bộ môn cũ và mới, kỳ/ngày hiệu lực, trạng thái, review, applied_at; chỉ một đơn PENDING hoặc APPROVED chưa áp dụng/sinh viên |
-| Notice | title/content, audience, department_ids/major_ids, DRAFT/PUBLISHED/ARCHIVED, hạn hiển thị |
-| NoticeRead | notice_id/user_id duy nhất, read_at đầu tiên |
-| AuthSession | user_id, hash token, expires_at; TTL index tự dọn phiên hết hạn |
-| Room | tên phòng và sức chứa |
-| Section | môn, kỳ, bộ môn, giảng viên; capacity=30, OPEN/CLOSED; unique(semester_id,code) |
-| Enrollment | trạng thái ACTIVE/WITHDRAWN, thời điểm và version; unique(section,student) và unique active(student,course,semester) |
-| EnrollmentPeriod | các khoảng starts_at/ends_at; chỉ một khoảng mở cho cặp lớp/sinh viên |
-| ClassSession | ngày/slot, giờ UTC, phòng, giảng viên, trạng thái và tối đa 30 dòng attendance nhúng |
-| Leave | snapshot ngày/slot/giờ của đơn; reviewer, status; unique active(session,requester) |
-| Change | lịch gốc và lịch đề xuất, version buổi gốc; chỉ một PENDING trên một buổi |
-| Audit | actor/action/entity, before_data/after_data, thời gian |
-| SessionHistory | lịch cũ/mới, người thao tác và đơn liên quan |
-| AcademicLock | một document được ghi trong mọi transaction học vụ |
-| ImportBatch | source hash và số lượng để nhập dữ liệu cũ không nhân đôi |
+| Department | Bộ môn quản lý môn, giảng viên, HEAD |
+| Course | Môn: code/name/department_id/active; soft disable, không xóa lịch sử |
+| Semester | Kỳ cụ thể có term/year/start_at/end_at chuẩn UTC+7; giữ kỳ legacy để đối chiếu |
+| Major | Ngành và course_ids phục vụ điều kiện đăng ký; HEAD chỉ thay môn trong chương trình thuộc bộ môn |
+| Section | Lớp học phần của Course trong Semester, capacity=30, OPEN/CLOSED; giảng viên không cố định trên lớp |
+| ClassSession | Section + ngày + slot + phòng; lecturer_id nullable là phân công của chính buổi đó; attendance nhúng tối đa 30 |
+| Enrollment | Trạng thái đăng ký hiện tại của cặp sinh viên/lớp, course/semester dùng unique active |
+| EnrollmentPeriod | Các khoảng starts_at/ends_at; roster và lịch quá khứ lấy theo giờ bắt đầu buổi |
+| Leave / Change | Đơn nghỉ và đổi lịch/phòng có snapshot, reviewer, version, trạng thái |
+| User / AuthSession | Tài khoản và phiên opaque token hash/TTL; profile chỉ đọc, không có trường ảnh |
+| Room | Phòng và sức chứa |
+| Notice | Nháp/phát hành, đối tượng nhận, ngày hết hạn; API chỉ tạo/phát hành/đọc |
+| Audit / SessionHistory | Lịch sử append, snapshot lịch có lecturer_id; không có REST sửa/xóa hoặc endpoint riêng ngoài scope |
+| AcademicLock / ImportBatch | Khóa transaction, nguồn import để chạy lại không nhân đôi |
+| MajorTransfer / NoticeRead | Dữ liệu lịch sử còn giữ; không có job chuyển ngành hoặc API thay đổi/đọc mới theo workflow cũ |
 
-4 slot là cấu hình cố định trong `slots.js`, không mở API sửa slot. Ngày là chuỗi YYYY-MM-DD theo Việt Nam; thời gian là BSON Date UTC. ID dùng ObjectId, khi trả API đổi `_id` thành `id`. `legacy_id` giữ ID số để đối chiếu sau import.
+Section.lecturer_id còn trong schema ở dạng optional để đọc/import document cũ, chỉ là metadata lưu trữ. API lớp không trả trường này như phân công hiện tại. Toàn bộ quyền giảng viên và báo cáo căn cứ ClassSession.lecturer_id; không tự chuyển người dạy của buổi cũ khi phân công lại.
 
-```mermaid
-erDiagram
- DEPARTMENT ||--o{ USER : includes
- DEPARTMENT ||--o{ COURSE : owns
- DEPARTMENT ||--o{ MAJOR : includes
- MAJOR }o--o{ COURSE : curriculum
- MAJOR ||--o{ USER : studies
- USER ||--o{ MAJOR_TRANSFER : requests
- SEMESTER ||--o{ MAJOR_TRANSFER : effective_in
- USER ||--o{ NOTICE : authors
- NOTICE ||--o{ NOTICE_READ : tracks
- USER ||--o{ NOTICE_READ : reads
- COURSE ||--o{ SECTION : offered_as
- SEMESTER ||--o{ SECTION : includes
- USER ||--o{ SECTION : teaches
- SECTION ||--o{ ENROLLMENT : receives
- USER ||--o{ ENROLLMENT : registers
- ENROLLMENT ||--o{ ENROLLMENT_PERIOD : retains
- SECTION ||--o{ CLASS_SESSION : schedules
- ROOM ||--o{ CLASS_SESSION : hosts
- CLASS_SESSION ||--o{ LEAVE : receives
- CLASS_SESSION ||--o{ CHANGE : receives
- CLASS_SESSION ||--o{ SESSION_HISTORY : records
- USER ||--o{ AUTH_SESSION : owns
- USER ||--o{ AUDIT : acts
-```
+Index ClassSession chống trùng section/room theo ngày/slot khi SCHEDULED/COMPLETED. Index session_lecturer_slot_assigned chỉ chống trùng khi lecturer_id là ObjectId, vì nhiều buổi chưa phân công có thể cùng slot ở các phòng khác nhau. Buổi CANCELLED giải phóng slot. Service còn kiểm tra giao khoảng thời gian và lịch sinh viên; lecturer_id=null bỏ kiểm tra trùng giảng viên.
 
-Các đường quan hệ biểu diễn tham chiếu nghiệp vụ, không phải FK MongoDB tự thực thi. Điểm danh là subdocument trong ClassSession vì luôn bị chặn ở 30 dòng; đọc/ghi danh sách và version của buổi cùng một document. Audit và lịch sử không nhúng để tránh document tăng vô hạn.
+Enrollment unique(section,student), unique active(student,course,semester). EnrollmentPeriod chỉ một khoảng mở mỗi cặp. Rút/đăng ký lại không xóa các khoảng trước, không xóa attendance. Một sinh viên không có class_id cố định trong User. Thay đổi lớp theo đăng ký, không phải chuyển ngành. Không có đơn chuyển lớp sinh viên trong scope hiện tại.
 
-Danh sách điểm danh của buổi dựa vào khoảng đăng ký phủ thời điểm start_at. Rút lớp chỉ đóng khoảng đang mở; không xóa dữ liệu quá khứ. Các truy vấn lịch của sinh viên không trả attendance của người khác; xem lịch lớp trước đăng ký chỉ có thông tin lịch.
+HEAD phân công một đợt theo danh sách buổi + version trong một transaction, kiểm tra cùng bộ môn, future/SCHEDULED/chưa attendance. Giữ nguyên mọi buổi quá khứ. Đổi người phụ trách hủy Change PENDING, giữ Leave nếu slot không đổi. Giảng viên cũ vẫn thấy yêu cầu mình đã gửi, và buổi cũ vẫn thuộc người đã dạy.
 
-Index buổi học chặn trùng section/room/lecturer theo ngày và slot khi SCHEDULED/COMPLETED; buổi CANCELLED giải phóng slot. Service còn kiểm tra khoảng thời gian và trùng sinh viên. Unique index active của enrollment chặn đăng ký nhiều lớp của một môn cùng kỳ. Số 30 và kiểm tra chỗ trống được bảo vệ bằng transaction + khóa chung, không chỉ dựa vào count ở frontend.
+Migration scope:preview/scope:migrate thay đúng index lecturer cũ, không dùng syncIndexes, không drop collection hoặc rewrite document. Có backup trước khi chạy. Các script seed chỉ dành cho DB trống; import/repair vẫn giữ khả năng đọc lecturer_id legacy. Khi thêm writer phải đi qua service/transaction để không bỏ khóa học vụ.
 
-Khóa chung phù hợp quy mô đồ án; khi tải ghi lớn có thể tách khóa theo tài nguyên sau khi có kiểm thử đồng thời. Không cho writer bên ngoài bỏ qua service. Mongoose ref không bảo đảm đối tượng tồn tại nếu sửa trực tiếp MongoDB; API tạo/duyệt đều kiểm tra tham chiếu và phạm vi quyền.
-
-Audit/SessionHistory chỉ được thêm qua ứng dụng, không có API sửa/xóa. Tài khoản DB có quyền rộng vẫn có thể sửa nên khi triển khai cần giới hạn đặc quyền. Khôi phục lịch sử trước khi có snapshot là không thể; importer không bịa original_* cho đơn cũ.
-
-Học kỳ Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Ngày kết thúc là mốc đầu tháng nghỉ (exclusive). Kỳ legacy được giữ để đối chiếu. Chuyển ngành chỉ áp dụng từ đầu kỳ sau ngày gửi: đóng đăng ký môn riêng ngành cũ ở kỳ hiệu lực trở đi, không xóa điểm danh/khoảng đăng ký cũ hoặc môn chung. Chi tiết và lệnh chuẩn hóa: [STUDENT_AFFAIRS.md](STUDENT_AFFAIRS.md).
+4 slot cố định và kỳ 3 tháng/1 tháng nghỉ giữ nguyên. Chi tiết endpoint/payload và công cụ thiết lập buổi: [API.md](API.md).

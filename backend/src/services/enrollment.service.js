@@ -1,3 +1,4 @@
+import { courseRepository } from "../repositories/index.js";
 import { majorRepository } from "../repositories/student-affairs.repositories.js";
 import { fail } from "../utils/api-error.js";
 import { same } from "../utils/identity.js";
@@ -6,7 +7,6 @@ import { checkVersion } from "../utils/version.js";
 import { get, saveDocument } from "../repositories/base.repository.js";
 import { transaction } from "../repositories/transaction.js";
 import { audit } from "./audit.service.js";
-import { authorizeSection } from "./access.service.js";
 import {
   semesterRepository,
   userRepository,
@@ -20,6 +20,8 @@ import {
 export async function enroll(session, user, sectionId, studentId) {
   const section = await get(sectionRepository, sectionId, session);
   const student = await get(userRepository, studentId, session);
+  const course = await get(courseRepository, section.course_id, session);
+  if (course.active === false) fail(409, "Môn đã ngừng sử dụng");
   const now = new Date();
   if (!student.major_id)
     fail(409, "Cán bộ cần cập nhật ngành học trước khi đăng ký môn");
@@ -211,24 +213,6 @@ export async function myEnrollments(user) {
       { sort: { enrolled_at: -1 }, limit: 200 },
     ),
   );
-}
-export async function listEnrollments(user, sectionId) {
-  const section = await get(sectionRepository, sectionId);
-  await authorizeSection(section, user);
-  const filter = { section_id: section._id };
-  if (user.role === "STUDENT") filter.student_id = user._id;
-  const rows = await enrollmentRepository.find(filter, {
-    sort: { _id: 1 },
-    limit: 500,
-  });
-  const students = await userRepository.find({
-    _id: { $in: rows.map((r) => r.student_id) },
-  });
-  return rows.map((r) => ({
-    ...clean(r),
-    name: students.find((s) => same(s._id, r.student_id))?.name,
-    user_code: students.find((s) => same(s._id, r.student_id))?.user_code,
-  }));
 }
 export async function registerStudent(user, sectionId, data) {
   const key = user.role === "STUDENT" ? user._id : data.student_id;

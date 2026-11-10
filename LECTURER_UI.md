@@ -32,7 +32,7 @@ Giao diện giảng viên không có thanh điều hướng dưới. Mở hồ s
 
 Các lớp dữ liệu tại `lecturer/models/lecturer_data.dart`, ngày lịch tại `lecturer/utils/lecturer_dates.dart`, style/thẻ dùng chung tại `lecturer/widgets/`.
 
-Backend giữ nguyên quyền của API. Danh sách đơn chỉ bổ sung requester (name/user_code), lesson (lớp/môn/ngày/slot/phòng) và original_room_name/proposed_room_name sau khi lọc phạm vi, truy vấn theo lô. Không trả profile đầy đủ của sinh viên hoặc password hash. Lịch bổ sung course_code; các trường cũ giữ nguyên.
+Backend cấp quyền giảng viên theo lecturer_id của từng buổi, không theo lecturer_id cũ của lớp. Đổi phân công không thay giảng viên trên buổi quá khứ. Danh sách đơn chỉ bổ sung requester (name/user_code), lesson (lớp/môn/ngày/slot/phòng) và original_room_name/proposed_room_name sau khi lọc phạm vi, truy vấn theo lô. Không trả profile đầy đủ của sinh viên hoặc password hash. Lịch bổ sung course_code; các trường cũ giữ nguyên.
 
 ## Chạy và xác minh
 

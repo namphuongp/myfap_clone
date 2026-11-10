@@ -5,7 +5,7 @@ import { checkVersion } from "../utils/version.js";
 import { get, saveDocument } from "../repositories/base.repository.js";
 import { transaction } from "../repositories/transaction.js";
 import { audit } from "./audit.service.js";
-import { scopedSectionIds, authorizeLesson } from "./access.service.js";
+import { authorizeLesson } from "./access.service.js";
 import { ensureSlot, reschedule } from "./scheduling.service.js";
 import { slotTimes } from "../utils/slots.js";
 import {
@@ -72,6 +72,7 @@ export async function createChange(user, data) {
       timing.start_at,
       timing.end_at,
       lesson._id,
+      lesson.lecturer_id,
     );
     const [row] = await changeRepository.create(
       [
@@ -109,10 +110,9 @@ export async function listRequests(user, q, kind) {
   )
     filter.requester_id = user._id;
   else if (user.role !== "STAFF") {
-    const sections = await scopedSectionIds(user);
     filter.session_id = {
       $in: await classSessionRepository.distinct("_id", {
-        section_id: { $in: sections },
+        lecturer_id: user._id,
       }),
     };
   }

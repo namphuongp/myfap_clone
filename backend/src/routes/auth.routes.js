@@ -19,7 +19,6 @@ export function authRoutes() {
 }
 export function sessionRoutes() {
   const router = Router();
-  router.get("/auth/me", authController.me);
   router.post("/auth/logout", authController.logout);
   return router;
 }

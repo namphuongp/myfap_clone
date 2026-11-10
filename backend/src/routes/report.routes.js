@@ -11,11 +11,5 @@ export function reportRoutes() {
     validate(schema.attendanceReportSchema, "query"),
     controller.attendanceReport,
   );
-  router.get(
-    "/reports/requests",
-    roles("HEAD"),
-    validate(schema.requestReportSchema, "query"),
-    controller.requestReport,
-  );
   return router;
 }

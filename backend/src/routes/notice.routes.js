@@ -19,24 +19,11 @@ export function noticeRoutes() {
     validate(schemas.createNoticeSchema),
     controller.createNotice,
   );
-  router.patch(
-    "/notices/:id",
-    roles("STAFF"),
-    validate(schemas.updateNoticeSchema),
-    controller.updateNotice,
-  );
   router.post(
     "/notices/:id/publish",
     roles("STAFF"),
     validate(schemas.noticeActionSchema),
     controller.publishNotice,
   );
-  router.post(
-    "/notices/:id/archive",
-    roles("STAFF"),
-    validate(schemas.noticeActionSchema),
-    controller.archiveNotice,
-  );
-  router.post("/notices/:id/read", roles("STUDENT"), controller.markRead);
   return router;
 }

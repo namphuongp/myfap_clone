@@ -1,6 +1,5 @@
 import {
   noticeRepository,
-  noticeReadRepository,
   majorRepository,
 } from "../repositories/student-affairs.repositories.js";
 import { departmentRepository, userRepository } from "../repositories/index.js";
@@ -66,26 +65,6 @@ export async function createNotice(actor, data) {
     return clean(row);
   });
 }
-export async function updateNotice(actor, id, data) {
-  return transaction(async (session) => {
-    const row = await get(noticeRepository, id, session);
-    checkVersion(row, data.version);
-    if (row.status !== "DRAFT") fail(409, "Chỉ sửa thông báo nháp");
-    const before = clean(row);
-    Object.assign(row, await audienceFields(data, session));
-    await saveDocument(row, { session });
-    await audit(
-      session,
-      actor,
-      "UPDATE_NOTICE",
-      "Notice",
-      row._id,
-      before,
-      row,
-    );
-    return clean(row);
-  });
-}
 export async function publishNotice(actor, id, data) {
   return transaction(async (session) => {
     const row = await get(noticeRepository, id, session);
@@ -109,26 +88,6 @@ export async function publishNotice(actor, id, data) {
     return clean(row);
   });
 }
-export async function archiveNotice(actor, id, data) {
-  return transaction(async (session) => {
-    const row = await get(noticeRepository, id, session);
-    checkVersion(row, data.version);
-    if (row.status === "ARCHIVED") fail(409, "Thông báo đã lưu trữ");
-    const before = clean(row);
-    row.status = "ARCHIVED";
-    await saveDocument(row, { session });
-    await audit(
-      session,
-      actor,
-      "ARCHIVE_NOTICE",
-      "Notice",
-      row._id,
-      before,
-      row,
-    );
-    return clean(row);
-  });
-}
 export async function listNotices(actor, q) {
   if (actor.role === "STUDENT" && q.status && q.status !== "PUBLISHED")
     fail(403, "Chỉ được xem thông báo đã phát hành");
@@ -143,21 +102,7 @@ export async function listNotices(actor, q) {
     skip: (q.page - 1) * 20,
     limit: 20,
   });
-  const reads =
-    actor.role === "STUDENT"
-      ? await noticeReadRepository.distinct("notice_id", {
-          user_id: actor._id,
-          notice_id: { $in: rows.map((r) => r._id) },
-        })
-      : [];
-  const readIds = new Set(reads.map(String));
-  return {
-    page: q.page,
-    items: rows.map((r) => ({
-      ...clean(r),
-      is_read: readIds.has(String(r._id)),
-    })),
-  };
+  return { page: q.page, items: clean(rows) };
 }
 export async function getNotice(actor, id) {
   const row =
@@ -169,25 +114,4 @@ export async function getNotice(actor, id) {
         });
   if (!row) fail(404, "Không tìm thấy thông báo");
   return clean(row);
-}
-export async function markRead(actor, id) {
-  // Khóa cùng việc lưu trữ thông báo để không ghi nhận đọc sau khi bản tin đã bị ẩn.
-  return transaction(async (session) => {
-    const filter = await visibleFilter(actor);
-    const row = await noticeRepository.findOne(
-      { _id: id, ...filter },
-      { session },
-    );
-    if (!row) fail(404, "Không tìm thấy thông báo");
-    const existing = await noticeReadRepository.findOne(
-      { notice_id: id, user_id: actor._id },
-      { session },
-    );
-    if (existing) return clean(existing);
-    const read = await noticeReadRepository.create(
-      { notice_id: id, user_id: actor._id, read_at: new Date() },
-      { session },
-    );
-    return clean(read);
-  });
 }

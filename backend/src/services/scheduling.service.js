@@ -15,6 +15,7 @@ import {
 } from "../repositories/index.js";
 export const sessionSnapshot = (s) =>
   clean({
+    lecturer_id: s.lecturer_id ?? null,
     room_id: s.room_id,
     session_date: s.session_date,
     slot_id: s.slot_id,
@@ -61,6 +62,7 @@ export async function ensureSlot(
   start,
   end,
   exclude,
+  lecturerId = null,
 ) {
   const semester = await get(semesterRepository, section.semester_id, session);
   if (end <= start || start < semester.start_at || end > semester.end_at)
@@ -79,7 +81,7 @@ export async function ensureSlot(
       ...filter,
       $or: [
         { room_id: roomId },
-        { lecturer_id: section.lecturer_id },
+        ...(lecturerId ? [{ lecturer_id: lecturerId }] : []),
         { section_id: section._id },
       ],
     },
@@ -145,6 +147,7 @@ export async function reschedule(
     timing.start_at,
     timing.end_at,
     lesson._id,
+    lesson.lecturer_id,
   );
   const before = clean(lesson);
   const oldSnapshot = sessionSnapshot(lesson);

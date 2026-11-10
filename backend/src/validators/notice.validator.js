@@ -11,7 +11,6 @@ const fields = {
   expires_at: date.nullable().optional(),
 };
 export const createNoticeSchema = body(fields);
-export const updateNoticeSchema = body({ version, ...fields });
 export const noticeActionSchema = body({ version });
 export const listNoticesSchema = body({
   page: z.coerce.number().int().min(1).max(10000).default(1),

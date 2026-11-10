@@ -1,14 +1,10 @@
 import {
   sectionRepository,
-  classSessionRepository,
   courseRepository,
   userRepository,
   semesterRepository,
   enrollmentRepository,
-  leaveRepository,
-  changeRepository,
 } from "../repositories/index.js";
-import { majorTransferRepository } from "../repositories/student-affairs.repositories.js";
 import { reportRepository } from "../repositories/report.repository.js";
 import { get } from "../repositories/base.repository.js";
 import { same } from "../utils/identity.js";
@@ -28,10 +24,10 @@ async function sectionsFor(actor, q) {
         fail(400, "Bộ lọc không phải giảng viên");
     }
   const filter = { department_id: actor.department_id };
-  for (const key of ["semester_id", "course_id", "lecturer_id"])
+  for (const key of ["semester_id", "course_id"])
     if (q[key]) filter[key] = q[key];
   if (q.section_id) filter._id = q.section_id;
-  return sectionRepository.find(filter, { sort: { _id: 1 } });
+  return sectionRepository.find(filter);
 }
 const metrics = (row) => {
   const present = row?.present ?? 0,
@@ -57,30 +53,48 @@ const metrics = (row) => {
   };
 };
 export async function attendanceReport(actor, q) {
-  const sections = await sectionsFor(actor, q);
-  const ids = sections.map((s) => s._id);
-  const summaries = await reportRepository.attendanceBySections(ids);
-  const counts = await enrollmentRepository.activeCounts(ids);
-  const summaryMap = new Map(summaries.map((s) => [String(s._id), s])),
-    countMap = new Map(counts.map((s) => [String(s._id), s.count]));
+  const sections = await sectionsFor(actor, q),
+    ids = sections.map((s) => s._id);
+  const counts = await enrollmentRepository.activeCounts(ids),
+    countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+  const rows = await reportRepository.attendanceBySections(ids, {
+    lecturerId: q.lecturer_id,
+    byLecturer: q.group_by === "LECTURER",
+  });
+  if (q.group_by === "LECTURER") {
+    const people = await userRepository.find(
+      { _id: { $in: rows.map((r) => r._id).filter(Boolean) } },
+      { select: "name" },
+    );
+    return {
+      department_id: String(actor.department_id),
+      group_by: q.group_by,
+      items: rows.map((r) => ({
+        id: r._id ? String(r._id) : null,
+        name: people.find((p) => same(p._id, r._id))?.name ?? "Chưa phân công",
+        sections: r.section_ids.length,
+        active_enrollments: r.section_ids.reduce(
+          (n, id) => n + (countMap.get(String(id)) ?? 0),
+          0,
+        ),
+        ...metrics(r),
+      })),
+    };
+  }
   const courses = await courseRepository.find({
       _id: { $in: sections.map((s) => s.course_id) },
     }),
-    lecturers = await userRepository.find({
-      _id: { $in: sections.map((s) => s.lecturer_id) },
-    });
-  const courseMap = new Map(courses.map((c) => [String(c._id), c])),
-    lecturerMap = new Map(lecturers.map((u) => [String(u._id), u]));
-  const details = sections.map((s) => ({
-    section_id: String(s._id),
-    section_code: s.code,
-    course_id: String(s.course_id),
-    course: courseMap.get(String(s.course_id))?.name,
-    lecturer_id: String(s.lecturer_id),
-    lecturer: lecturerMap.get(String(s.lecturer_id))?.name,
-    active_enrollments: countMap.get(String(s._id)) ?? 0,
-    ...metrics(summaryMap.get(String(s._id))),
-  }));
+    summaryMap = new Map(rows.map((r) => [String(r._id), r]));
+  const details = sections
+    .filter((s) => !q.lecturer_id || summaryMap.has(String(s._id)))
+    .map((s) => ({
+      section_id: String(s._id),
+      section_code: s.code,
+      course_id: String(s.course_id),
+      course: courses.find((c) => same(c._id, s.course_id))?.name,
+      active_enrollments: countMap.get(String(s._id)) ?? 0,
+      ...metrics(summaryMap.get(String(s._id))),
+    }));
   if (q.group_by === "SECTION")
     return {
       department_id: String(actor.department_id),
@@ -89,41 +103,32 @@ export async function attendanceReport(actor, q) {
     };
   const grouped = new Map();
   for (const row of details) {
-    const key = q.group_by === "COURSE" ? row.course_id : row.lecturer_id;
-    let group = grouped.get(key);
-    if (!group) {
-      group = {
-        id: key,
-        name: q.group_by === "COURSE" ? row.course : row.lecturer,
-        sections: 0,
-        active_enrollments: 0,
-        sessions: 0,
-        cancelled_sessions: 0,
-        completed_sessions: 0,
-        recorded_sessions: 0,
-        present: 0,
-        late: 0,
-        absent: 0,
-        excused: 0,
-      };
-      grouped.set(key, group);
-    }
-    group.sections++;
-    for (const field of [
+    const g = grouped.get(row.course_id) ?? {
+      id: row.course_id,
+      name: row.course,
+      sections: 0,
+      active_enrollments: 0,
+      sessions: 0,
+      cancelled_sessions: 0,
+      completed_sessions: 0,
+      recorded_sessions: 0,
+      present: 0,
+      late: 0,
+      absent: 0,
+      excused: 0,
+    };
+    g.sections++;
+    for (const key of [
       "active_enrollments",
       "sessions",
       "cancelled_sessions",
       "completed_sessions",
       "recorded_sessions",
     ])
-      group[field] += row[field];
-    for (const [key, status] of [
-      ["present", "PRESENT"],
-      ["late", "LATE"],
-      ["absent", "ABSENT"],
-      ["excused", "EXCUSED"],
-    ])
-      group[key] += row.attendance[status];
+      g[key] += row[key];
+    for (const key of ["present", "late", "absent", "excused"])
+      g[key] += row.attendance[key.toUpperCase()];
+    grouped.set(row.course_id, g);
   }
   return {
     department_id: String(actor.department_id),
@@ -138,51 +143,26 @@ export async function attendanceReport(actor, q) {
   };
 }
 export async function departmentSummary(actor, q) {
-  const sections = await sectionsFor(actor, q);
-  const rows = await reportRepository.attendanceBySections(
-    sections.map((s) => s._id),
-  );
-  const total = {
-    sessions: 0,
-    cancelled_sessions: 0,
-    completed_sessions: 0,
-    recorded_sessions: 0,
-    present: 0,
-    late: 0,
-    absent: 0,
-    excused: 0,
-  };
+  const sections = await sectionsFor(actor, q),
+    rows = await reportRepository.attendanceBySections(
+      sections.map((s) => s._id),
+    );
+  const sum = {};
   for (const row of rows)
-    for (const key of Object.keys(total)) total[key] += row[key] ?? 0;
+    for (const key of [
+      "sessions",
+      "cancelled_sessions",
+      "completed_sessions",
+      "recorded_sessions",
+      "present",
+      "late",
+      "absent",
+      "excused",
+    ])
+      sum[key] = (sum[key] ?? 0) + row[key];
   return {
     department_id: String(actor.department_id),
     sections: sections.length,
-    ...metrics(total),
-  };
-}
-export async function requestReport(actor, q) {
-  const sections = await sectionsFor(actor, q);
-  const ids = await classSessionRepository.distinct("_id", {
-    section_id: { $in: sections.map((s) => s._id) },
-  });
-  const counts = async (repo, filter) =>
-    repo
-      .aggregate([
-        { $match: filter },
-        { $group: { _id: "$status", count: { $sum: 1 } } },
-      ])
-      .then((rows) => rows.map(({ _id, count }) => ({ status: _id, count })));
-  const filter = { from_department_id: actor.department_id };
-  if (q.semester_id)
-    filter.effective_semester_id = (
-      await get(semesterRepository, q.semester_id)
-    )._id;
-  return {
-    department_id: String(actor.department_id),
-    leave_requests: await counts(leaveRepository, { session_id: { $in: ids } }),
-    change_requests: await counts(changeRepository, {
-      session_id: { $in: ids },
-    }),
-    major_transfers: await counts(majorTransferRepository, filter),
+    ...metrics(sum),
   };
 }

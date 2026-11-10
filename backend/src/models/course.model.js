@@ -4,6 +4,7 @@ export const Course = model(
   {
     code: { ...str(80), unique: true },
     name: str(),
+    active: { type: Boolean, default: true },
     department_id: ref("Department"),
   },
   [[{ department_id: 1, name: 1 }, { unique: true }]],

@@ -18,7 +18,7 @@ const sessionSchema = new Schema(
   {
     legacy_id: { type: Number, index: true, sparse: true },
     section_id: ref("Section"),
-    lecturer_id: ref("User"),
+    lecturer_id: { ...ref("User"), required: false, default: null },
     room_id: ref("Room"),
     session_date: { type: String, required: true },
     slot_id: { type: Number, enum: [1, 2, 3, 4, null], default: null },
@@ -60,10 +60,16 @@ for (const key of ["section_id", "room_id", "lecturer_id"])
   sessionSchema.index(
     { [key]: 1, session_date: 1, slot_id: 1 },
     {
+      ...(key === "lecturer_id"
+        ? { name: "session_lecturer_slot_assigned" }
+        : {}),
       unique: true,
       partialFilterExpression: {
         status: { $in: ["SCHEDULED", "COMPLETED"] },
         slot_id: { $type: "number" },
+        ...(key === "lecturer_id"
+          ? { lecturer_id: { $type: "objectId" } }
+          : {}),
       },
     },
   );

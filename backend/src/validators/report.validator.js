@@ -8,4 +8,3 @@ export const attendanceReportSchema = body({
   section_id: id.optional(),
   group_by: z.enum(["SECTION", "COURSE", "LECTURER"]).default("SECTION"),
 });
-export const requestReportSchema = body({ semester_id: id.optional() });

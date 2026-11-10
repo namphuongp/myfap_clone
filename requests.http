@@ -1,209 +1,198 @@
 @base = http://localhost:3000/api
-@token = paste_accessToken_here
-@sectionId = 507f1f77bcf86cd799439011
-@sessionId = 507f1f77bcf86cd799439012
-@requestId = 507f1f77bcf86cd799439013
-@studentId = 507f1f77bcf86cd799439014
-@roomId = 507f1f77bcf86cd799439015
+@token = paste_token_for_correct_role
+@courseId = 507f1f77bcf86cd799439011
+@majorId = 507f1f77bcf86cd799439012
+@semesterId = 507f1f77bcf86cd799439013
+@sectionId = 507f1f77bcf86cd799439014
+@sessionId = 507f1f77bcf86cd799439015
+@lecturerId = 507f1f77bcf86cd799439016
+@studentId = 507f1f77bcf86cd799439017
+@roomId = 507f1f77bcf86cd799439018
+@requestId = 507f1f77bcf86cd799439019
 
-### Thay ID ví dụ bằng id thực nhận từ API
+### Thay ID/version ví dụ bằng dữ liệu thật; đổi email login cho từng role
 GET {{base}}/health
 
-### Đổi email để đăng nhập theo từng role; copy accessToken vào biến token
+### Login
 POST {{base}}/auth/login
 Content-Type: application/json
 
-{"email":"student@myfap.local","password":"Demo@12345678"}
+{"email":"lecturer@myfap.local","password":"Demo@12345678"}
 
-### Tài khoản
-GET {{base}}/auth/me
+### Profile mọi role — chỉ đọc
+GET {{base}}/profile
 Authorization: Bearer {{token}}
 
-### Danh mục môn
+### Danh mục
 GET {{base}}/courses
 Authorization: Bearer {{token}}
 
-### Danh mục học kỳ
+### Kỳ
 GET {{base}}/semesters
 Authorization: Bearer {{token}}
 
-### Danh mục phòng
+### Phòng
 GET {{base}}/rooms
 Authorization: Bearer {{token}}
 
-### 4 slot
+### Slot
 GET {{base}}/time-slots
 Authorization: Bearer {{token}}
 
-### Lớp mở và số chỗ còn
-GET {{base}}/sections/available
+### HEAD — ngành trong bộ môn để chọn chương trình môn
+GET {{base}}/majors
 Authorization: Bearer {{token}}
 
-### Xem lịch lớp trước khi đăng ký
+### HEAD — tạo môn; không nhận department_id
+POST {{base}}/courses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"code":"PRM394","name":"Lập trình di động","major_ids":["{{majorId}}"]}
+
+### HEAD — sửa/ngừng môn, không xóa dữ liệu cũ
+PATCH {{base}}/courses/{{courseId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"active":false}
+
+### HEAD — giảng viên cùng bộ môn
+GET {{base}}/lecturers
+Authorization: Bearer {{token}}
+
+### HEAD/STUDENT/LECTURER — danh sách lớp đúng phạm vi
+GET {{base}}/sections?semester_id={{semesterId}}
+Authorization: Bearer {{token}}
+
+### HEAD — lớp chưa có giảng viên, CLOSED; chuẩn bị buổi bằng setup:session trước khi mở
+POST {{base}}/sections
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"code":"PRM393-A","course_id":"{{courseId}}","semester_id":"{{semesterId}}"}
+
+### Lịch lớp — giảng viên chỉ nhận buổi mình phụ trách
 GET {{base}}/sections/{{sectionId}}/sessions
 Authorization: Bearer {{token}}
 
-### Sinh viên tự đăng ký sau khi lớp đã có lịch
+### HEAD — phân công theo buổi, null để hủy, version lấy từ lịch lớp
+PUT {{base}}/sections/{{sectionId}}/assignments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"reason":"Phân công tuần tới","assignments":[{"session_id":"{{sessionId}}","lecturer_id":"{{lecturerId}}","version":0}]}
+
+### HEAD — mở đăng ký sau khi có lịch
+PATCH {{base}}/sections/{{sectionId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"status":"OPEN"}
+
+### STUDENT — lớp còn chỗ thuộc ngành
+GET {{base}}/sections/available
+Authorization: Bearer {{token}}
+
+### STUDENT — đăng ký bản thân
 POST {{base}}/sections/{{sectionId}}/enrollments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {}
 
-### Đăng ký của bản thân, gồm version để rút
+### STUDENT — đăng ký/lịch sử bản thân
 GET {{base}}/me/enrollments
 Authorization: Bearer {{token}}
 
-### Rút đăng ký (đổi version và studentId đúng tài khoản)
+### STUDENT — rút giữ lịch sử
 POST {{base}}/sections/{{sectionId}}/enrollments/{{studentId}}/withdraw
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {"version":0}
 
-### Xem lịch cá nhân (thay khoảng ngày phù hợp, tối đa 93 ngày)
-GET {{base}}/schedule?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z
+### STUDENT/LECTURER — lịch cá nhân, tối đa 93 ngày
+GET {{base}}/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z
 Authorization: Bearer {{token}}
 
-### Sinh viên gửi nghỉ đúng buổi/ngày/slot hiện tại
-POST {{base}}/leave-requests
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"session_id":"{{sessionId}}","reason":"Khám bệnh"}
-
-### Danh sách đơn nghỉ
-GET {{base}}/leave-requests?status=PENDING&page=1
-Authorization: Bearer {{token}}
-
-### Giảng viên duyệt nghỉ
-PATCH {{base}}/leave-requests/{{requestId}}/decision
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0,"decision":"APPROVED","note":"Đồng ý"}
-
-### Điểm danh và ghi chú nghỉ có phép
+### LECTURER — roster đúng buổi
 GET {{base}}/sessions/{{sessionId}}/attendance
 Authorization: Bearer {{token}}
 
-### Giảng viên gửi đủ danh sách của buổi, lấy version từ GET attendance
+### LECTURER — gửi đủ lớp sau khi buổi bắt đầu
 PUT {{base}}/sessions/{{sessionId}}/attendance
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {"version":0,"rows":[{"student_id":"{{studentId}}","status":"ABSENT"}]}
 
-### Giảng viên đề nghị đổi phòng hoặc ngày/slot
+### STUDENT — xin nghỉ
+POST {{base}}/leave-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"session_id":"{{sessionId}}","reason":"Khám bệnh"}
+
+### Đơn nghỉ đúng phạm vi
+GET {{base}}/leave-requests?status=PENDING&page=1
+Authorization: Bearer {{token}}
+
+### LECTURER — duyệt nghỉ đúng buổi
+PATCH {{base}}/leave-requests/{{requestId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version":0,"decision":"APPROVED","note":"Đồng ý"}
+
+### LECTURER — đề nghị đổi lịch/phòng
 POST {{base}}/change-requests
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"session_id":"{{sessionId}}","reason":"Đổi lịch","proposed_room_id":"{{roomId}}","proposed_date":"2026-11-20","proposed_slot_id":2}
+{"session_id":"{{sessionId}}","reason":"Phòng bảo trì","proposed_room_id":"{{roomId}}","proposed_date":"2026-11-20","proposed_slot_id":2}
 
-### Cán bộ duyệt đổi lịch (đổi ngày/slot làm đơn nghỉ cũ INVALIDATED)
+### LECTURER lịch sử mình gửi / STAFF danh sách duyệt
+GET {{base}}/change-requests?page=1
+Authorization: Bearer {{token}}
+
+### STAFF — duyệt đổi lịch/phòng
 PATCH {{base}}/change-requests/{{requestId}}/decision
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"version":0,"decision":"APPROVED","note":"Đã kiểm tra lịch"}
+{"version":0,"decision":"APPROVED","note":"Đã kiểm tra"}
 
-### Lịch sử lịch của buổi
-GET {{base}}/sessions/{{sessionId}}/history
-Authorization: Bearer {{token}}
-
-### Lịch sử điểm danh before/after
-GET {{base}}/sessions/{{sessionId}}/attendance-history
-Authorization: Bearer {{token}}
-
-### Trưởng bộ môn xem thống kê
-GET {{base}}/department/summary
-Authorization: Bearer {{token}}
-
-### Đăng xuất
-POST {{base}}/auth/logout
-Authorization: Bearer {{token}}
-
-### Profile cho mọi role
-GET {{base}}/profile
-Authorization: Bearer {{token}}
-
-### Cập nhật liên hệ; lấy version mới nhất từ profile
-PATCH {{base}}/profile
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0,"phone":"0901234567","address":"Hà Nội","date_of_birth":"2004-01-15"}
-
-### Đổi mật khẩu sẽ thu hồi toàn bộ phiên; dùng trên tài khoản thử nghiệm riêng
-PATCH {{base}}/profile/password
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"current_password":"Demo@12345678","new_password":"ReplaceWithOwnStrongPassword123!"}
-
-### Ngành học (STUDENT/STAFF); thay ID ví dụ bằng dữ liệu API
-GET {{base}}/majors
-Authorization: Bearer {{token}}
-
-### STUDENT gửi chuyển ngành, server tự chọn kỳ tiếp theo
-POST {{base}}/major-transfer-requests
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"to_major_id":"507f1f77bcf86cd799439020","reason":"Định hướng chuyên ngành mới"}
-
-### STUDENT xem đơn mình; STAFF xem để duyệt
-GET {{base}}/major-transfer-requests?status=PENDING&page=1
-Authorization: Bearer {{token}}
-
-### STAFF duyệt trước kỳ hiệu lực; không đổi ngành ngay
-PATCH {{base}}/major-transfer-requests/{{requestId}}/decision
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0,"decision":"APPROVED","note":"Đủ điều kiện"}
-
-### STUDENT rút đơn còn PENDING
-POST {{base}}/major-transfer-requests/{{requestId}}/cancel
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0}
-
-### STAFF tạo học kỳ chuẩn
-POST {{base}}/semesters
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"term":"SPRING","year":2027}
-
-### STAFF tạo nháp; copy id trả về để publish
+### STAFF — tạo nháp
 POST {{base}}/notices
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"title":"Thông báo đăng ký môn","content":"Sinh viên kiểm tra thời gian đăng ký trên hệ thống.","audience":"ALL_STUDENTS"}
+{"title":"Đăng ký môn","content":"Sinh viên kiểm tra lịch đăng ký.","audience":"ALL_STUDENTS"}
 
-### STAFF phát hành nháp
+### STAFF — phát hành (requestId là id thông báo)
 POST {{base}}/notices/{{requestId}}/publish
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {"version":0}
 
-### STUDENT chỉ xem bản đã phát hành đúng đối tượng, chưa hết hạn
+### STUDENT đọc bản phù hợp / STAFF xem nháp và bản đã gửi
 GET {{base}}/notices?page=1
 Authorization: Bearer {{token}}
 
-### Đánh dấu đã đọc (lặp lại không đổi thời điểm đầu tiên)
-POST {{base}}/notices/{{requestId}}/read
+### Chi tiết thông báo
+GET {{base}}/notices/{{requestId}}
 Authorization: Bearer {{token}}
 
-### HEAD báo cáo trong bộ môn; tùy chọn semester_id/course_id/lecturer_id/section_id
-GET {{base}}/reports/attendance?group_by=COURSE
+### HEAD — tổng quan bộ môn
+GET {{base}}/department/summary
 Authorization: Bearer {{token}}
 
-### HEAD thống kê đơn theo trạng thái
-GET {{base}}/reports/requests
+### HEAD — người dạy được thống kê theo từng buổi
+GET {{base}}/reports/attendance?group_by=LECTURER
+Authorization: Bearer {{token}}
+
+### Logout
+POST {{base}}/auth/logout
 Authorization: Bearer {{token}}

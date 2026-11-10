@@ -22,7 +22,10 @@
     "test:affairs": "node --env-file=.env --test test/student-affairs.test.js",
     "academics:preview": "node --env-file=.env src/scripts/academic-calendar.js",
     "academics:normalize": "node --env-file=.env src/scripts/academic-calendar.js --apply",
-    "seed:affairs": "node --env-file=.env src/scripts/seed-student-affairs.js"
+    "seed:affairs": "node --env-file=.env src/scripts/seed-student-affairs.js",
+    "scope:preview": "node --env-file=.env src/scripts/migrate-scope.js",
+    "scope:migrate": "node --env-file=.env src/scripts/migrate-scope.js --apply",
+    "setup:session": "node --env-file=.env src/scripts/setup-session.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

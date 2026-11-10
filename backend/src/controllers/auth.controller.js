@@ -8,8 +8,6 @@ export const login = async (req, res) => {
   res.json(result);
 };
 
-import { clean } from "../utils/serialize.js";
-export const me = (req, res) => res.json(clean(req.user));
 export const logout = async (req, res) => {
   await service.logout(req.auth);
   res.status(204).end();

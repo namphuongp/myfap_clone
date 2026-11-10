@@ -188,7 +188,7 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
       .send({ email: "student@legacy.local", password: "Demo@12345678" })
       .expect(200);
     await request(app)
-      .get("/api/auth/me")
+      .get("/api/profile")
       .set("Authorization", `Bearer ${oldToken}`)
       .expect(200);
     assert.equal((await importSnapshot(snapshot)).already_imported, true);

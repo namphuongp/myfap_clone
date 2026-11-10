@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { id, date, body } from "./common.js";
-
+import { body, version, id } from "./common.js";
 const code = z
   .string()
   .trim()
@@ -8,33 +7,18 @@ const code = z
   .max(80)
   .regex(/^[A-Za-z0-9_-]+$/);
 const name = z.string().trim().min(1).max(120);
-export const createUserSchema = body({
-  user_code: code,
+export const createCourseSchema = body({
+  code,
   name,
-  email: z
-    .email()
-    .max(254)
-    .transform((v) => v.toLowerCase()),
-  password: z
-    .string()
-    .min(12)
-    .refine(
-      (v) => Buffer.byteLength(v, "utf8") <= 72,
-      "Mật khẩu tối đa 72 byte",
-    ),
-  role: z.enum(["STUDENT", "LECTURER", "HEAD", "STAFF"]),
-  department_id: id,
-  major_id: id.nullable().optional(),
+  major_ids: z.array(id).max(100).default([]),
 });
-export const catalogSchemas = {
-  departments: body({ code: code.max(60), name }),
-  courses: body({ code, name, department_id: id }),
-  semesters: body({
-    term: z.enum(["SPRING", "SUMMER", "FALL"]),
-    year: z.number().int().min(2000).max(2100),
-  }),
-  rooms: body({
-    name: name.max(60),
-    capacity: z.number().int().min(1).max(500),
-  }),
-};
+export const updateCourseSchema = body({
+  version,
+  code: code.optional(),
+  name: name.optional(),
+  active: z.boolean().optional(),
+  major_ids: z.array(id).max(100).optional(),
+}).refine(
+  (v) => Object.keys(v).some((key) => key !== "version"),
+  "Cần có trường cập nhật",
+);
