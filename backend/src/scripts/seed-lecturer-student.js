@@ -1,4 +1,5 @@
 import { connect, disconnect } from "../config/database.js";
+import { bootstrapAcademicCalendar } from "../services/academic-bootstrap.service.js";
 import {
   userRepository,
   courseRepository,
@@ -13,6 +14,7 @@ import bcrypt from "bcryptjs";
 
 try {
   await connect();
+  await bootstrapAcademicCalendar({ apply: true });
 
   // 1. Lấy thông tin Giảng viên và Sinh viên demo
   const lecturer = await userRepository.findOne({ role: "LECTURER" });
