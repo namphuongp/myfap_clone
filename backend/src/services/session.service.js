@@ -62,6 +62,7 @@ export async function personalSchedule(user, q) {
       course_id: String(section.course_id),
       semester_id: String(section.semester_id),
       course: courses.find((c) => same(c._id, section.course_id))?.name,
+      course_code: courses.find((c) => same(c._id, section.course_id))?.code,
       room_name: rooms.find((r) => same(r._id, s.room_id))?.name,
     };
   });

@@ -54,4 +54,4 @@ flutter run -d chrome --web-hostname=localhost --web-port=5173
 
 Web mặc định gọi `http://localhost:3000/api`. Cổng `5173` khớp với `CORS_ORIGINS` trong `backend/.env.example`. Nếu đổi cổng web, cập nhật `CORS_ORIGINS` trong `backend/.env` rồi khởi động lại API. Khi đang chạy, nhấn `r` trong terminal Flutter để hot reload.
 
-Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; cho sửa liên hệ và đổi mật khẩu, không upload ảnh. HEAD tải tổng quan bộ môn thay vì lịch. Thông báo/chuyển ngành đã có backend API; các màn thao tác học vụ còn cần tích hợp. Xem ../STUDENT_AFFAIRS.md và ../API.md.
+Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; cho sửa liên hệ và đổi mật khẩu, không upload ảnh. HEAD tải tổng quan bộ môn thay vì lịch. Giảng viên đã có trang chủ, lịch dạy, điểm danh, duyệt nghỉ, yêu cầu đổi lịch/phòng và theo dõi trạng thái; xem [Giao diện giảng viên](../LECTURER_UI.md). Thông báo/chuyển ngành của sinh viên và màn STAFF còn cần tích hợp. Xem ../STUDENT_AFFAIRS.md và ../API.md.

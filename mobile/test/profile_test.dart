@@ -89,7 +89,7 @@ void main() {
       expect(api.paths, contains('/profile'));
       await tester.pageBack();
       await tester.pumpAndSettle();
-      if (role == 'STUDENT') {
+      if (role == 'STUDENT' || role == 'LECTURER') {
         expect(find.byTooltip('Hồ sơ cá nhân'), findsOneWidget);
       } else {
         expect(find.text('Hồ sơ của tôi'), findsOneWidget);

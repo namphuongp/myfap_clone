@@ -51,7 +51,7 @@ Cho sửa số điện thoại, địa chỉ, ngày sinh; không tự sửa tên
 
 Luồng: `mobile/lib/core/profile/screens/profile_screen.dart` → `mobile/lib/core/profile/repositories/profile_repository.dart` → `mobile/lib/core/api/api_client.dart` → `profile.routes/controller/service` → repository → Mongoose.
 
-Flutter hiện có đăng nhập, xem lịch, tổng quan HEAD và profile. Các thao tác thông báo/đơn chuyển ngành mới có API để tích hợp tiếp giao diện tương ứng; không tính các API này là đã có đầy đủ màn quản trị Flutter.
+Flutter hiện có đăng nhập, lịch/đăng ký môn cho sinh viên, tổng quan HEAD và profile. Giảng viên có đầy đủ màn lịch dạy, điểm danh, duyệt nghỉ, đổi lịch/phòng; xem [LECTURER_UI.md](LECTURER_UI.md). Các thao tác thông báo/đơn chuyển ngành mới có API để tích hợp tiếp giao diện tương ứng; không tính các API này là đã có đầy đủ màn quản trị Flutter.
 
 ## Dữ liệu mẫu và kiểm thử
 

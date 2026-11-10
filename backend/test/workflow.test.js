@@ -288,6 +288,25 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
         const leave = await as("student", "post", "/leave-requests")
           .send({ session_id: String(future._id), reason: "Khám bệnh" })
           .expect(201);
+        const visibleLeaves = await as(
+          "lecturer",
+          "get",
+          "/leave-requests?status=PENDING&page=1",
+        ).expect(200);
+        const listedLeave = visibleLeaves.body.items.find(
+          (r) => r.id === leave.body.id,
+        );
+        assert.deepEqual(Object.keys(listedLeave.requester).sort(), [
+          "name",
+          "user_code",
+        ]);
+        assert.equal(
+          listedLeave.lesson.section_code,
+          (await Section.findById(future.section_id)).code,
+        );
+        assert.ok(listedLeave.lesson.course);
+        assert.ok(listedLeave.lesson.room_name);
+        assert.ok(!JSON.stringify(listedLeave).includes("password_hash"));
         await as("staff", "patch", `/leave-requests/${leave.body.id}/decision`)
           .send({ version: 0, decision: "APPROVED", note: "OK" })
           .expect(403);
@@ -314,6 +333,16 @@ test("MongoDB replica set: đăng ký 30 chỗ, slot, duyệt đơn, lịch sử
             proposed_slot_id: 1,
           })
           .expect(201);
+        const ownChanges = await as(
+          "lecturer",
+          "get",
+          "/change-requests?status=PENDING&page=1",
+        ).expect(200);
+        const listedChange = ownChanges.body.items.find(
+          (r) => r.id === change.body.id,
+        );
+        assert.equal(listedChange.original_room_name, rooms[0].name);
+        assert.equal(listedChange.proposed_room_name, rooms[1].name);
         await as(
           "staff",
           "patch",

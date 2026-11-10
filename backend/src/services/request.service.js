@@ -1,3 +1,4 @@
+import { displayRequests } from "./request-display.service.js";
 import { fail } from "../utils/api-error.js";
 import { clean } from "../utils/serialize.js";
 import { checkVersion } from "../utils/version.js";
@@ -117,7 +118,7 @@ export async function listRequests(user, q, kind) {
   }
   return {
     page: q.page,
-    items: clean(
+    items: await displayRequests(
       await repository.find(filter, {
         sort: { created_at: -1, _id: -1 },
         skip: (q.page - 1) * 50,

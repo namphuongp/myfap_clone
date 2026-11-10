@@ -130,6 +130,8 @@ STAFF đổi lịch trực tiếp:
 | GET | /change-requests?status=PENDING&page=1 | LECTURER đơn của mình; STAFF |
 | PATCH | /change-requests/:id/decision | STAFF |
 
+GET danh sách đơn trả `{page,items}` (50 dòng/trang), bổ sung `requester:{name,user_code}`, `lesson:{section_code,course,course_code,session_date,slot_id,room_name}`, `original_room_name`, `proposed_room_name`. Các trường này chỉ thêm sau bộ lọc phân quyền; không kèm email, liên hệ hoặc password hash của sinh viên. GET /schedule bổ sung `course_code`.
+
 Gửi nghỉ: `{"session_id":"507f1f77bcf86cd799439019","reason":"Khám bệnh"}`. Server chụp ngày/slot hiện tại. Duyệt/từ chối: `{"version":0,"decision":"APPROVED","note":"Đồng ý"}` hoặc REJECTED.
 
 Gửi đổi lịch:
