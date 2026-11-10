@@ -96,7 +96,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           onEnrollmentChanged: () => setState(() => _scheduleRevision++),
         ),
         RequestsScreen(api: widget.api),
-        const AnnouncementsScreen(),
+        AnnouncementsScreen(api: widget.api),
       ],
     ),
     bottomNavigationBar: NavigationBar(

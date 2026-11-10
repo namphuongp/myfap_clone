@@ -23,7 +23,7 @@ lib/
     screens/  widgets/  utils/
 ```
 
-Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình theo role. Sinh viên có lịch theo tuần, đăng ký/rút lớp và gửi/theo dõi đơn xin nghỉ. Chuyển ngành chưa có API trong backend hiện tại; mục Thông báo vẫn là màn hình khung. Giảng viên có lịch dạy, điểm danh và xử lý đơn; HEAD có màn quản lý môn/lớp và báo cáo; STAFF có màn quản trị học vụ. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
+Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình theo role. Sinh viên có lịch theo tuần, đăng ký/rút lớp, gửi/theo dõi đơn xin nghỉ và xem/tìm kiếm thông báo học vụ theo phạm vi được nhận. Chuyển ngành chưa có API trong backend hiện tại. Giảng viên có lịch dạy, điểm danh và xử lý đơn; HEAD có màn quản lý môn/lớp và báo cáo; STAFF có màn quản trị học vụ. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
 
 Backend hiện dùng trạng thái lớp `OPEN/CLOSED` để cho phép đăng ký, chưa có mốc thời gian mở và đóng đăng ký. Nếu cần đợt đăng ký theo giờ, backend phải lưu mốc thời gian và kiểm tra khi nhận yêu cầu đăng ký; chỉ đếm ngược ở Flutter không đủ để chặn đăng ký ngoài thời gian.
 
