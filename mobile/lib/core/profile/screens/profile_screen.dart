@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -263,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: primaryColor.withOpacity(0.06),
+                                      color: primaryColor.withValues(alpha: 0.06),
                                       blurRadius: 20,
                                       offset: const Offset(0, 6),
                                     ),
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
+                                      color: Colors.black.withValues(alpha: 0.03),
                                       blurRadius: 14,
                                       offset: const Offset(0, 4),
                                     ),
@@ -407,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         'Thông tin hồ sơ do nhà trường quản lý.',
                                         style: TextStyle(
                                           color: const Color(0xFF8C8CA1)
-                                              .withOpacity(0.9),
+                                              .withValues(alpha: 0.9),
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w500,
                                         ),
