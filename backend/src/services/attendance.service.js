@@ -6,6 +6,7 @@ import { get, saveDocument } from "../repositories/base.repository.js";
 import { transaction } from "../repositories/transaction.js";
 import { audit } from "./audit.service.js";
 import { rosterIds, authorizeLesson } from "./access.service.js";
+import { localDate } from "../utils/slots.js";
 import {
   userRepository,
   classSessionRepository,
@@ -50,8 +51,11 @@ export async function saveAttendance(user, sessionId, data) {
     const lesson = await get(classSessionRepository, sessionId, session);
     await authorizeLesson(lesson, user, session);
     checkVersion(lesson, data.version);
-    if (lesson.status === "CANCELLED" || lesson.start_at > new Date())
-      fail(409, "Buổi chưa bắt đầu hoặc đã hủy");
+    const now = new Date();
+    if (lesson.status === "CANCELLED") fail(409, "Buổi học đã bị hủy");
+    if (lesson.session_date !== localDate(now))
+      fail(409, "Chỉ được điểm danh trong ngày diễn ra buổi học");
+    if (lesson.start_at > now) fail(409, "Buổi học chưa bắt đầu");
     const students = await rosterIds(lesson, session);
     const ids = new Set(data.rows.map((r) => r.student_id));
     if (
@@ -77,7 +81,6 @@ export async function saveAttendance(user, sessionId, data) {
       version: lesson.version,
       rows: clean(lesson.attendance),
     };
-    const now = new Date();
     lesson.attendance = data.rows.map((r) => ({
       ...r,
       updated_by: user._id,

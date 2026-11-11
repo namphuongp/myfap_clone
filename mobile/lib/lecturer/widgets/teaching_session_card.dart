@@ -87,7 +87,9 @@ class TeachingSessionCard extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onAttendance,
                 icon: const Icon(Icons.fact_check_outlined, size: 18),
-                label: Text(session.canRecord ? 'Điểm danh' : 'Xem danh sách'),
+                label: Text(
+                  session.canRecordToday ? 'Điểm danh' : 'Xem danh sách',
+                ),
               ),
               if (session.canChange)
                 OutlinedButton.icon(
