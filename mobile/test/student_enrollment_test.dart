@@ -20,6 +20,7 @@ class FakeEnrollmentApi extends ApiClient {
     'semester_id': '507f1f77bcf86cd799439013',
     'semester_code': 'FALL-2026',
     'remaining': 29,
+    'status': 'OPEN',
   };
 
   @override

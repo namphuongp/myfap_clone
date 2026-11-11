@@ -59,6 +59,37 @@ Future<void> openHead(WidgetTester tester, HeadApi api) async {
 }
 
 void main() {
+  testWidgets('Đơn từ mở riêng từ trang chủ và lọc theo học kỳ', (
+    tester,
+  ) async {
+    final api = HeadApi();
+    addTearDown(api.dispose);
+    await openHead(tester, api);
+    expect(find.text('Quản lý giảng viên'), findsOneWidget);
+    await tester.tap(find.text('Báo cáo bộ môn'));
+    await tester.pumpAndSettle();
+    expect(
+      api.reads.any((path) => path.startsWith('/reports/requests')),
+      isFalse,
+    );
+    await tester.tap(find.text('Trang chủ'));
+    await tester.pumpAndSettle();
+    api.reads.clear();
+    await tester.tap(find.text('Đơn từ trong bộ môn'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đơn xin nghỉ'), findsOneWidget);
+    expect(find.text('Đơn đổi lịch / phòng'), findsOneWidget);
+    expect(api.reads, contains('/reports/requests'));
+    expect(
+      api.reads.any((path) => path.startsWith('/reports/attendance')),
+      isFalse,
+    );
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FALL-2026').last);
+    await tester.pumpAndSettle();
+    expect(api.reads, contains('/reports/requests?semester_id=term1'));
+  });
   testWidgets(
     'HEAD có báo cáo và giảng viên, không khôi phục ba chức năng đã xóa',
     (tester) async {

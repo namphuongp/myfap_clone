@@ -7,6 +7,7 @@ import '../../core/profile/screens/profile_screen.dart';
 import '../repositories/head_repository.dart';
 import '../widgets/head_ui.dart';
 import 'head_report_screen.dart';
+import 'head_request_report_screen.dart';
 import 'head_lecturers_screen.dart';
 
 class HeadHomeScreen extends StatefulWidget {
@@ -72,8 +73,14 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
   );
   void _lecturers() => _open(
     HeadScaffold(
-      appBar: AppBar(title: const Text('Giảng viên bộ môn')),
+      appBar: AppBar(title: const Text('Quản lý giảng viên')),
       body: HeadLecturersScreen(repository: _repo),
+    ),
+  );
+  void _requests() => _open(
+    HeadScaffold(
+      appBar: AppBar(title: const Text('Đơn từ trong bộ môn')),
+      body: HeadRequestReportScreen(repository: _repo),
     ),
   );
   Future<void> _logout() async {
@@ -173,7 +180,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
                 SizedBox(
                   width: width,
                   child: _DashboardTile(
-                    label: 'Giảng viên',
+                    label: 'Quản lý giảng viên',
                     icon: Icons.contact_page_rounded,
                     color: const Color(0xFF1768B6),
                     background: const Color(0xFFE7F1FF),
@@ -188,6 +195,16 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
                     color: const Color(0xFFF39A00),
                     background: const Color(0xFFFFF4D2),
                     onTap: _report,
+                  ),
+                ),
+                SizedBox(
+                  width: width,
+                  child: _DashboardTile(
+                    label: 'Đơn từ trong bộ môn',
+                    icon: Icons.description_outlined,
+                    color: const Color(0xFF169B78),
+                    background: const Color(0xFFE2F6EF),
+                    onTap: _requests,
                   ),
                 ),
               ],

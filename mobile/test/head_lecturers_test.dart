@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfap/core/api/api_client.dart';
+import 'package:myfap/lecturer/widgets/lecturer_ui.dart';
 
 import 'head_test.dart' as base;
 
@@ -53,7 +54,7 @@ class LecturerApi extends base.HeadApi {
 Finder input(String name) => find.widgetWithText(TextFormField, name);
 Future<void> list(WidgetTester tester, LecturerApi api) async {
   await base.openHead(tester, api);
-  await tester.tap(find.text('Giảng viên').last);
+  await tester.tap(find.text('Quản lý giảng viên').last);
   await tester.pumpAndSettle();
 }
 
@@ -171,7 +172,7 @@ void main() {
       await tester.tap(find.text('Thử lại'));
       await tester.pumpAndSettle();
       final context = tester.element(find.text('Nguyễn An • GV001'));
-      expect(Theme.of(context).colorScheme.primary, const Color(0xFF1A304B));
+      expect(Theme.of(context).colorScheme.primary, lecturerNavy);
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Thêm giảng viên'));
       await tester.pumpAndSettle();

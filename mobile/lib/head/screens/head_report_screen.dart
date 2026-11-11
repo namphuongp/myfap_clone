@@ -11,7 +11,7 @@ class HeadReportScreen extends StatefulWidget {
 }
 
 class _HeadReportScreenState extends State<HeadReportScreen> {
-  Json? _options, _summary, _requests;
+  Json? _options, _summary;
   List<Json> _items = [];
   String? _semester, _course, _lecturer, _error;
   String _group = 'SECTION';
@@ -38,14 +38,12 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
           'lecturer_id': ?_lecturer,
           'group_by': _group,
         }),
-        widget.repository.report('/reports/requests', semester),
       ]);
       if (mounted) {
         setState(() {
           _options = results[0];
           _summary = results[1];
           _items = widget.repository.rows(results[2]['items']);
-          _requests = results[3];
         });
       }
     } catch (e) {
@@ -198,41 +196,6 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                 const Text(
                   'Tỷ lệ chỉ tính trên các lượt điểm danh đã ghi nhận; không coi dữ liệu chưa ghi là vắng.',
                 ),
-                if (_requests != null) ...[
-                  const SizedBox(height: 20),
-                  Text(
-                    'Đơn từ trong bộ môn theo học kỳ',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  for (final entry in const {
-                    'leave_requests': 'Đơn xin nghỉ',
-                    'change_requests': 'Đơn đổi lịch / phòng',
-                  }.entries)
-                    Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry.value,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            if ((_requests![entry.key] as List).isEmpty)
-                              const Text('Chưa có đơn'),
-                            for (final r in widget.repository.rows(
-                              _requests![entry.key],
-                            ))
-                              Text(
-                                '${statusLabels[r['status']] ?? r['status']}: ${r['count']}',
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
               ],
               if (_error != null) LoadMessage(message: _error!, retry: _load),
             ],
