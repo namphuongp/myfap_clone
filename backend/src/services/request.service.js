@@ -116,8 +116,11 @@ export async function listRequests(user, q, kind) {
       }),
     };
   }
+  const total = await repository.countDocuments(filter);
   return {
     page: q.page,
+    total,
+    has_more: q.page * 50 < total,
     items: await displayRequests(
       await repository.find(filter, {
         sort: { created_at: -1, _id: -1 },

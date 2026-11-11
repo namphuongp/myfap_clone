@@ -27,9 +27,6 @@ export async function sectionFilter(user) {
     };
   return {};
 }
-export async function scopedSectionIds(user) {
-  return sectionRepository.distinct("_id", await sectionFilter(user));
-}
 export async function authorizeSection(section, user, session) {
   if (user.role === "HEAD" && !same(section.department_id, user.department_id))
     fail(403, "Ngoài phạm vi bộ môn");

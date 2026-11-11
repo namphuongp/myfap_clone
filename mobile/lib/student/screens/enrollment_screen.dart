@@ -154,7 +154,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
     final alreadyStudies = _alreadyStudies(section);
     final canRegister =
         !alreadyStudies &&
-        (section.registrationOpen || section.registrationOpenAt == null) &&
+        section.registrationOpen &&
         (section.remaining ?? 0) > 0;
     final sessions = _repository.sessions(section.id);
     showModalBottomSheet<void>(
@@ -394,6 +394,8 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
                               : !section.registrationOpen &&
                                     section.registrationOpenAt != null
                               ? 'Mở ngày ${_formatDate(section.registrationOpenAt!)}'
+                              : !section.registrationOpen
+                              ? 'Lớp đã đóng đăng ký'
                               : 'Lớp đã đầy',
                           style: const TextStyle(
                             fontSize: 15,

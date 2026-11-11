@@ -80,3 +80,7 @@ npm run format:check
 Các suite MongoDB chỉ dùng DB riêng trống có hậu tố _test, không chạy trên myfap. Test không xóa DB sau khi chạy. Có kiểm tra phân công đồng thời/rollback, null index, lịch sử người dạy/sinh viên, 30 chỗ, đơn, thông báo, scope và bảo mật. Trong mobile: flutter analyze, flutter test. Fixture/widget test không thay thế kiểm thử thiết bị thật.
 
 Tài liệu: [API](API.md), [Request mẫu](requests.http), [Database](database.md), [Kiến trúc backend](backend/README.md), [Giao diện giảng viên](LECTURER_UI.md), [Phạm vi học vụ](STUDENT_AFFAIRS.md).
+
+### HEAD sau tích hợp main
+
+HEAD vẫn có bốn màn riêng. Môn học dùng nghiệp vụ main, gồm ngành áp dụng và trạng thái hoạt động. Phân công chuyển sang từng buổi học, dùng version của buổi và lý do; giữ kiểm tra xung đột, lịch sử và hủy đề xuất cũ khi đổi người phụ trách. Màn chuyển phòng giữ nguyên ngày/ca và chờ STAFF duyệt. Giữ nguyên giao diện sinh viên, giảng viên và hồ sơ chỉ đọc từ main. `npm.cmd run test:head` kiểm tra luồng kết hợp trên database test riêng.

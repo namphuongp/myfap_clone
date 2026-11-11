@@ -31,6 +31,7 @@ export async function getAttendance(user, sessionId) {
     version: lesson.version,
     saved: lesson.attendance_saved,
     session_status: lesson.status,
+    start_at: lesson.start_at,
     rows: students.map((s) => {
       const a = lesson.attendance.find((a) => same(a.student_id, s._id));
       const l = leaves.find((l) => same(l.requester_id, s._id));

@@ -8,6 +8,10 @@ class SectionOption {
     required this.semesterId,
     required this.semesterCode,
     required this.remaining,
+    this.registrationOpen = true,
+    this.registrationOpenAt,
+    this.registrationCloseAt,
+    this.withdrawalDeadline,
   });
 
   final String id;
@@ -18,6 +22,10 @@ class SectionOption {
   final String semesterId;
   final String semesterCode;
   final int? remaining;
+  final bool registrationOpen;
+  final DateTime? registrationOpenAt;
+  final DateTime? registrationCloseAt;
+  final DateTime? withdrawalDeadline;
 
   factory SectionOption.fromJson(Map<String, dynamic> json) => SectionOption(
     id: json['id'] as String,
@@ -28,6 +36,7 @@ class SectionOption {
     semesterId: json['semester_id'] as String,
     semesterCode: json['semester_code']?.toString() ?? 'Học kỳ',
     remaining: (json['remaining'] as num?)?.toInt(),
+    registrationOpen: json['status'] == 'OPEN',
   );
 }
 

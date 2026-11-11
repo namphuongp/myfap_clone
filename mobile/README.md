@@ -55,3 +55,5 @@ flutter run -d chrome --web-hostname=localhost --web-port=5173
 Web mặc định gọi `http://localhost:3000/api`. Cổng `5173` khớp với `CORS_ORIGINS` trong `backend/.env.example`. Nếu đổi cổng web, cập nhật `CORS_ORIGINS` trong `backend/.env` rồi khởi động lại API. Khi đang chạy, nhấn `r` trong terminal Flutter để hot reload.
 
 Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; chỉ xem thông tin, không có chỉnh sửa/đổi mật khẩu hoặc upload ảnh. HEAD tải tổng quan bộ môn thay vì lịch. Giảng viên đã có trang chủ, lịch dạy, điểm danh, duyệt nghỉ, yêu cầu đổi lịch/phòng và theo dõi trạng thái; xem [Giao diện giảng viên](../LECTURER_UI.md). Thông báo/chuyển ngành của sinh viên và màn STAFF còn cần tích hợp. Xem ../STUDENT_AFFAIRS.md và ../API.md.
+
+HEAD có bốn màn riêng và dùng core/academic cho lịch/danh sách đơn. Phân công thực hiện qua API theo buổi của main; các màn giảng viên và sinh viên giữ nguyên từ main. Không có màn Theo dõi chuyên cần cho HEAD. Course form hỗ trợ major_ids và trạng thái hoạt động, dùng cùng nghiệp vụ main qua alias /head/courses.

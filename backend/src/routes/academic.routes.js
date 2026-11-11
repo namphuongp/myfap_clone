@@ -11,13 +11,10 @@ import * as attendance from "../controllers/attendance.controller.js";
 import { saveAttendanceSchema } from "../validators/attendance.validator.js";
 import * as reports from "../controllers/report.controller.js";
 import { departmentSummarySchema } from "../validators/report.validator.js";
-import * as assignment from "../controllers/assignment.controller.js";
-import { assignSessionsSchema } from "../validators/assignment.validator.js";
 export function academicRoutes() {
   const router = Router();
   router.param("id", validateId);
   router.param("studentId", validateId);
-  router.get("/lecturers", roles("HEAD"), assignment.listLecturers);
   router.get(
     "/sections/available",
     roles("STUDENT"),
@@ -41,12 +38,6 @@ export function academicRoutes() {
     roles("HEAD"),
     validate(sectionSchemas.setSectionStatusSchema),
     sections.setSectionStatus,
-  );
-  router.put(
-    "/sections/:id/assignments",
-    roles("HEAD"),
-    validate(assignSessionsSchema),
-    assignment.assignSessions,
   );
   router.get("/me/enrollments", roles("STUDENT"), enrollment.myEnrollments);
   router.post(

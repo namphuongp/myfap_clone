@@ -38,6 +38,18 @@ class FakeProfileApi extends ApiClient {
   ]) async {
     paths.add(path);
     methods.add(method);
+    if (path == '/head/options') {
+      return {
+        'courses': <dynamic>[],
+        'lecturers': <dynamic>[],
+        'semesters': <dynamic>[],
+        'majors': <dynamic>[],
+      };
+    }
+    if (path.startsWith('/reports/attendance')) return {'items': <dynamic>[]};
+    if (path.startsWith('/reports/requests')) {
+      return {'leave_requests': <dynamic>[], 'change_requests': <dynamic>[]};
+    }
     if (path == '/department/summary') {
       return {'sections': 2, 'sessions': 8, 'recorded_sessions': 3};
     }
@@ -68,11 +80,13 @@ void main() {
         ),
       );
       if (role == 'HEAD') {
-        await tester.tap(find.text('Xem báo cáo bộ môn'));
+        await tester.tap(find.text('Báo cáo bộ môn'));
         await tester.pumpAndSettle();
         expect(api.paths, contains('/department/summary'));
         expect(api.paths.any((path) => path.startsWith('/schedule')), isFalse);
         expect(find.textContaining('Số lớp: 2'), findsOneWidget);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
       }
       await tester.tap(find.byTooltip('Hồ sơ cá nhân'));
       await tester.pumpAndSettle();
@@ -81,6 +95,7 @@ void main() {
       expect(api.paths, contains('/profile'));
       await tester.pageBack();
       await tester.pumpAndSettle();
+
       if (role == 'STUDENT' || role == 'LECTURER') {
         expect(find.byTooltip('Hồ sơ cá nhân'), findsOneWidget);
       } else {

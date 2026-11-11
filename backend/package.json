@@ -17,6 +17,8 @@
     "slots:repair": "node --env-file=.env src/scripts/repair-legacy-slots.js --apply",
     "test": "node --test test/security.test.js",
     "test:workflow": "node --env-file=.env --test test/workflow.test.js",
+    "test:head": "node --env-file=.env --test test/head.test.js",
+    "test:lecturers": "node --env-file=.env --test test/head-lecturers.test.js",
     "test:import": "node --env-file=.env --test test/import.test.js",
     "format:check": "prettier --check src test",
     "test:affairs": "node --env-file=.env --test test/student-affairs.test.js",

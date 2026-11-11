@@ -6,6 +6,12 @@ import * as controller from "../controllers/report.controller.js";
 export function reportRoutes() {
   const router = Router();
   router.get(
+    "/reports/requests",
+    roles("HEAD"),
+    validate(schema.departmentSummarySchema, "query"),
+    controller.requestReport,
+  );
+  router.get(
     "/reports/attendance",
     roles("HEAD"),
     validate(schema.attendanceReportSchema, "query"),

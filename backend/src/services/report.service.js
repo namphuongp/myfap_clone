@@ -4,6 +4,9 @@ import {
   userRepository,
   semesterRepository,
   enrollmentRepository,
+  classSessionRepository,
+  leaveRepository,
+  changeRepository,
 } from "../repositories/index.js";
 import { reportRepository } from "../repositories/report.repository.js";
 import { get } from "../repositories/base.repository.js";
@@ -164,5 +167,24 @@ export async function departmentSummary(actor, q) {
     department_id: String(actor.department_id),
     sections: sections.length,
     ...metrics(sum),
+  };
+}
+
+export async function requestReport(actor, q) {
+  const sections = await sectionsFor(actor, q);
+  const sessions = await classSessionRepository.distinct("_id", {
+    section_id: { $in: sections.map((s) => s._id) },
+  });
+  const counts = (repo) =>
+    repo
+      .aggregate([
+        { $match: { session_id: { $in: sessions } } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ])
+      .then((rows) => rows.map((r) => ({ status: r._id, count: r.count })));
+  return {
+    department_id: String(actor.department_id),
+    leave_requests: await counts(leaveRepository),
+    change_requests: await counts(changeRepository),
   };
 }

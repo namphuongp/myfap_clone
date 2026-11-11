@@ -179,3 +179,17 @@ npm run setup:session -- --head=HEAD_ID --section=SECTION_ID --room=ROOM_ID --da
 Thay các ID bằng ObjectId thật. Lệnh kiểm tra HEAD cùng bộ môn, kỳ/slot/phòng/trùng lịch và tạo buổi chưa phân công; sau đó HEAD dùng PUT assignments, PATCH section/status trên màn phân công. Công cụ CLI không mở thêm REST endpoint. Các danh mục ban đầu vẫn dùng seed/import hiện có.
 
 Kiểm thử: npm test; test:workflow, test:affairs, test:import với MONGODB_URI riêng, DB trống có hậu tố `_test` theo README. Không chạy test trên myfap.
+
+## Tích hợp HEAD với main
+
+Giữ các màn sinh viên, giảng viên và hồ sơ chỉ đọc từ main. HEAD có bốn màn: Báo cáo bộ môn, Quản lý môn học, Phân công theo buổi và Gửi đơn chuyển phòng; không có màn theo dõi chuyên cần từng sinh viên.
+
+HEAD dùng `GET /head/options`, `GET /head/courses?search=&page=1`, `GET /head/sections?semester_id=&course_id=&page=1` làm dữ liệu cho màn hình. Hai danh sách trả `{page,total,has_more,items}` với 50 dòng/trang. Options chỉ có môn, ngành, giảng viên hoạt động cùng bộ môn và học kỳ chuẩn.
+
+`POST /head/courses` và `PATCH /head/courses/:id` là alias của nghiệp vụ `/courses` trên main: cùng validator, transaction, version, active và major_ids. Client không chọn bộ môn. Không duy trì hai cách cập nhật chương trình môn khác nhau.
+
+Phân công dùng `GET /sections/:id/sessions` và `PUT /sections/:id/assignments` của main. Body gồm `assignments:[{session_id,lecturer_id,version}]` và `reason`; lecturer_id có thể null để bỏ phân công. Chỉ buổi tương lai chưa điểm danh, kiểm tra trùng giờ và rollback nguyên đợt nếu một dòng lỗi. Khi đổi giảng viên, hủy đơn đổi lịch/phòng PENDING của buổi, giữ đơn nghỉ. Không dùng API phân công giảng viên theo Section cũ.
+
+HEAD được xem `/schedule` trong bộ môn và gửi `/change-requests` nhưng không đổi ngày/ca. Danh sách đơn HEAD chỉ gồm đơn tự gửi cho buổi cùng bộ môn. STAFF vẫn duyệt/từ chối. Response đơn giữ cấu trúc requester/lesson của main, bổ sung total/has_more cho phân trang HEAD.
+
+`GET /reports/requests?semester_id=...` bổ sung thống kê đơn nghỉ và đơn đổi lịch/phòng trong bộ môn cho HEAD; role khác trả 403. Không khôi phục API chuyển ngành, sửa hồ sơ, xếp lịch hoặc các API ngoài scope đã bỏ trên main.

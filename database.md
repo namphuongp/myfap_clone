@@ -31,3 +31,5 @@ HEAD phân công một đợt theo danh sách buổi + version trong một trans
 Migration scope:preview/scope:migrate thay đúng index lecturer cũ, không dùng syncIndexes, không drop collection hoặc rewrite document. Có backup trước khi chạy. Các script seed chỉ dành cho DB trống; import/repair vẫn giữ khả năng đọc lecturer_id legacy. Khi thêm writer phải đi qua service/transaction để không bỏ khóa học vụ.
 
 4 slot cố định và kỳ 3 tháng/1 tháng nghỉ giữ nguyên. Chi tiết endpoint/payload và công cụ thiết lập buổi: [API.md](API.md).
+
+HEAD không ghi Section.lecturer_id để phân công. Luồng HEAD dùng ClassSession.lecturer_id, version và lịch sử buổi theo main. Alias quản lý môn dùng chung transaction cập nhật Course và Major.course_ids với main; không thêm collection. Đơn chuyển phòng HEAD dùng Change hiện có, giữ ngày/ca và do STAFF duyệt.
