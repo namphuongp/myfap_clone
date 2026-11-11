@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-const lecturerNavy = Color(0xFF1A304B);
+const lecturerNavy = Color(0xFF7047EB);
+const lecturerNavyDark = Color(0xFF1E1E2D);
 const lecturerOrange = Color(0xFFF69A08);
-const lecturerBackground = Color(0xFFF5F4FA);
-const lecturerMuted = Color(0xFF637184);
-const lecturerGreen = Color(0xFF087F67);
+const lecturerBackground = Color(0xFFF8F9FE);
+const lecturerMuted = Color(0xFF8C8CA1);
+const lecturerGreen = Color(0xFF10B981);
 
 ThemeData lecturerTheme(ThemeData base) => base.copyWith(
   scaffoldBackgroundColor: lecturerBackground,
@@ -12,31 +13,43 @@ ThemeData lecturerTheme(ThemeData base) => base.copyWith(
     seedColor: lecturerNavy,
     primary: lecturerNavy,
     secondary: lecturerOrange,
-    primaryContainer: lecturerNavy,
-    onPrimaryContainer: Colors.white,
+    primaryContainer: const Color(0xFFEDE9FE),
+    onPrimaryContainer: lecturerNavy,
     surface: Colors.white,
   ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: lecturerNavy,
-    foregroundColor: Colors.white,
+    backgroundColor: Colors.transparent,
+    foregroundColor: Color(0xFF1E1E2D),
     centerTitle: true,
     elevation: 0,
+    scrolledUnderElevation: 0,
     toolbarHeight: 72,
   ),
   cardTheme: CardThemeData(
     color: Colors.white,
     surfaceTintColor: Colors.transparent,
-    elevation: 1,
+    elevation: 0,
     margin: EdgeInsets.zero,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(22),
-      side: const BorderSide(color: Color(0xFFE9EAF0)),
+      borderRadius: BorderRadius.circular(20),
+      side: const BorderSide(color: Color(0xFFEBEBF2)),
     ),
   ),
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
     fillColor: Colors.white,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFEBEBF2)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFEBEBF2)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: lecturerNavy, width: 1.5),
+    ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
   ),
   filledButtonTheme: FilledButtonThemeData(
@@ -45,11 +58,14 @@ ThemeData lecturerTheme(ThemeData base) => base.copyWith(
       foregroundColor: Colors.white,
       minimumSize: const Size(0, 48),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 0,
     ),
   ),
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
+      foregroundColor: lecturerNavy,
       minimumSize: const Size(0, 46),
+      side: const BorderSide(color: Color(0xFFDDD2FE)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
   ),
@@ -88,7 +104,18 @@ class LecturerPage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title), actions: actions),
+    backgroundColor: lecturerBackground,
+    appBar: AppBar(
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Color(0xFF1E1E2D),
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      actions: actions,
+    ),
     body: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1000),
@@ -108,9 +135,9 @@ class SectionHeading extends StatelessWidget {
       children: [
         Container(
           width: 4,
-          height: 24,
+          height: 20,
           decoration: BoxDecoration(
-            color: lecturerOrange,
+            color: lecturerNavy,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -119,9 +146,10 @@ class SectionHeading extends StatelessWidget {
           child: Text(
             title,
             style: const TextStyle(
-              color: lecturerNavy,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
+              color: Color(0xFF1E1E2D),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
         ),
