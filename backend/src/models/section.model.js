@@ -7,7 +7,8 @@ export const Section = model(
     course_id: ref("Course"),
     semester_id: ref("Semester"),
     department_id: ref("Department"),
-    lecturer_id: ref("User"),
+    // Chỉ giữ để đọc dữ liệu cũ, không dùng làm phân công hiện tại.
+    lecturer_id: { ...ref("User"), required: false, default: null },
     capacity: { type: Number, enum: [30], default: 30 },
     status: { type: String, enum: ["OPEN", "CLOSED"], default: "OPEN" },
   },

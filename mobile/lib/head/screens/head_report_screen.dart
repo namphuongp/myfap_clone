@@ -98,6 +98,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Xem báo cáo bộ môn'),
               ),
+              const SizedBox(height: 16),
               if (_options != null) ...[
                 _filter(
                   'Học kỳ',
@@ -109,6 +110,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                 const SizedBox(height: 12),
                 if (_summary != null)
                   Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -130,6 +132,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                   'Báo cáo giảng dạy tổng hợp',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
+                const SizedBox(height: 16),
                 _filter(
                   'Môn học',
                   _course,
@@ -137,6 +140,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                   'name',
                   (v) => setState(() => _course = v),
                 ),
+                const SizedBox(height: 16),
                 _filter(
                   'Giảng viên',
                   _lecturer,
@@ -144,6 +148,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                   'name',
                   (v) => setState(() => _lecturer = v),
                 ),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _group,
                   decoration: const InputDecoration(
@@ -164,12 +169,14 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                           _load();
                         },
                 ),
+                const SizedBox(height: 16),
                 if (!_loading && _items.isEmpty)
                   const LoadMessage(
                     message: 'Chưa có dữ liệu theo bộ lọc này.',
                   ),
                 for (final r in _items)
                   Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -197,12 +204,13 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                     'Đơn từ trong bộ môn theo học kỳ',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  const SizedBox(height: 12),
                   for (final entry in const {
                     'leave_requests': 'Đơn xin nghỉ',
                     'change_requests': 'Đơn đổi lịch / phòng',
-                    'major_transfers': 'Đơn chuyển ngành',
                   }.entries)
                     Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(

@@ -1,36 +1,34 @@
-import '../../core/academic/academic_repository.dart';
-export '../../core/academic/academic_repository.dart' show Json;
+import '../../core/api/api_client.dart';
 
-class HeadRepository extends AcademicRepository {
-  HeadRepository(super.api);
+typedef Json = Map<String, dynamic>;
+
+class HeadRepository {
+  HeadRepository(this.api);
+  final ApiClient api;
+  List<Json> rows(dynamic data) =>
+      (data as List).map((r) => Map<String, dynamic>.from(r as Map)).toList();
   Future<Json> options() async => Map<String, dynamic>.from(
     await api.request('GET', '/head/options') as Map,
   );
-  Future<Json> list(
-    String kind, {
+  Future<Json> lecturers({
     String search = '',
-    String? semester,
-    String? course,
+    String status = 'ALL',
     int page = 1,
   }) async => Map<String, dynamic>.from(
     await api.request(
       'GET',
-      '/head/$kind?${Uri(queryParameters: {'search': search, 'page': '$page', 'semester_id': ?semester, 'course_id': ?course}).query}',
+      '/head/lecturers?${Uri(queryParameters: {'search': search, 'status': status, 'page': '$page'}).query}',
     ) as Map,
   );
-  Future<void> saveCourse(Json? row, String code, String name) async {
+  Future<Json> lecturer(String id) async => Map<String, dynamic>.from(
+    await api.request('GET', '/head/lecturers/$id') as Map,
+  );
+  Future<void> saveLecturer(Json? row, Json fields) async {
     await api.request(
       row == null ? 'POST' : 'PATCH',
-      row == null ? '/head/courses' : '/head/courses/${row['id']}',
-      {'code': code, 'name': name, if (row != null) 'version': row['version']},
+      row == null ? '/head/lecturers' : '/head/lecturers/${row['id']}',
+      {...fields, if (row != null) 'version': row['version']},
     );
-  }
-
-  Future<void> assign(Json row, String lecturer) async {
-    await api.request('PATCH', '/head/sections/${row['id']}/lecturer', {
-      'version': row['version'],
-      'lecturer_id': lecturer,
-    });
   }
 
   Future<Json> report(

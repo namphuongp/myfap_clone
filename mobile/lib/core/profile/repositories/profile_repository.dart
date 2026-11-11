@@ -23,31 +23,5 @@ class ProfileRepository {
   Future<UserProfile> getProfile() async => UserProfile(
     Map<String, dynamic>.from(await api.request('GET', '/profile') as Map),
   );
-  Future<UserProfile> updateContact({
-    required int version,
-    required String? phone,
-    required String? address,
-    required String? dateOfBirth,
-  }) async => UserProfile(
-    Map<String, dynamic>.from(
-      await api.request('PATCH', '/profile', {
-        'version': version,
-        'phone': phone,
-        'address': address,
-        'date_of_birth': dateOfBirth,
-      }) as Map,
-    ),
-  );
-  Future<void> changePassword(
-    String currentPassword,
-    String newPassword,
-  ) async {
-    await api.request('PATCH', '/profile/password', {
-      'current_password': currentPassword,
-      'new_password': newPassword,
-    });
-    await api.clearLocalSession();
-  }
-
   Future<void> clearSession() => api.clearLocalSession();
 }

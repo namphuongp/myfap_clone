@@ -1,10 +1,11 @@
+import { displayRequests } from "./request-display.service.js";
 import { fail } from "../utils/api-error.js";
 import { clean } from "../utils/serialize.js";
 import { checkVersion } from "../utils/version.js";
 import { get, saveDocument } from "../repositories/base.repository.js";
 import { transaction } from "../repositories/transaction.js";
 import { audit } from "./audit.service.js";
-import { scopedSectionIds, authorizeLesson } from "./access.service.js";
+import { authorizeLesson } from "./access.service.js";
 import { ensureSlot, reschedule } from "./scheduling.service.js";
 import { slotTimes } from "../utils/slots.js";
 import {
@@ -12,10 +13,6 @@ import {
   classSessionRepository,
   leaveRepository,
   changeRepository,
-  userRepository,
-  sectionRepository,
-  courseRepository,
-  roomRepository,
 } from "../repositories/index.js";
 const requestRepositories = {
   leave: leaveRepository,
@@ -54,15 +51,6 @@ export async function createChange(user, data) {
   const result = await transaction(async (session) => {
     const lesson = await get(classSessionRepository, data.session_id, session);
     const section = await authorizeLesson(lesson, user, session);
-    if (
-      user.role === "HEAD" &&
-      (data.proposed_date !== lesson.session_date ||
-        data.proposed_slot_id !== lesson.slot_id)
-    )
-      fail(
-        403,
-        "Trưởng bộ môn chỉ được yêu cầu chuyển phòng, giữ nguyên ngày và ca",
-      );
     const timing = slotTimes(data.proposed_date, data.proposed_slot_id);
     if (
       lesson.status !== "SCHEDULED" ||
@@ -77,13 +65,6 @@ export async function createChange(user, data) {
       timing.end_at.getTime() === lesson.end_at.getTime()
     )
       fail(400, "Lịch đề xuất không thay đổi");
-    if (
-      await changeRepository.exists(
-        { session_id: lesson._id, status: "PENDING" },
-        { session },
-      )
-    )
-      fail(409, "Buổi học đã có yêu cầu chờ duyệt; hãy chờ cán bộ xử lý");
     await ensureSlot(
       session,
       section,
@@ -91,6 +72,7 @@ export async function createChange(user, data) {
       timing.start_at,
       timing.end_at,
       lesson._id,
+      lesson.lecturer_id,
     );
     const [row] = await changeRepository.create(
       [
@@ -124,89 +106,28 @@ export async function listRequests(user, q, kind) {
   if (q.status) filter.status = q.status;
   if (
     user.role === "STUDENT" ||
-    (repository === changeRepository &&
-      ["LECTURER", "HEAD"].includes(user.role))
+    (repository === changeRepository && user.role === "LECTURER")
   )
     filter.requester_id = user._id;
   else if (user.role !== "STAFF") {
-    const sections = await scopedSectionIds(user);
     filter.session_id = {
       $in: await classSessionRepository.distinct("_id", {
-        section_id: { $in: sections },
+        lecturer_id: user._id,
       }),
     };
   }
-  if (user.role === "HEAD") {
-    const sections = await scopedSectionIds(user);
-    filter.session_id = {
-      $in: await classSessionRepository.distinct("_id", {
-        section_id: { $in: sections },
-      }),
-    };
-  }
-  const [requests, total] = await Promise.all([
-    repository.find(filter, {
-      sort: { created_at: -1, _id: -1 },
-      skip: (q.page - 1) * 50,
-      limit: 50,
-    }),
-    repository.countDocuments(filter),
-  ]);
-  const lessons = await classSessionRepository.find({
-    _id: { $in: requests.map((r) => r.session_id) },
-  });
-  const [people, sections, rooms] = await Promise.all([
-    userRepository.find({
-      _id: {
-        $in: requests.flatMap((r) =>
-          [r.requester_id, r.reviewer_id].filter(Boolean),
-        ),
-      },
-    }),
-    sectionRepository.find({ _id: { $in: lessons.map((r) => r.section_id) } }),
-    roomRepository.find({
-      _id: {
-        $in: [
-          ...lessons.map((r) => r.room_id),
-          ...requests.map((r) => r.proposed_room_id).filter(Boolean),
-          ...requests.map((r) => r.original_room_id).filter(Boolean),
-        ],
-      },
-    }),
-  ]);
-  const courses = await courseRepository.find({
-    _id: { $in: sections.map((r) => r.course_id) },
-  });
-  const byId = (rows) => new Map(rows.map((r) => [String(r._id), r]));
-  const lessonMap = byId(lessons),
-    peopleMap = byId(people),
-    sectionMap = byId(sections),
-    courseMap = byId(courses),
-    roomMap = byId(rooms);
+  const total = await repository.countDocuments(filter);
   return {
     page: q.page,
     total,
     has_more: q.page * 50 < total,
-    items: requests.map((row) => {
-      const lesson = lessonMap.get(String(row.session_id));
-      const section = sectionMap.get(String(lesson?.section_id));
-      const person = peopleMap.get(String(row.requester_id));
-      return {
-        ...clean(row),
-        requester_name: person?.name ?? null,
-        requester_code: person?.user_code ?? null,
-        reviewer_name: peopleMap.get(String(row.reviewer_id))?.name ?? null,
-        section_code: section?.code ?? null,
-        course: courseMap.get(String(section?.course_id))?.name ?? null,
-        session_date: lesson?.session_date ?? null,
-        slot_id: kind === "leave" ? row.slot_id : (lesson?.slot_id ?? null),
-        room_name: roomMap.get(String(lesson?.room_id))?.name ?? null,
-        proposed_room_name:
-          roomMap.get(String(row.proposed_room_id))?.name ?? null,
-        original_room_name:
-          roomMap.get(String(row.original_room_id))?.name ?? null,
-      };
-    }),
+    items: await displayRequests(
+      await repository.find(filter, {
+        sort: { created_at: -1, _id: -1 },
+        skip: (q.page - 1) * 50,
+        limit: 50,
+      }),
+    ),
   };
 }
 export async function reviewRequest(user, requestId, data, kind) {

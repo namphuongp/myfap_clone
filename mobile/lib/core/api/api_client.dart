@@ -17,10 +17,9 @@ class ApiClient {
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static String get baseUrl {
     if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
-    return kIsWeb
-        ? 'http://localhost:3000/api'
-        : 'http://10.0.2.2:3000/api';
+    return kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
   }
+
   final FlutterSecureStorage _storage;
   final http.Client _client;
   String? _token;

@@ -10,16 +10,20 @@ const statusCount = (status) => ({
   },
 });
 export const reportRepository = {
-  attendanceBySections(ids) {
+  attendanceBySections(ids, { lecturerId, byLecturer = false } = {}) {
     return classSessionRepository.aggregate([
       {
         $match: {
           section_id: { $in: ids.map((id) => new Types.ObjectId(String(id))) },
+          ...(lecturerId
+            ? { lecturer_id: new Types.ObjectId(String(lecturerId)) }
+            : {}),
         },
       },
       {
         $group: {
-          _id: "$section_id",
+          _id: byLecturer ? "$lecturer_id" : "$section_id",
+          section_ids: { $addToSet: "$section_id" },
           sessions: {
             $sum: { $cond: [{ $ne: ["$status", "CANCELLED"] }, 1, 0] },
           },

@@ -1,3 +1,4 @@
+import { migrateTeachingIndex } from "./teaching-index.repository.js";
 import mongoose from "mongoose";
 import { MODELS, Lock } from "../models/index.js";
 export const databaseRepository = {
@@ -7,6 +8,7 @@ export const databaseRepository = {
   async initialize() {
     for (const Model of MODELS) {
       await Model.createCollection();
+      if (Model.modelName === "ClassSession") await migrateTeachingIndex();
       await Model.createIndexes();
     }
     await Lock.updateOne(

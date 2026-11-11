@@ -61,6 +61,7 @@ export async function normalizeLegacySessions({ apply = false } = {}) {
                   candidate.start_at,
                   candidate.end_at,
                   row._id,
+                  row.lecturer_id,
                 );
               timing = candidate;
               break;

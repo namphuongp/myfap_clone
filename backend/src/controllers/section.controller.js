@@ -4,7 +4,7 @@ export const availableSections = async (req, res) => {
   res.json(result);
 };
 export const listSections = async (req, res) => {
-  const result = await service.listSections(req.user);
+  const result = await service.listSections(req.user, req.validated.query);
   res.json(result);
 };
 export const createSection = async (req, res) => {

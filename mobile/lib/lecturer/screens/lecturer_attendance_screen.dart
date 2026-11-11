@@ -1,155 +1,129 @@
+import "../widgets/attendance_choice_row.dart";
+
 import 'package:flutter/material.dart';
 
+import '../models/lecturer_data.dart';
 import '../repositories/lecturer_repository.dart';
-import '../widgets/lecturer_widgets.dart';
+import '../utils/lecturer_dates.dart';
+import '../widgets/lecturer_ui.dart';
 
-class LecturerAttendanceScreen extends StatelessWidget {
-  const LecturerAttendanceScreen({super.key, required this.repository});
+const attendanceLabels = {
+  'PRESENT': 'Có mặt',
+  'ABSENT': 'Vắng mặt',
+  'LATE': 'Đi muộn',
+  'EXCUSED': 'Vắng có phép',
+};
+
+class LecturerAttendanceScreen extends StatefulWidget {
   final LecturerRepository repository;
+  final TeachingSession session;
+  const LecturerAttendanceScreen({
+    super.key,
+    required this.repository,
+    required this.session,
+  });
   @override
-  Widget build(BuildContext context) => SessionBrowser(
-    repository: repository,
-    attendance: true,
-    onSelect: (row) => Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => _AttendanceEditor(repository: repository, lesson: row),
-      ),
-    ),
-  );
+  State<LecturerAttendanceScreen> createState() =>
+      _LecturerAttendanceScreenState();
 }
 
-class _AttendanceEditor extends StatefulWidget {
-  const _AttendanceEditor({required this.repository, required this.lesson});
-  final LecturerRepository repository;
-  final Json lesson;
-  @override
-  State<_AttendanceEditor> createState() => _AttendanceEditorState();
-}
-
-class _AttendanceEditorState extends State<_AttendanceEditor> {
+class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
   List<Json> _rows = [];
   int _version = 0;
-  bool _loading = true,
-      _saving = false,
-      _dirty = false,
-      _saved = false,
-      _conflict = false;
-  String? _error;
-  String _sessionStatus = '';
-  DateTime? _startAt;
-  bool get _editable =>
-      !_loading &&
-      !_saving &&
-      !_conflict &&
-      _sessionStatus != 'CANCELLED' &&
-      !(_startAt ?? DateTime.parse(widget.lesson['start_at'] as String))
-          .isAfter(DateTime.now());
+  bool _loading = true, _saving = false, _dirty = false, _saved = false;
+  String? _error, _sessionStatus;
+  bool get _canEdit =>
+      widget.session.canRecord && _sessionStatus != 'CANCELLED';
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<bool> _confirm(String title, String message) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Hủy'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Xác nhận'),
-            ),
-          ],
-        ),
-      ) ??
-      false;
   Future<void> _load() async {
-    if (_dirty &&
-        !await _confirm(
-          'Tải lại danh sách?',
-          'Các thay đổi điểm danh chưa lưu sẽ bị bỏ.',
-        )) {
-      return;
-    }
-    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final data = await widget.repository.attendance(
-        widget.lesson['id'] as String,
-      );
+      final result = await widget.repository.attendance(widget.session.id);
       if (mounted) {
         setState(() {
-          _rows = widget.repository.rows(data['rows']);
-          _version = data['version'] as int;
-          _sessionStatus = data['session_status'] as String;
-          _startAt = DateTime.parse(
-            (data['start_at'] ?? widget.lesson['start_at']) as String,
-          );
-          _saved = data['saved'] == true;
+          _rows = jsonList(result['rows']);
+          _version = (result['version'] as num).toInt();
+          _saved = result['saved'] == true;
+          _sessionStatus = result['session_status'] as String;
           _dirty = false;
-          _conflict = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = '$e';
-          _conflict = true;
-        });
-      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  Future<bool> _confirmDiscard() async =>
+      !_dirty ||
+      await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Bỏ thay đổi chưa lưu?'),
+              content: const Text(
+                'Các trạng thái điểm danh vừa chọn sẽ không được lưu.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Tiếp tục sửa'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Bỏ thay đổi'),
+                ),
+              ],
+            ),
+          ) ==
+          true;
+  Future<void> _reload() async {
+    if (await _confirmDiscard() && mounted) _load();
+  }
+
   Future<void> _save() async {
-    if (_rows.any((r) => r['status'] == 'NOT_RECORDED')) {
-      showMessage(
-        context,
-        'Chọn trạng thái cho tất cả sinh viên trước khi lưu',
+    if (_rows.any((row) => !attendanceLabels.containsKey(row['status']))) {
+      setState(
+        () => _error = 'Chọn trạng thái cho tất cả sinh viên trước khi lưu.',
       );
       return;
     }
-    if (!await _confirm(
-      'Lưu điểm danh?',
-      'Lưu kết quả cho ${_rows.length} sinh viên. Mỗi lần cập nhật đều được lưu lịch sử.',
-    )) {
-      return;
-    }
-    if (!mounted) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
       await widget.repository.saveAttendance(
-        widget.lesson['id'] as String,
+        widget.session.id,
         _version,
-        [
-          for (final r in _rows)
-            {'student_id': r['student_id'], 'status': r['status']},
-        ],
+        _rows
+            .map(
+              (row) => <String, dynamic>{
+                'student_id': row['student_id'],
+                'status': row['status'],
+              },
+            )
+            .toList(),
       );
+      if (!mounted) return;
+      _dirty = false;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Đã lưu điểm danh')));
+      await _load();
+    } catch (error) {
       if (mounted) {
-        setState(() => _dirty = false);
-        showMessage(context, 'Đã lưu điểm danh');
-        await _load();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = '$e';
-          _conflict = true;
-        });
+        setState(
+          () => _error =
+              '$error\nNếu dữ liệu đã thay đổi, tải lại danh sách trước khi sửa tiếp.',
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -158,136 +132,126 @@ class _AttendanceEditorState extends State<_AttendanceEditor> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: !_saving && !_dirty,
+    canPop: !_dirty && !_saving,
     onPopInvokedWithResult: (didPop, result) async {
-      if (!didPop &&
-          !_saving &&
-          await _confirm(
-            'Rời màn hình?',
-            'Bỏ các thay đổi điểm danh chưa lưu?',
-          ) &&
-          mounted) {
+      if (!didPop && !_saving && await _confirmDiscard() && context.mounted) {
         setState(() => _dirty = false);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.pop(context);
-        });
+        Navigator.of(context).pop();
       }
     },
-    child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Điểm danh sinh viên'),
-        actions: [
-          IconButton(
-            tooltip: 'Tải lại danh sách',
-            onPressed: _loading || _saving ? null : _load,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    child: LecturerPage(
+      title: 'Điểm danh',
+      actions: [
+        IconButton(
+          tooltip: 'Tải lại danh sách',
+          onPressed: _saving || _loading ? null : _reload,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(18),
               children: [
-                Text(
-                  sessionLabel(widget.lesson),
-                  style: Theme.of(context).textTheme.titleMedium,
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.session.section,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: lecturerNavy,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(widget.session.course),
+                        const SizedBox(height: 10),
+                        Text(
+                          '${dateLabel(widget.session.day)} · Slot ${widget.session.slot} · ${widget.session.room}',
+                          style: const TextStyle(color: lecturerMuted),
+                        ),
+                        const SizedBox(height: 12),
+                        StatusPill(
+                          _saved ? 'Đã ghi nhận điểm danh' : 'Chưa ghi nhận',
+                          color: _saved ? lecturerGreen : lecturerMuted,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                Text(sessionDetail(widget.lesson)),
-                Text(_saved ? 'Đã lưu điểm danh' : 'Chưa ghi nhận điểm danh'),
-                if (!_editable && !_loading)
-                  const Text(
-                    'Chỉ ghi điểm danh sau khi buổi học bắt đầu; buổi bị hủy không được ghi.',
+                if (!_canEdit)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: Text(
+                      'Chỉ ghi điểm danh khi buổi học đã bắt đầu và chưa bị hủy.',
+                      style: TextStyle(color: lecturerMuted),
+                    ),
                   ),
-              ],
-            ),
-          ),
-          if (_loading || _saving) const LinearProgressIndicator(),
-          if (_error != null)
-            LoadMessage(
-              message:
-                  '$_error${_conflict ? '\nTải lại dữ liệu trước khi lưu tiếp.' : ''}',
-              retry: _saving ? null : _load,
-            ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (!_loading && _rows.isEmpty)
-                  const LoadMessage(
-                    message: 'Buổi học chưa có sinh viên trong danh sách.',
+                if (_error != null) ErrorPanel(_error!, onRetry: _reload),
+                SectionHeading('Danh sách sinh viên (${_rows.length})'),
+                if (_rows.isEmpty && _error == null)
+                  const EmptyPanel(
+                    title: 'Chưa có sinh viên',
+                    message: 'Danh sách được tính theo đăng ký tại thời điểm buổi học.',
+                    icon: Icons.groups_outlined,
                   ),
-                for (final row in _rows)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${row['name']} • ${row['user_code']}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          if (row['note'] != null)
+                ..._rows.map(
+                  (row) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              '${row['note']} (đơn nghỉ đã duyệt)',
-                              style: TextStyle(color: Colors.green.shade800),
+                              row['name'] as String,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: lecturerNavy,
+                              ),
                             ),
-                          DropdownButtonFormField<String>(
-                            key: ValueKey(
-                              '${row['student_id']}-$_version-${row['status']}',
+                            Text(
+                              row['user_code'] as String,
+                              style: const TextStyle(color: lecturerMuted),
                             ),
-                            initialValue: row['status'] as String,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Kết quả điểm danh',
+                            const SizedBox(height: 8),
+                            AttendanceChoiceRow(
+                              studentId: row['student_id'] as String,
+                              status: row['status'] as String,
+                              note: row['note'] as String?,
+                              enabled: _canEdit && !_saving,
+                              onChanged: (value) => setState(() {
+                                row['status'] = value;
+                                _dirty = true;
+                              }),
                             ),
-                            items: [
-                              for (final s in [
-                                'NOT_RECORDED',
-                                'PRESENT',
-                                'ABSENT',
-                                'LATE',
-                                'EXCUSED',
-                              ])
-                                DropdownMenuItem(
-                                  value: s,
-                                  child: Text(statusLabels[s]!),
-                                ),
-                            ],
-                            onChanged: !_editable
-                                ? null
-                                : (v) => setState(() {
-                                    row['status'] = v;
-                                    _dirty = true;
-                                  }),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ),
+                if (_rows.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 28),
+                    child: FilledButton.icon(
+                      onPressed: !_canEdit || _saving ? null : _save,
+                      icon: const Icon(Icons.save_outlined),
+                      label: Text(_saving ? 'Đang lưu…' : 'Lưu điểm danh'),
+                    ),
+                  ),
+                const Text(
+                  'Đơn nghỉ được duyệt chỉ thêm ghi chú, không tự đổi sinh viên sang Có mặt.',
+                  style: TextStyle(color: lecturerMuted, fontSize: 12),
+                ),
               ],
             ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _editable && _dirty && _rows.isNotEmpty
-                      ? _save
-                      : null,
-                  icon: const Icon(Icons.save),
-                  label: Text('Lưu điểm danh (${_rows.length} sinh viên)'),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     ),
   );
 }

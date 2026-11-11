@@ -1,6 +1,5 @@
 import { reportRoutes } from "./routes/report.routes.js";
 import { headRoutes } from "./routes/head.routes.js";
-import { majorRoutes } from "./routes/major.routes.js";
 import { noticeRoutes } from "./routes/notice.routes.js";
 import { profileRoutes } from "./routes/profile.routes.js";
 import express from "express";
@@ -17,10 +16,19 @@ export function createApp() {
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
-  const origins = (process.env.CORS_ORIGINS ?? "").split(",").filter(Boolean);
+  const origins = (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.use(
     cors({
-      origin: (origin, cb) => cb(null, !origin || origins.includes(origin)),
+      origin: (origin, cb) => {
+        if (!origin || origins.includes(origin)) return cb(null, true);
+        if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return cb(null, true);
+        }
+        cb(null, false);
+      },
     }),
   );
   app.use(express.json({ limit: "64kb" }));
@@ -30,7 +38,6 @@ export function createApp() {
   app.use("/api", sessionRoutes());
   app.use("/api", profileRoutes());
   app.use("/api", noticeRoutes());
-  app.use("/api", majorRoutes());
   app.use("/api", reportRoutes());
   app.use("/api", headRoutes());
   app.use("/api", catalogRoutes());

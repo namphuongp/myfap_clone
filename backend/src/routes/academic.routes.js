@@ -1,120 +1,84 @@
 import { Router } from "express";
 import { roles } from "../middlewares/auth.middleware.js";
 import { validate, validateId } from "../middlewares/validate.middleware.js";
-import * as sectionController from "../controllers/section.controller.js";
+import * as sections from "../controllers/section.controller.js";
 import * as sectionSchemas from "../validators/section.validator.js";
-import * as enrollmentController from "../controllers/enrollment.controller.js";
+import * as enrollment from "../controllers/enrollment.controller.js";
 import * as enrollmentSchemas from "../validators/enrollment.validator.js";
-import * as sessionController from "../controllers/session.controller.js";
-import * as sessionSchemas from "../validators/session.validator.js";
-import * as attendanceController from "../controllers/attendance.controller.js";
-import * as attendanceSchemas from "../validators/attendance.validator.js";
-import * as reportController from "../controllers/report.controller.js";
-import * as reportSchemas from "../validators/report.validator.js";
+import * as sessions from "../controllers/session.controller.js";
+import { personalScheduleSchema } from "../validators/session.validator.js";
+import * as attendance from "../controllers/attendance.controller.js";
+import { saveAttendanceSchema } from "../validators/attendance.validator.js";
+import * as reports from "../controllers/report.controller.js";
+import { departmentSummarySchema } from "../validators/report.validator.js";
 export function academicRoutes() {
   const router = Router();
   router.param("id", validateId);
   router.param("studentId", validateId);
   router.get(
     "/sections/available",
-    roles("STUDENT", "STAFF"),
+    roles("STUDENT"),
     validate(sectionSchemas.availableSectionsSchema, "query"),
-    sectionController.availableSections,
+    sections.availableSections,
   );
   router.get(
     "/sections",
-    roles("STUDENT", "LECTURER", "STAFF"),
-    sectionController.listSections,
+    roles("STUDENT", "LECTURER", "HEAD"),
+    validate(sectionSchemas.listSectionsSchema, "query"),
+    sections.listSections,
   );
   router.post(
     "/sections",
-    roles("STAFF"),
-    validate(sectionSchemas.createSectionSchema, "body"),
-    sectionController.createSection,
+    roles("HEAD"),
+    validate(sectionSchemas.createSectionSchema),
+    sections.createSection,
   );
   router.patch(
     "/sections/:id/status",
-    roles("STAFF"),
-    validate(sectionSchemas.setSectionStatusSchema, "body"),
-    sectionController.setSectionStatus,
+    roles("HEAD"),
+    validate(sectionSchemas.setSectionStatusSchema),
+    sections.setSectionStatus,
   );
-  router.get(
-    "/me/enrollments",
-    roles("STUDENT"),
-    enrollmentController.myEnrollments,
-  );
-  router.get(
-    "/sections/:id/enrollments",
-    roles("STUDENT", "LECTURER", "STAFF"),
-    enrollmentController.listEnrollments,
-  );
+  router.get("/me/enrollments", roles("STUDENT"), enrollment.myEnrollments);
   router.post(
     "/sections/:id/enrollments",
-    roles("STUDENT", "STAFF"),
-    validate(enrollmentSchemas.registerStudentSchema, "body"),
-    enrollmentController.registerStudent,
+    roles("STUDENT"),
+    validate(enrollmentSchemas.registerStudentSchema),
+    enrollment.registerStudent,
   );
   router.post(
     "/sections/:id/enrollments/:studentId/withdraw",
-    roles("STUDENT", "STAFF"),
-    validate(enrollmentSchemas.withdrawStudentSchema, "body"),
-    enrollmentController.withdrawStudent,
+    roles("STUDENT"),
+    validate(enrollmentSchemas.withdrawStudentSchema),
+    enrollment.withdrawStudent,
   );
   router.get(
     "/schedule",
-    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
-    validate(sessionSchemas.personalScheduleSchema, "query"),
-    sessionController.personalSchedule,
+    roles("STUDENT", "LECTURER"),
+    validate(personalScheduleSchema, "query"),
+    sessions.personalSchedule,
   );
   router.get(
     "/sections/:id/sessions",
-    roles("STUDENT", "LECTURER", "STAFF"),
-    sessionController.sectionSessions,
-  );
-  router.post(
-    "/sessions",
-    roles("STAFF"),
-    validate(sessionSchemas.createSessionSchema, "body"),
-    sessionController.createSession,
-  );
-  router.patch(
-    "/sessions/:id/schedule",
-    roles("STAFF"),
-    validate(sessionSchemas.changeScheduleSchema, "body"),
-    sessionController.changeSchedule,
-  );
-  router.patch(
-    "/sessions/:id/status",
-    roles("STAFF"),
-    validate(sessionSchemas.setSessionStatusSchema, "body"),
-    sessionController.setSessionStatus,
-  );
-  router.get(
-    "/sessions/:id/history",
-    roles("LECTURER", "STAFF"),
-    sessionController.sessionHistory,
-  );
-  router.get(
-    "/sessions/:id/attendance-history",
-    roles("LECTURER", "STAFF"),
-    attendanceController.attendanceHistory,
+    roles("STUDENT", "LECTURER", "HEAD"),
+    sessions.sectionSessions,
   );
   router.get(
     "/sessions/:id/attendance",
-    roles("STUDENT", "LECTURER", "STAFF"),
-    attendanceController.getAttendance,
+    roles("LECTURER"),
+    attendance.getAttendance,
   );
   router.put(
     "/sessions/:id/attendance",
     roles("LECTURER"),
-    validate(attendanceSchemas.saveAttendanceSchema, "body"),
-    attendanceController.saveAttendance,
+    validate(saveAttendanceSchema),
+    attendance.saveAttendance,
   );
   router.get(
     "/department/summary",
     roles("HEAD"),
-    validate(reportSchemas.departmentSummarySchema, "query"),
-    reportController.departmentSummary,
+    validate(departmentSummarySchema, "query"),
+    reports.departmentSummary,
   );
   return router;
 }

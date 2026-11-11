@@ -1,37 +1,31 @@
 import { Router } from "express";
 import { roles } from "../middlewares/auth.middleware.js";
+import { options } from "../controllers/head.controller.js";
 import { validate, validateId } from "../middlewares/validate.middleware.js";
-import * as schemas from "../validators/head.validator.js";
-import * as controller from "../controllers/head.controller.js";
+import * as lecturers from "../controllers/head-lecturer.controller.js";
+import * as schemas from "../validators/head-lecturer.validator.js";
 export function headRoutes() {
   const router = Router();
-  router.use("/head", roles("HEAD"));
   router.param("id", validateId);
-  router.get("/head/options", controller.options);
   router.get(
-    "/head/courses",
-    validate(schemas.list, "query"),
-    controller.courses,
+    "/head/lecturers",
+    roles("HEAD"),
+    validate(schemas.listLecturersSchema, "query"),
+    lecturers.list,
   );
+  router.get("/head/lecturers/:id", roles("HEAD"), lecturers.detail);
   router.post(
-    "/head/courses",
-    validate(schemas.courseCreate),
-    controller.createCourse,
+    "/head/lecturers",
+    roles("HEAD"),
+    validate(schemas.createLecturerSchema),
+    lecturers.create,
   );
   router.patch(
-    "/head/courses/:id",
-    validate(schemas.courseUpdate),
-    controller.updateCourse,
+    "/head/lecturers/:id",
+    roles("HEAD"),
+    validate(schemas.updateLecturerSchema),
+    lecturers.update,
   );
-  router.get(
-    "/head/sections",
-    validate(schemas.list, "query"),
-    controller.sections,
-  );
-  router.patch(
-    "/head/sections/:id/lecturer",
-    validate(schemas.assign),
-    controller.assignLecturer,
-  );
+  router.get("/head/options", roles("HEAD"), options);
   return router;
 }

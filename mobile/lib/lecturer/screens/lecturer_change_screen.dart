@@ -1,82 +1,36 @@
 import 'package:flutter/material.dart';
 
+import '../models/lecturer_data.dart';
 import '../repositories/lecturer_repository.dart';
-import '../widgets/lecturer_widgets.dart';
-import 'lecturer_requests_screen.dart';
+import '../utils/lecturer_dates.dart';
+import '../widgets/lecturer_ui.dart';
 
 class LecturerChangeScreen extends StatefulWidget {
-  const LecturerChangeScreen({super.key, required this.repository});
   final LecturerRepository repository;
+  final TeachingSession? initialSession;
+  const LecturerChangeScreen({
+    super.key,
+    required this.repository,
+    this.initialSession,
+  });
   @override
   State<LecturerChangeScreen> createState() => _LecturerChangeScreenState();
 }
 
 class _LecturerChangeScreenState extends State<LecturerChangeScreen> {
-  int _revision = 0;
-  Future<void> _open(Json row) async {
-    if (DateTime.parse(row['start_at'] as String).isBefore(DateTime.now()) ||
-        row['attendance_saved'] == true) {
-      showMessage(context, 'Chỉ đổi buổi tương lai chưa điểm danh');
-      return;
-    }
-    final sent = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => _ChangeForm(repository: widget.repository, lesson: row),
-      ),
-    );
-    if (sent == true && mounted) setState(() => _revision++);
-  }
-
-  @override
-  Widget build(BuildContext context) => DefaultTabController(
-    length: 2,
-    child: Column(
-      children: [
-        const TabBar(
-          tabs: [
-            Tab(text: 'Tạo yêu cầu'),
-            Tab(text: 'Đơn đã gửi'),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            children: [
-              SessionBrowser(repository: widget.repository, onSelect: _open),
-              LecturerRequestsScreen(
-                key: ValueKey(_revision),
-                repository: widget.repository,
-                changes: true,
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ChangeForm extends StatefulWidget {
-  const _ChangeForm({required this.repository, required this.lesson});
-  final LecturerRepository repository;
-  final Json lesson;
-  @override
-  State<_ChangeForm> createState() => _ChangeFormState();
-}
-
-class _ChangeFormState extends State<_ChangeForm> {
-  final _reason = TextEditingController();
   final _form = GlobalKey<FormState>();
-  List<Json> _rooms = [], _slots = [];
-  String? _room, _error;
-  late DateTime _date;
-  late int _slot;
+  final _reason = TextEditingController();
+  List<TeachingSession> _sessions = [];
+  List<Json> _rooms = [];
+  List<AcademicTerm> _terms = [];
+  TeachingSession? _session;
+  String? _roomId, _error;
+  DateTime? _day;
+  int? _slot;
   bool _loading = true, _saving = false;
   @override
   void initState() {
     super.initState();
-    _date = DateTime.parse(widget.lesson['session_date'] as String);
-    _slot = widget.lesson['slot_id'] as int;
-    _room = widget.lesson['room_id'] as String;
     _load();
   }
 
@@ -92,81 +46,101 @@ class _ChangeFormState extends State<_ChangeForm> {
       _error = null;
     });
     try {
-      final result = await Future.wait([
+      final data = await Future.wait<dynamic>([
         widget.repository.rooms(),
-        widget.repository.slots(),
+        widget.repository.terms(),
+        if (widget.initialSession == null)
+          widget.repository.schedule(
+            vnDay(),
+            vnDay().add(const Duration(days: 92)),
+          ),
       ]);
-      if (mounted) {
-        setState(() {
-          _rooms = result[0];
-          _slots = result[1];
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (!mounted) return;
+      setState(() {
+        _rooms = data[0] as List<Json>;
+        _terms = data[1] as List<AcademicTerm>;
+        _sessions = widget.initialSession == null
+            ? (data[2] as List<TeachingSession>)
+                  .where((s) => s.canChange)
+                  .toList()
+            : [widget.initialSession!];
+        if (_sessions.isNotEmpty) _select(_sessions.first);
+      });
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _pick() async {
-    final now = vietnamNow();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = await showDatePicker(
+  void _select(TeachingSession session) {
+    _session = session;
+    _roomId = _rooms.any((r) => r['id'] == session.roomId)
+        ? session.roomId
+        : null;
+    _day = session.day;
+    _slot = session.slot;
+  }
+
+  Future<void> _pickDate() async {
+    final term = _terms.where((s) => s.id == _session!.semesterId).firstOrNull;
+    if (term == null) {
+      setState(
+        () => _error = 'Không tìm thấy học kỳ của buổi học. Hãy tải lại.',
+      );
+      return;
+    }
+    final start = vnDay(term.start).isAfter(vnDay())
+        ? vnDay(term.start)
+        : vnDay();
+    final end = vnDay(term.end).subtract(const Duration(days: 1));
+    final initial = _day!.isBefore(start) ? start : _day!;
+    final picked = await showDatePicker(
       context: context,
-      initialDate: _date.isBefore(today) ? today : _date,
-      firstDate: today,
-      lastDate: DateTime(today.year + 3),
+      initialDate: DateTime(initial.year, initial.month, initial.day),
+      firstDate: DateTime(start.year, start.month, start.day),
+      lastDate: DateTime(end.year, end.month, end.day),
+      helpText: 'Chọn ngày trong học kỳ',
+      cancelText: 'Hủy',
+      confirmText: 'Chọn',
     );
-    if (day != null && mounted) setState(() => _date = day);
+    if (picked != null && mounted) {
+      setState(
+        () => _day = DateTime.utc(picked.year, picked.month, picked.day),
+      );
+    }
   }
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
-    if (dateValue(_date) == widget.lesson['session_date'] &&
-        _slot == widget.lesson['slot_id'] &&
-        _room == widget.lesson['room_id']) {
-      showMessage(context, 'Hãy thay đổi ngày, ca hoặc phòng');
+    if (_day == _session!.day &&
+        _slot == _session!.slot &&
+        _roomId == _session!.roomId) {
+      setState(
+        () =>
+            _error = 'Hãy thay đổi ngày, slot hoặc phòng so với lịch hiện tại.',
+      );
       return;
     }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Gửi yêu cầu cho cán bộ?'),
-        content: Text(
-          '${sessionLabel(widget.lesson)}\n${displayDate(dateValue(_date))} • Ca $_slot\nPhòng ${_rooms.firstWhere((r) => r['id'] == _room)['name']}\nLịch chỉ thay đổi sau khi cán bộ duyệt.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Gửi yêu cầu'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      await widget.repository.change({
-        'session_id': widget.lesson['id'],
-        'reason': _reason.text.trim(),
-        'proposed_date': dateValue(_date),
-        'proposed_slot_id': _slot,
-        'proposed_room_id': _room,
-      });
-      if (mounted) {
-        showMessage(context, 'Đã gửi yêu cầu, đang chờ cán bộ duyệt');
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      await widget.repository.createChange(
+        session: _session!,
+        roomId: _roomId!,
+        day: _day!,
+        slot: _slot!,
+        reason: _reason.text.trim(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã gửi yêu cầu cho cán bộ duyệt')),
+      );
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -175,110 +149,164 @@ class _ChangeFormState extends State<_ChangeForm> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: Scaffold(
-      appBar: AppBar(title: const Text('Yêu cầu đổi lịch / phòng')),
-      body: _loading
+    child: LecturerPage(
+      title: 'Yêu cầu đổi lịch / phòng',
+      child: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _rooms.isEmpty || _slots.isEmpty
-          ? Center(
-              child: LoadMessage(
-                message: _error ?? 'Chưa có phòng hoặc ca học',
-                retry: _load,
-              ),
-            )
-          : SingleChildScrollView(
+          : _sessions.isEmpty
+          ? ListView(
               padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _form,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          '${sessionLabel(widget.lesson)}\nHiện tại: ${sessionDetail(widget.lesson)}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Giữ nguyên ngày và ca nếu chỉ muốn chuyển phòng. Giờ học theo UTC+7.',
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _saving ? null : _pick,
-                      icon: const Icon(Icons.calendar_month),
-                      label: Text(
-                        'Ngày đề xuất: ${displayDate(dateValue(_date))}',
-                      ),
-                    ),
-                    DropdownButtonFormField<int>(
-                      initialValue: _slot,
-                      decoration: const InputDecoration(
-                        labelText: 'Ca đề xuất',
-                      ),
-                      items: [
-                        for (final s in _slots)
-                          DropdownMenuItem(
-                            value: s['id'] as int,
+              children: [
+                if (_error != null)
+                  ErrorPanel(_error!, onRetry: _load)
+                else
+                  const EmptyPanel(
+                    title: 'Chưa có buổi phù hợp',
+                    message: 'Chọn buổi tương lai, chưa điểm danh. Tìm các buổi xa hơn trong màn Lịch dạy.',
+                    icon: Icons.edit_calendar_outlined,
+                  ),
+              ],
+            )
+          : Form(
+              key: _form,
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  const Text(
+                    'Yêu cầu sẽ được cán bộ kiểm tra và phê duyệt. Lịch hiện tại giữ nguyên trong lúc chờ.',
+                    style: TextStyle(color: lecturerMuted),
+                  ),
+                  const SectionHeading('Buổi học hiện tại'),
+                  DropdownButtonFormField<String>(
+                    initialValue: _session?.id,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Buổi dạy'),
+                    items: _sessions
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s.id,
                             child: Text(
-                              'Ca ${s['id']} • ${minuteLabel(s['start_minute'])}–${minuteLabel(s['end_minute'])}',
+                              '${dateLabel(s.day)} · Slot ${s.slot} · ${s.section}',
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                      ],
-                      onChanged: _saving
-                          ? null
-                          : (v) => setState(() => _slot = v!),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: _rooms.any((r) => r['id'] == _room)
-                          ? _room
-                          : null,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Phòng đề xuất',
-                      ),
-                      items: [
-                        for (final r in _rooms)
-                          DropdownMenuItem(
-                            value: r['id'] as String,
-                            child: Text('${r['name']} • ${r['capacity']} chỗ'),
+                        )
+                        .toList(),
+                    onChanged: _saving
+                        ? null
+                        : (value) => setState(
+                            () => _select(
+                              _sessions.firstWhere((s) => s.id == value),
+                            ),
                           ),
-                      ],
-                      onChanged: _saving
-                          ? null
-                          : (v) => setState(() => _room = v),
-                      validator: (v) => v == null ? 'Chọn phòng' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _reason,
-                      enabled: !_saving,
-                      maxLength: 1000,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Lý do thay đổi',
-                        border: OutlineInputBorder(),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _session!.course,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${dateLabel(_session!.day)} · ${slotLabels[_session!.slot]}\nPhòng ${_session!.room}',
+                            style: const TextStyle(color: lecturerMuted),
+                          ),
+                        ],
                       ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Nhập lý do' : null,
                     ),
-                    if (_error != null)
-                      Text(
+                  ),
+                  const SectionHeading('Lịch / phòng đề xuất'),
+                  OutlinedButton.icon(
+                    onPressed: _saving ? null : _pickDate,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text('Ngày học: ${dateLabel(_day!)}'),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    key: ValueKey('slot-${_session!.id}'),
+                    initialValue: _slot,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Slot đề xuất',
+                    ),
+                    items: slotLabels.entries
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text('Slot ${e.key} · ${e.value}'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _saving
+                        ? null
+                        : (value) => setState(() => _slot = value),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('room-${_session!.id}'),
+                    initialValue: _roomId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Phòng đề xuất',
+                    ),
+                    items: _rooms
+                        .map(
+                          (room) => DropdownMenuItem(
+                            value: room['id'] as String,
+                            child: Text(
+                              '${room['name']} · ${room['capacity']} chỗ',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _saving
+                        ? null
+                        : (value) => setState(() => _roomId = value),
+                    validator: (value) =>
+                        value == null ? 'Chọn phòng học' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    key: const Key('change-reason'),
+                    controller: _reason,
+                    enabled: !_saving,
+                    maxLength: 1000,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: const InputDecoration(
+                      labelText: 'Lý do thay đổi',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Nhập lý do thay đổi'
+                        : null,
+                  ),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
                         _error!,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
-                    if (_saving) const LinearProgressIndicator(),
-                    FilledButton.icon(
-                      onPressed: _saving ? null : _submit,
-                      icon: const Icon(Icons.send),
-                      label: const Text('Gửi cán bộ duyệt'),
                     ),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _saving ? null : _submit,
+                    icon: const Icon(Icons.send_outlined),
+                    label: Text(_saving ? 'Đang gửi…' : 'Gửi yêu cầu'),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Đổi ngày hoặc slot sẽ làm đơn nghỉ cũ hết hiệu lực khi được duyệt. Chỉ đổi phòng vẫn giữ đơn nghỉ.',
+                    style: TextStyle(color: lecturerMuted, fontSize: 12),
+                  ),
+                ],
               ),
             ),
     ),

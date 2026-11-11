@@ -10,22 +10,7 @@ import {
   userRepository,
   classSessionRepository,
   leaveRepository,
-  auditRepository,
 } from "../repositories/index.js";
-export async function attendanceHistory(user, sessionId) {
-  const lesson = await get(classSessionRepository, sessionId);
-  await authorizeLesson(lesson, user);
-  return clean(
-    await auditRepository.find(
-      {
-        entity: "ClassSession",
-        entity_id: lesson._id,
-        action: "SAVE_ATTENDANCE",
-      },
-      { sort: { created_at: -1, _id: -1 }, limit: 200 },
-    ),
-  );
-}
 export async function getAttendance(user, sessionId) {
   const lesson = await get(classSessionRepository, sessionId);
   await authorizeLesson(lesson, user);
@@ -75,6 +60,19 @@ export async function saveAttendance(user, sessionId, data) {
       !students.every((s) => ids.has(String(s)))
     )
       fail(400, "Cần đúng và đủ danh sách tại thời điểm buổi học");
+    for (const row of data.rows) {
+      if (
+        !["PRESENT", "ABSENT"].includes(row.status) &&
+        !lesson.attendance.some(
+          (old) =>
+            same(old.student_id, row.student_id) && old.status === row.status,
+        )
+      )
+        fail(
+          400,
+          "Điểm danh mới chỉ nhận PRESENT/ABSENT; trạng thái cũ chỉ được giữ nguyên",
+        );
+    }
     const before = {
       version: lesson.version,
       rows: clean(lesson.attendance),

@@ -14,7 +14,7 @@ export function requestRoutes() {
   );
   router.post(
     "/change-requests",
-    roles("LECTURER", "HEAD"),
+    roles("LECTURER"),
     validate(schemas.createChangeSchema),
     controller.createChange,
   );
@@ -24,8 +24,8 @@ export function requestRoutes() {
   ]) {
     const readPolicy =
       kind === "change"
-        ? [roles("LECTURER", "HEAD", "STAFF")]
-        : [roles("STUDENT", "LECTURER", "STAFF")];
+        ? [roles("LECTURER", "STAFF")]
+        : [roles("STUDENT", "LECTURER")];
     router.get(
       `/${path}`,
       ...readPolicy,
