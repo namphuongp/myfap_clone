@@ -61,10 +61,14 @@ export function sharedRoutes() {
   );
   router.get(
     "/notices",
-    roles("STUDENT", "STAFF"),
+    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
     validate(listNoticesSchema, "query"),
     notices.listNotices,
   );
-  router.get("/notices/:id", roles("STUDENT", "STAFF"), notices.getNotice);
+  router.get(
+    "/notices/:id",
+    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
+    notices.getNotice,
+  );
   return router;
 }

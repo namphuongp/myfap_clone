@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/profile/repositories/profile_repository.dart';
 import '../../core/profile/screens/profile_screen.dart';
+import '../../student/screens/announcements_screen.dart';
 import '../repositories/lecturer_repository.dart';
 import '../widgets/lecturer_ui.dart';
 import 'lecturer_schedule_screen.dart';
@@ -52,6 +53,26 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     ),
   );
   void _schedule() => _open(LecturerScheduleScreen(repository: _repository));
+  void _notices() => _open(
+    Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Bản tin học vụ',
+          style: TextStyle(
+            color: Color(0xFF1E1E2D),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: AnnouncementsScreen(api: widget.api),
+    ),
+  );
   void _attendance() =>
       _open(LecturerAttendanceCoursesScreen(repository: _repository));
   void _requests() => _open(LecturerRequestsScreen(repository: _repository));
@@ -147,6 +168,24 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             ],
           ),
           actions: [
+            IconButton(
+              tooltip: 'Bản tin học vụ',
+              onPressed: _notices,
+              icon: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEBEBF2)),
+                ),
+                child: const Icon(
+                  Icons.notifications_none_rounded,
+                  size: 20,
+                  color: Color(0xFF1E1E2D),
+                ),
+              ),
+            ),
             IconButton(
               tooltip: 'Hồ sơ cá nhân',
               onPressed: _profile,

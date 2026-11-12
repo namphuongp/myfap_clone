@@ -6,7 +6,14 @@ export const Notice = model(
     content: str(5000),
     audience: {
       type: String,
-      enum: ["ALL_STUDENTS", "DEPARTMENT", "MAJOR"],
+      enum: [
+        "ALL_STUDENTS",
+        "ALL_LECTURERS",
+        "ALL_HEADS",
+        "ALL_USERS",
+        "DEPARTMENT",
+        "MAJOR",
+      ],
       default: "ALL_STUDENTS",
     },
     department_ids: [{ type: Schema.Types.ObjectId, ref: "Department" }],

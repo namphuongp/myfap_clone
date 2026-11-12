@@ -305,6 +305,10 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   String _audienceLabel(String audience) => switch (audience) {
+    'ALL_STUDENTS' => 'Sinh viên',
+    'ALL_LECTURERS' => 'Giảng viên',
+    'ALL_HEADS' => 'Trưởng bộ môn',
+    'ALL_USERS' => 'Toàn trường',
     'DEPARTMENT' => 'Bộ môn của bạn',
     'MAJOR' => 'Ngành của bạn',
     _ => 'Toàn trường',

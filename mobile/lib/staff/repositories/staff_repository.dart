@@ -82,12 +82,13 @@ class StaffRepository {
   Future<StaffJson> createNotice({
     required String title,
     required String content,
+    String audience = 'ALL_STUDENTS',
     DateTime? expiresAt,
   }) async => _object(
     await api.request('POST', '/notices', {
       'title': title,
       'content': content,
-      'audience': 'ALL_STUDENTS',
+      'audience': audience,
       'department_ids': <String>[],
       'major_ids': <String>[],
       'expires_at': expiresAt?.toUtc().toIso8601String(),

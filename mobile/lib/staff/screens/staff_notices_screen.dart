@@ -64,13 +64,23 @@ class _StaffNoticesScreenState extends State<StaffNoticesScreen> {
     }
   }
 
+  String _audienceLabel(String? audience) => switch (audience) {
+    'ALL_LECTURERS' => 'Chỉ giảng viên',
+    'ALL_HEADS' => 'Chỉ trưởng bộ môn',
+    'ALL_USERS' => 'Tất cả mọi người',
+    'DEPARTMENT' => 'Theo bộ môn',
+    'MAJOR' => 'Theo ngành học',
+    _ => 'Toàn bộ sinh viên',
+  };
+
   Future<void> _publish(StaffJson notice) async {
+    final target = _audienceLabel(notice['audience']?.toString()).toLowerCase();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Phát hành thông báo?'),
         content: Text(
-          '“${notice['title']}” sẽ được gửi tới toàn bộ sinh viên.',
+          '“${notice['title']}” sẽ được gửi tới $target.',
         ),
         actions: [
           TextButton(
@@ -268,8 +278,8 @@ class _NoticeCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               expires == null
-                  ? 'Đối tượng: Toàn bộ sinh viên'
-                  : 'Toàn bộ sinh viên · Hết hạn ${_dateLabel(expires)}',
+                  ? 'Đối tượng: ${_audienceText(notice['audience']?.toString())}'
+                  : '${_audienceText(notice['audience']?.toString())} · Hết hạn ${_dateLabel(expires)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -287,6 +297,15 @@ class _NoticeCard extends StatelessWidget {
       ),
     );
   }
+
+  String _audienceText(String? audience) => switch (audience) {
+    'ALL_LECTURERS' => 'Chỉ giảng viên',
+    'ALL_HEADS' => 'Chỉ trưởng bộ môn',
+    'ALL_USERS' => 'Tất cả mọi người',
+    'DEPARTMENT' => 'Theo bộ môn',
+    'MAJOR' => 'Theo ngành học',
+    _ => 'Toàn bộ sinh viên',
+  };
 
   String _statusLabel(String status) => switch (status) {
     'PUBLISHED' => 'Đã phát hành',
@@ -310,6 +329,7 @@ class _StaffNoticeFormScreenState extends State<StaffNoticeFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _content = TextEditingController();
+  String _audience = 'ALL_STUDENTS';
   DateTime? _expiresAt;
   bool _saving = false;
 
@@ -348,6 +368,7 @@ class _StaffNoticeFormScreenState extends State<StaffNoticeFormScreen> {
       await widget.repository.createNotice(
         title: _title.text.trim(),
         content: _content.text.trim(),
+        audience: _audience,
         expiresAt: _expiresAt,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -404,6 +425,37 @@ class _StaffNoticeFormScreenState extends State<StaffNoticeFormScreen> {
                     : null,
               ),
               const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: _audience,
+                decoration: const InputDecoration(
+                  labelText: 'Đối tượng nhận thông báo',
+                  prefixIcon: Icon(Icons.groups_outlined),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'ALL_STUDENTS',
+                    child: Text('Chỉ sinh viên'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ALL_LECTURERS',
+                    child: Text('Chỉ giảng viên'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ALL_HEADS',
+                    child: Text('Chỉ trưởng bộ môn'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ALL_USERS',
+                    child: Text('Tất cả mọi người'),
+                  ),
+                ],
+                onChanged: _saving
+                    ? null
+                    : (value) {
+                        if (value != null) setState(() => _audience = value);
+                      },
+              ),
+              const SizedBox(height: 12),
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.event_busy_outlined),

@@ -15,11 +15,15 @@ import { fail } from "../../../utils/api-error.js";
 async function audienceFields(data, session) {
   const departments = [...new Set(data.department_ids)],
     majors = [...new Set(data.major_ids)];
+  const isGlobal = [
+    "ALL_STUDENTS",
+    "ALL_LECTURERS",
+    "ALL_HEADS",
+    "ALL_USERS",
+  ].includes(data.audience);
   if (
-    (data.audience === "ALL_STUDENTS" &&
-      (departments.length || majors.length)) ||
-    (data.audience === "DEPARTMENT" &&
-      (!departments.length || majors.length)) ||
+    (isGlobal && (departments.length || majors.length)) ||
+    (data.audience === "DEPARTMENT" && (!departments.length || majors.length)) ||
     (data.audience === "MAJOR" && (!majors.length || departments.length))
   )
     fail(400, "Đối tượng nhận không khớp loại thông báo");
@@ -42,12 +46,16 @@ async function audienceFields(data, session) {
 // Giới hạn thông báo theo đối tượng nhận và thời hạn.
 async function visibleFilter(actor) {
   const user = await get(userRepository, actor._id);
-  const scope = [
-    { audience: "ALL_STUDENTS" },
-    { audience: "DEPARTMENT", department_ids: user.department_id },
-  ];
-  if (user.major_id)
+  const scope = [{ audience: "ALL_USERS" }];
+  if (user.role === "STUDENT") scope.push({ audience: "ALL_STUDENTS" });
+  if (user.role === "LECTURER") scope.push({ audience: "ALL_LECTURERS" });
+  if (user.role === "HEAD") scope.push({ audience: "ALL_HEADS" });
+  if (user.department_id) {
+    scope.push({ audience: "DEPARTMENT", department_ids: user.department_id });
+  }
+  if (user.role === "STUDENT" && user.major_id) {
     scope.push({ audience: "MAJOR", major_ids: user.major_id });
+  }
   const now = new Date();
   return {
     status: "PUBLISHED",
@@ -96,7 +104,7 @@ export async function publishNotice(actor, id, data) {
 }
 // Lấy thông báo đúng đối tượng và trạng thái.
 export async function listNotices(actor, q) {
-  if (actor.role === "STUDENT" && q.status && q.status !== "PUBLISHED")
+  if (actor.role !== "STAFF" && q.status && q.status !== "PUBLISHED")
     fail(403, "Chỉ được xem thông báo đã phát hành");
   const filter =
     actor.role === "STAFF"
