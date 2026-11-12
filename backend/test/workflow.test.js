@@ -5,8 +5,7 @@ import {
   ClassSession,
   Course,
   Department,
-  Enrollment,
-  EnrollmentPeriod,
+  ClassMembership,
   Leave,
   Section,
 } from "../src/models/index.js";
@@ -113,7 +112,7 @@ test("Remaining workflows: registration, attendance, lecturer requests and repor
     await t.test(
       "withdrawal and registration preserve past attendance and enrollment history",
       async () => {
-        const enrollment = await Enrollment.findOne({
+        const enrollment = await ClassMembership.findOne({
           student_id: users.student._id,
           section_id: section._id,
         });
@@ -132,7 +131,7 @@ test("Remaining workflows: registration, attendance, lecturer requests and repor
           .send({})
           .expect(201);
         assert.equal(
-          await EnrollmentPeriod.countDocuments({
+          await ClassMembership.countDocuments({
             student_id: users.student._id,
             section_id: section._id,
           }),

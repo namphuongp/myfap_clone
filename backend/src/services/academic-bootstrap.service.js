@@ -1,7 +1,7 @@
 import {
   semesterRepository,
   sectionRepository,
-  enrollmentRepository,
+  classMembershipRepository,
   classSessionRepository,
   userRepository,
 } from "../repositories/index.js";
@@ -74,7 +74,7 @@ export async function bootstrapAcademicCalendar({ apply = false } = {}) {
         const before = clean(section);
         section.semester_id = target._id;
         await saveDocument(section, { session });
-        const enrollments = await enrollmentRepository.find(
+        const enrollments = await classMembershipRepository.find(
           { section_id: section._id },
           { session },
         );

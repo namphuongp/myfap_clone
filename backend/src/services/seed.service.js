@@ -11,8 +11,7 @@ import {
   userRepository,
   roomRepository,
   sectionRepository,
-  enrollmentRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
 } from "../repositories/index.js";
 export async function seed({ now = new Date() } = {}) {
@@ -96,27 +95,15 @@ export async function seed({ now = new Date() } = {}) {
       { session, ordered: true },
     );
     const enrolled_at = new Date(now.getTime() - 7 * 86400000);
-    await enrollmentRepository.create(
-      [
-        {
-          section_id: section._id,
-          student_id: users.STUDENT._id,
-          course_id: course._id,
-          semester_id: semester._id,
-          enrolled_at,
-        },
-      ],
-      { session, ordered: true },
-    );
-    await enrollmentPeriodRepository.create(
-      [
-        {
-          section_id: section._id,
-          student_id: users.STUDENT._id,
-          starts_at: enrolled_at,
-        },
-      ],
-      { session, ordered: true },
+    await classMembershipRepository.create(
+      {
+        section_id: section._id,
+        student_id: users.STUDENT._id,
+        course_id: course._id,
+        semester_id: semester._id,
+        starts_at: enrolled_at,
+      },
+      { session },
     );
     const pastDay = new Date(
       Math.max(

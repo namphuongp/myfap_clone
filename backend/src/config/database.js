@@ -12,5 +12,5 @@ export async function connect(uri = process.env.MONGODB_URI) {
   if (!hello.setName && !hello.msg?.includes("isdbgrid"))
     throw new Error("MongoDB cần replica set để hỗ trợ transaction");
 }
-export const initialize = () => databaseRepository.initialize();
+export const initialize = (options) => databaseRepository.initialize(options);
 export const disconnect = () => mongoose.disconnect();

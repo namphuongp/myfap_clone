@@ -357,7 +357,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   Widget _transferContent(BuildContext context, StudentRequestsData data) {
-    final pending = data.majorTransfers.any((row) => row['status'] == 'PENDING');
+    final pending = data.majorTransfers.any((row) => row['status'] == 'PENDING' || (row['status'] == 'APPROVED' && row['applied_at'] == null));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -404,6 +404,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text('Lý do: ${request['reason'] ?? ''}'),
+                    if (request['status'] != 'REJECTED' && request['status'] != 'CANCELLED')
+                      Text(request['applied_at'] != null ? 'Đã áp dụng chuyển ngành' : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}'),
                     if ((request['review_note']?.toString() ?? '').isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text('Phản hồi: ${request['review_note']}'),

@@ -1,8 +1,9 @@
+import { applyDueMajorTransfers } from "../src/services/major-transfer.service.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
 import {
-  Audit,
+  ActivityLog,
   Major,
   MajorTransfer,
   Notice,
@@ -33,7 +34,7 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
       assert.equal(r.body.length, 4);
     });
     await t.test(
-      "Không tự áp dụng chuyển ngành đã duyệt cũ khi đăng nhập/xác thực",
+      "Không áp dụng lại đơn đã chuyển ngành trong quá khứ",
       async () => {
         const target = await Major.create({
           code: "ARCHIVE",
@@ -50,6 +51,7 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
           effective_semester_id: semester._id,
           effective_at: new Date(Date.now() - 86400000),
           status: "APPROVED",
+          applied_at: new Date(Date.now() - 86400000),
           reason: "Dữ liệu trước thu gọn",
           reviewer_id: users.staff._id,
         });
@@ -66,11 +68,11 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
           String((await User.findById(users.student._id)).major_id),
           String(major._id),
         );
-        assert.equal((await MajorTransfer.findById(old._id)).applied_at, null);
+        assert.ok((await MajorTransfer.findById(old._id)).applied_at);
       },
     );
     await t.test(
-      "Sinh viên gửi đơn, STAFF duyệt và cập nhật ngành có audit",
+      "Duyệt chuyển ngành chờ kỳ tới, chỉ áp dụng đúng hạn và không chạy lại",
       async () => {
         const target = await Major.create({
           code: "TRANSFER-TARGET",
@@ -118,18 +120,36 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
           .send({ version: 0, decision: "APPROVED", note: "Đã kiểm tra" })
           .expect(200);
         const updated = await User.findById(users.student._id);
-        assert.equal(String(updated.major_id), String(target._id));
+        assert.equal(String(updated.major_id), String(major._id));
         const request = await MajorTransfer.findById(created.body.id);
-        assert.ok(request.applied_at);
+        assert.equal(request.applied_at, null);
+        assert.equal(+request.effective_at, +nextTerm().start_at);
+        await applyDueMajorTransfers(
+          new Date(+request.effective_at - 1),
+          users.student._id,
+        );
+        assert.equal(
+          String((await User.findById(users.student._id)).major_id),
+          String(major._id),
+        );
+        await applyDueMajorTransfers(request.effective_at, users.student._id);
+        assert.equal(
+          String((await User.findById(users.student._id)).major_id),
+          String(target._id),
+        );
+        assert.equal(
+          await applyDueMajorTransfers(request.effective_at, users.student._id),
+          0,
+        );
         assert.equal(request.status, "APPROVED");
         assert.ok(
-          await Audit.exists({
+          await ActivityLog.exists({
             entity: "MajorTransfer",
             entity_id: request._id,
           }),
         );
         assert.ok(
-          await Audit.exists({
+          await ActivityLog.exists({
             action: "APPLY_MAJOR_TRANSFER",
             entity_id: users.student._id,
           }),

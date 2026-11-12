@@ -9,7 +9,7 @@ import { authorizeLesson } from "./access.service.js";
 import { ensureSlot, reschedule } from "./scheduling.service.js";
 import { slotTimes } from "../utils/slots.js";
 import {
-  enrollmentRepository,
+  classMembershipRepository,
   classSessionRepository,
   leaveRepository,
   changeRepository,
@@ -150,11 +150,12 @@ export async function reviewRequest(user, requestId, data, kind) {
         )
           fail(409, "Slot đã đổi, đơn nghỉ không còn hiệu lực");
         if (
-          !(await enrollmentRepository.exists(
+          !(await classMembershipRepository.exists(
             {
               section_id: lesson.section_id,
               student_id: row.requester_id,
-              status: "ACTIVE",
+              starts_at: { $lte: lesson.start_at },
+              $or: [{ ends_at: null }, { ends_at: { $gt: lesson.start_at } }],
             },
             { session: session },
           ))

@@ -14,7 +14,7 @@ import {
   courseRepository,
   roomRepository,
   sectionRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
 } from "../repositories/index.js";
 export async function personalSchedule(user, q) {
@@ -31,7 +31,7 @@ export async function personalSchedule(user, q) {
     { sort: { start_at: 1 }, limit: 1000 },
   );
   if (user.role === "STUDENT") {
-    const periods = await enrollmentPeriodRepository.find({
+    const periods = await classMembershipRepository.find({
       student_id: user._id,
     });
     rows = rows.filter((s) =>
@@ -77,7 +77,7 @@ export async function personalSchedule(user, q) {
 }
 export async function sectionSessions(user, sectionId) {
   const section = await get(sectionRepository, sectionId);
-  if (user.role !== "STUDENT") await authorizeSection(section, user);
+  await authorizeSection(section, user);
   const rows = clean(
     await classSessionRepository.find(
       {

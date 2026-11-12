@@ -12,8 +12,7 @@ import {
   userRepository,
   roomRepository,
   sectionRepository,
-  enrollmentRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
   leaveRepository,
 } from "../repositories/index.js";
@@ -36,21 +35,22 @@ export async function enroll(session, user, sectionId, studentId) {
   if (section.status !== "OPEN") fail(409, "Lớp đã đóng đăng ký");
   const semester = await get(semesterRepository, section.semester_id, session);
   if (semester.end_at <= now) fail(409, "Học kỳ đã kết thúc");
-  const existing = await enrollmentRepository.findOne(
+  const existing = await classMembershipRepository.findOne(
     {
       section_id: sectionId,
       student_id: studentId,
+      ends_at: null,
     },
     { session: session },
   );
-  if (existing?.status === "ACTIVE") fail(409, "Sinh viên đã đăng ký lớp");
+  if (existing) fail(409, "Sinh viên đã đăng ký lớp");
   if (
-    await enrollmentRepository.exists(
+    await classMembershipRepository.exists(
       {
         student_id: studentId,
         course_id: section.course_id,
         semester_id: section.semester_id,
-        status: "ACTIVE",
+        ends_at: null,
         section_id: { $ne: sectionId },
       },
       { session: session },
@@ -61,7 +61,7 @@ export async function enroll(session, user, sectionId, studentId) {
     {
       section_id: sectionId,
       status: "SCHEDULED",
-      start_at: { $gt: now },
+      start_at: { $gte: now },
     },
     { session: session },
   );
@@ -69,10 +69,10 @@ export async function enroll(session, user, sectionId, studentId) {
     fail(409, "Lớp phải có lịch học tương lai trước khi đăng ký");
   if (lessons.some((s) => !s.slot_id))
     fail(409, "Lịch cũ cần được chuẩn hóa theo slot");
-  const count = await enrollmentRepository.countDocuments(
+  const count = await classMembershipRepository.countDocuments(
     {
       section_id: sectionId,
-      status: "ACTIVE",
+      ends_at: null,
     },
     { session: session },
   );
@@ -85,11 +85,11 @@ export async function enroll(session, user, sectionId, studentId) {
   );
   if (rooms.some((r) => r.capacity < count + 1))
     fail(409, "Phòng không đủ chỗ");
-  const sectionIds = await enrollmentRepository.distinct(
+  const sectionIds = await classMembershipRepository.distinct(
     "section_id",
     {
       student_id: studentId,
-      status: "ACTIVE",
+      ends_at: null,
     },
     { session: session },
   );
@@ -109,21 +109,15 @@ export async function enroll(session, user, sectionId, studentId) {
     )
       fail(409, "Lịch lớp trùng lịch đã đăng ký");
   }
-  const before = existing ? clean(existing) : null;
-  const row =
-    existing ??
-    enrollmentRepository.instantiate({
+  const before = null;
+  const row = await classMembershipRepository.create(
+    {
       section_id: sectionId,
       student_id: studentId,
       course_id: section.course_id,
       semester_id: section.semester_id,
-    });
-  row.status = "ACTIVE";
-  row.enrolled_at = now;
-  row.withdrawn_at = null;
-  await saveDocument(row, { session });
-  await enrollmentPeriodRepository.create(
-    [{ section_id: sectionId, student_id: studentId, starts_at: now }],
+      starts_at: now,
+    },
     { session },
   );
   await audit(
@@ -135,7 +129,7 @@ export async function enroll(session, user, sectionId, studentId) {
     before,
     row,
   );
-  return clean(row);
+  return membershipDto(row);
 }
 export async function withdraw(
   session,
@@ -145,26 +139,21 @@ export async function withdraw(
   expected,
   effectiveAt = new Date(),
 ) {
-  const row = await enrollmentRepository.findOne(
+  const row = await classMembershipRepository.findOne(
     {
       section_id: sectionId,
       student_id: studentId,
+      ends_at: null,
     },
     { session: session },
   );
   if (!row) fail(404, "Không có đăng ký");
   checkVersion(row, expected);
-  if (row.status !== "ACTIVE") fail(409, "Đăng ký đã được rút");
+  if (row.ends_at) fail(409, "Sinh viên đã rời lớp");
   const before = clean(row);
   const now = effectiveAt;
-  row.status = "WITHDRAWN";
-  row.withdrawn_at = now;
+  row.ends_at = now;
   await saveDocument(row, { session });
-  await enrollmentPeriodRepository.updateOne(
-    { section_id: sectionId, student_id: studentId, ends_at: null },
-    { $set: { ends_at: now } },
-    { session, runValidators: true },
-  );
   const lessons = await classSessionRepository.distinct(
     "_id",
     {
@@ -204,14 +193,21 @@ export async function withdraw(
     before,
     row,
   );
-  return clean(row);
+  return membershipDto(row);
+}
+export function membershipDto(row) {
+  const value = clean(row);
+  delete value.legacy_data;
+  return {
+    ...value,
+    status: row.ends_at ? "WITHDRAWN" : "ACTIVE",
+    enrolled_at: row.starts_at,
+    withdrawn_at: row.ends_at ?? null,
+  };
 }
 export async function myEnrollments(user) {
-  return clean(
-    await enrollmentRepository.find(
-      { student_id: user._id },
-      { sort: { enrolled_at: -1 }, limit: 200 },
-    ),
+  return (await classMembershipRepository.latestForStudent(user._id)).map(
+    membershipDto,
   );
 }
 export async function registerStudent(user, sectionId, data) {

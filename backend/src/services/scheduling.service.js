@@ -8,10 +8,9 @@ import {
   semesterRepository,
   roomRepository,
   sectionRepository,
-  enrollmentRepository,
+  classMembershipRepository,
   classSessionRepository,
   leaveRepository,
-  sessionHistoryRepository,
 } from "../repositories/index.js";
 export const sessionSnapshot = (s) =>
   clean({
@@ -32,19 +31,6 @@ export async function recordSession(
   after,
   requestId = null,
 ) {
-  await sessionHistoryRepository.create(
-    [
-      {
-        session_id: after._id,
-        actor_id: user._id,
-        request_id: requestId,
-        action,
-        before_data: before ? sessionSnapshot(before) : null,
-        after_data: sessionSnapshot(after),
-      },
-    ],
-    { session },
-  );
   await audit(
     session,
     user,
@@ -53,6 +39,7 @@ export async function recordSession(
     after._id,
     before ? sessionSnapshot(before) : null,
     sessionSnapshot(after),
+    requestId,
   );
 }
 export async function ensureSlot(
@@ -88,20 +75,20 @@ export async function ensureSlot(
     { session: session },
   );
   if (conflict) fail(409, "Trùng phòng, giảng viên hoặc lớp");
-  const students = await enrollmentRepository.distinct(
+  const students = await classMembershipRepository.distinct(
     "student_id",
     {
       section_id: section._id,
-      status: "ACTIVE",
+      ends_at: null,
     },
     { session: session },
   );
   if (students.length) {
-    const sections = await enrollmentRepository.distinct(
+    const sections = await classMembershipRepository.distinct(
       "section_id",
       {
         student_id: { $in: students },
-        status: "ACTIVE",
+        ends_at: null,
         section_id: { $ne: section._id },
       },
       { session: session },
@@ -150,7 +137,6 @@ export async function reschedule(
     lesson.lecturer_id,
   );
   const before = clean(lesson);
-  const oldSnapshot = sessionSnapshot(lesson);
   const changed =
     timing.start_at.getTime() !== lesson.start_at.getTime() ||
     timing.end_at.getTime() !== lesson.end_at.getTime();
@@ -183,19 +169,6 @@ export async function reschedule(
       );
     }
   }
-  await sessionHistoryRepository.create(
-    [
-      {
-        session_id: lesson._id,
-        actor_id: user._id,
-        request_id: requestId,
-        action: "RESCHEDULE_SESSION",
-        before_data: oldSnapshot,
-        after_data: sessionSnapshot(lesson),
-      },
-    ],
-    { session },
-  );
   await audit(
     session,
     user,
@@ -204,6 +177,7 @@ export async function reschedule(
     lesson._id,
     before,
     lesson,
+    requestId,
   );
   return lesson;
 }

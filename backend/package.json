@@ -28,7 +28,9 @@
     "scope:preview": "node --env-file=.env src/scripts/migrate-scope.js",
     "scope:migrate": "node --env-file=.env src/scripts/migrate-scope.js --apply",
     "setup:session": "node --env-file=.env src/scripts/setup-session.js",
-    "test:seed": "node --env-file=.env --test test/seed.test.js"
+    "test:seed": "node --env-file=.env --test test/seed.test.js",
+    "db:migrate:preview": "node --env-file=.env src/scripts/migrate-collections.js",
+    "db:migrate": "node --env-file=.env src/scripts/migrate-collections.js --apply"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

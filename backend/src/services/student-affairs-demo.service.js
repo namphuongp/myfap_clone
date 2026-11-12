@@ -2,7 +2,7 @@ import {
   userRepository,
   courseRepository,
   sectionRepository,
-  enrollmentRepository,
+  classMembershipRepository,
 } from "../repositories/index.js";
 import { majorRepository } from "../repositories/student-affairs.repositories.js";
 import { transaction } from "../repositories/transaction.js";
@@ -34,7 +34,7 @@ export async function seedStudentAffairsDemo() {
         409,
         "Lệnh này chỉ dùng cho tài khoản demo gốc; không tự gán ngành cho dữ liệu thật",
       );
-    const sectionIds = await enrollmentRepository.distinct(
+    const sectionIds = await classMembershipRepository.distinct(
       "section_id",
       { student_id: student._id },
       { session },

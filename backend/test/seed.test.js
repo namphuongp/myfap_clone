@@ -9,8 +9,7 @@ import {
   ClassSession,
   Course,
   Semester,
-  Enrollment,
-  EnrollmentPeriod,
+  ClassMembership,
 } from "../src/models/index.js";
 import { slotTimes, localDate } from "../src/utils/slots.js";
 
@@ -33,8 +32,7 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
         assert.equal(await Section.countDocuments(), 2);
         assert.equal(await Course.countDocuments(), 3);
         assert.equal(await Semester.countDocuments(), 9);
-        assert.equal(await Enrollment.countDocuments(), 10);
-        assert.equal(await EnrollmentPeriod.countDocuments(), 10);
+        assert.equal(await ClassMembership.countDocuments(), 10);
         const lessons = await ClassSession.find();
         assert.equal(lessons.length, 8);
         assert.ok(lessons.every((lesson) => lesson.lecturer_id));
@@ -67,27 +65,18 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
         past.attendance[0].status = "ABSENT";
         await past.save();
         const snapshot = JSON.stringify(past.toObject());
-        const enrollment = await Enrollment.findOne({
+        const enrollment = await ClassMembership.findOne({
           section_id: section._id,
         });
-        enrollment.status = "WITHDRAWN";
-        enrollment.withdrawn_at = now;
+        enrollment.ends_at = now;
         await enrollment.save();
-        const period = await EnrollmentPeriod.findOne({
-          section_id: section._id,
-          student_id: enrollment.student_id,
-          ends_at: null,
-        });
-        period.ends_at = now;
-        await period.save();
         const result = await seedAllDemo({ now });
         assert.equal(result.sessions_created, 0);
         assert.equal(await User.countDocuments(), 8);
-        assert.equal(await Enrollment.countDocuments(), 10);
-        assert.equal(await EnrollmentPeriod.countDocuments(), 10);
+        assert.equal(await ClassMembership.countDocuments(), 10);
         assert.equal(
-          (await Enrollment.findById(enrollment._id)).status,
-          "WITHDRAWN",
+          +(await ClassMembership.findById(enrollment._id)).ends_at,
+          +now,
         );
         assert.equal(
           JSON.stringify((await ClassSession.findById(past._id)).toObject()),
@@ -117,12 +106,12 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
         const section = await Section.findOne({ code: "SE20A-PRM393" });
         const beforeSection = JSON.stringify(section.toObject());
         const beforeEnrollments = JSON.stringify(
-          await Enrollment.find({ section_id: section._id })
+          await ClassMembership.find({ section_id: section._id })
             .sort({ _id: 1 })
             .lean(),
         );
         const beforePeriods = JSON.stringify(
-          await EnrollmentPeriod.find({ section_id: section._id })
+          await ClassMembership.find({ section_id: section._id })
             .sort({ _id: 1 })
             .lean(),
         );
@@ -151,7 +140,7 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
           );
           assert.equal(
             JSON.stringify(
-              await Enrollment.find({ section_id: section._id })
+              await ClassMembership.find({ section_id: section._id })
                 .sort({ _id: 1 })
                 .lean(),
             ),
@@ -159,7 +148,7 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
           );
           assert.equal(
             JSON.stringify(
-              await EnrollmentPeriod.find({ section_id: section._id })
+              await ClassMembership.find({ section_id: section._id })
                 .sort({ _id: 1 })
                 .lean(),
             ),
@@ -193,14 +182,14 @@ test("Unified demo seed: repeatability, preserved history and academic dates", a
         });
         const counts = [
           await User.countDocuments(),
-          await Enrollment.countDocuments(),
+          await ClassMembership.countDocuments(),
           await ClassSession.countDocuments(),
         ];
         await assert.rejects(seedAllDemo({ now }), /ngoài bộ demo/);
         assert.deepEqual(
           [
             await User.countDocuments(),
-            await Enrollment.countDocuments(),
+            await ClassMembership.countDocuments(),
             await ClassSession.countDocuments(),
           ],
           counts,

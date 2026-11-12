@@ -4,7 +4,7 @@ import request from "supertest";
 import bcrypt from "bcryptjs";
 import { fixture } from "./fixtures.js";
 import { disconnect } from "../src/config/database.js";
-import { User, Department, Audit } from "../src/models/index.js";
+import { User, Department, ActivityLog } from "../src/models/index.js";
 test("Department lecturer management: scope, validation, lifecycle and session safety", async (t) => {
   try {
     assert.match(new URL(process.env.MONGODB_URI).pathname, /_test$/);
@@ -47,7 +47,7 @@ test("Department lecturer management: scope, validation, lifecycle and session s
         );
         assert.equal(stored.role, "LECTURER");
         assert.ok(await bcrypt.compare(password, stored.password_hash));
-        const audit = await Audit.findOne({
+        const audit = await ActivityLog.findOne({
           entity_id: lecturer.id,
           action: "HEAD_CREATE_LECTURER",
         });

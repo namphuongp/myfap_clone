@@ -1,5 +1,5 @@
 import { clean } from "../utils/serialize.js";
-import { auditRepository } from "../repositories/index.js";
+import { activityLogRepository } from "../repositories/index.js";
 export async function audit(
   session,
   user,
@@ -8,14 +8,16 @@ export async function audit(
   key,
   before = null,
   after = null,
+  requestId = null,
 ) {
-  await auditRepository.create(
+  await activityLogRepository.create(
     [
       {
         actor_id: user._id,
         action,
         entity,
         entity_id: key,
+        request_id: requestId,
         before_data: clean(before),
         after_data: clean(after),
       },

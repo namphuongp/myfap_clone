@@ -11,7 +11,7 @@ import {
   courseRepository,
   semesterRepository,
   sectionRepository,
-  enrollmentRepository,
+  classMembershipRepository,
   classSessionRepository,
 } from "../repositories/index.js";
 export async function availableSections(user, q) {
@@ -41,7 +41,7 @@ export async function availableSections(user, q) {
     limit: 200,
   });
   const result = await decorate(rows);
-  const counts = await enrollmentRepository.activeCounts(
+  const counts = await classMembershipRepository.activeCounts(
     rows.map((row) => row._id),
   );
   const bySection = new Map(counts.map((row) => [String(row._id), row.count]));

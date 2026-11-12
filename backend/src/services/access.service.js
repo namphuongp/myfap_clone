@@ -3,8 +3,7 @@ import { same } from "../utils/identity.js";
 import { get } from "../repositories/base.repository.js";
 import {
   sectionRepository,
-  enrollmentRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
 } from "../repositories/index.js";
 export async function sectionFilter(user) {
@@ -20,7 +19,7 @@ export async function sectionFilter(user) {
   if (user.role === "STUDENT")
     return {
       _id: {
-        $in: await enrollmentRepository.distinct("section_id", {
+        $in: await classMembershipRepository.distinct("section_id", {
           student_id: user._id,
         }),
       },
@@ -40,7 +39,7 @@ export async function authorizeSection(section, user, session) {
     fail(403, "Không có buổi phụ trách trong lớp");
   if (
     user.role === "STUDENT" &&
-    !(await enrollmentRepository.exists(
+    !(await classMembershipRepository.exists(
       { section_id: section._id, student_id: user._id },
       { session },
     ))
@@ -48,7 +47,7 @@ export async function authorizeSection(section, user, session) {
     fail(403, "Không thuộc lớp");
 }
 export async function rosterIds(lesson, session) {
-  return enrollmentPeriodRepository.distinct(
+  return classMembershipRepository.distinct(
     "student_id",
     {
       section_id: lesson.section_id,
@@ -68,6 +67,6 @@ export async function authorizeLesson(lesson, user, session) {
     user.role === "STUDENT" &&
     !(await rosterIds(lesson, session)).some((key) => same(key, user._id))
   )
-    fail(403, "Không đăng ký ở thời điểm buổi học");
+    fail(403, "Không thuộc lớp ở thời điểm buổi học");
   return section;
 }

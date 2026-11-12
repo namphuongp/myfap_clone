@@ -20,8 +20,7 @@ import {
   semesterRepository,
   sectionRepository,
   roomRepository,
-  enrollmentRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
 } from "../repositories/index.js";
 
@@ -130,43 +129,39 @@ async function ensureCourse(session, context, code, name) {
 }
 
 async function enroll(session, student, section, startsAt) {
-  const existing = await enrollmentRepository.findOne(
+  const existing = await classMembershipRepository.findOne(
     { section_id: section._id, student_id: student._id },
     { session },
   );
   if (existing) return;
   if (
-    await enrollmentRepository.exists(
+    await classMembershipRepository.exists(
       {
         student_id: student._id,
         course_id: section.course_id,
         semester_id: section.semester_id,
-        status: "ACTIVE",
+        ends_at: null,
       },
       { session },
     )
   )
     return;
   if (
-    (await enrollmentRepository.countDocuments(
-      { section_id: section._id, status: "ACTIVE" },
+    (await classMembershipRepository.countDocuments(
+      { section_id: section._id, ends_at: null },
       { session },
     )) >= 30
   )
     throw new Error(`Lớp ${section.code} đã đủ 30 sinh viên`);
-  await enrollmentRepository.create(
+  await classMembershipRepository.create(
     {
       section_id: section._id,
       student_id: student._id,
       course_id: section.course_id,
       semester_id: section.semester_id,
-      enrolled_at: startsAt,
-      status: "ACTIVE",
+      starts_at: startsAt,
+      ends_at: null,
     },
-    { session },
-  );
-  await enrollmentPeriodRepository.create(
-    { section_id: section._id, student_id: student._id, starts_at: startsAt },
     { session },
   );
 }
@@ -365,8 +360,8 @@ async function seedTeachingDemo({ now, fresh, passwordHash }) {
       }
       result.push({
         code,
-        active_students: await enrollmentRepository.countDocuments(
-          { section_id: section._id, status: "ACTIVE" },
+        active_students: await classMembershipRepository.countDocuments(
+          { section_id: section._id, ends_at: null },
           { session },
         ),
       });

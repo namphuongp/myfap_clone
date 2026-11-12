@@ -13,12 +13,11 @@ import {
   authSessionRepository,
   roomRepository,
   sectionRepository,
-  enrollmentRepository,
-  enrollmentPeriodRepository,
+  classMembershipRepository,
   classSessionRepository,
   leaveRepository,
   changeRepository,
-  auditRepository,
+  activityLogRepository,
   importBatchRepository,
 } from "../repositories/index.js";
 const sourceSchema = z.object({
@@ -201,19 +200,9 @@ export async function importSnapshot(input) {
         student_id: requireRef(maps.users, row.student_id, "sinh viên"),
         course_id: section.course_id,
         semester_id: section.semester_id,
-        enrolled_at,
+        starts_at: enrolled_at,
       };
-      await enrollmentRepository.create([fields], { session });
-      await enrollmentPeriodRepository.create(
-        [
-          {
-            section_id: fields.section_id,
-            student_id: fields.student_id,
-            starts_at: enrolled_at,
-          },
-        ],
-        { session },
-      );
+      await classMembershipRepository.create([fields], { session });
     }
     for (const row of tables.class_sessions) {
       const section = await sectionRepository.findById(
@@ -229,7 +218,7 @@ export async function importSnapshot(input) {
       )) {
         const studentId = requireRef(maps.users, a.student_id, "sinh viên");
         if (
-          !(await enrollmentRepository.exists(
+          !(await classMembershipRepository.exists(
             {
               section_id: section._id,
               student_id: studentId,
@@ -378,7 +367,7 @@ export async function importSnapshot(input) {
       auth_sessions: "AuthSession",
     };
     for (const row of tables.audit_logs)
-      await auditRepository.create(
+      await activityLogRepository.create(
         [
           {
             actor_id: requireRef(maps.users, row.actor_id, "người thao tác"),

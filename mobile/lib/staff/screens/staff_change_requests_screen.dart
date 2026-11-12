@@ -352,6 +352,8 @@ class _MajorTransferCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Từ: ${from['code'] ?? ''} · ${from['name'] ?? 'Ngành hiện tại'}'),
             Text('Đến: ${to['code'] ?? ''} · ${to['name'] ?? 'Ngành đích'}'),
+            if (status != 'REJECTED' && status != 'CANCELLED')
+              Text(request['applied_at'] != null ? 'Đã áp dụng chuyển ngành' : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}'),
             const SizedBox(height: 8),
             const Text('Lý do', style: TextStyle(fontWeight: FontWeight.w700)),
             Text(request['reason']?.toString() ?? 'Không có nội dung'),

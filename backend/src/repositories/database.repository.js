@@ -1,3 +1,4 @@
+import { assertCollectionsMigrated } from "./collection-migration.repository.js";
 import { migrateTeachingIndex } from "./teaching-index.repository.js";
 import { MajorTransfer } from "../models/major-transfer.model.js";
 import mongoose from "mongoose";
@@ -6,20 +7,17 @@ export const databaseRepository = {
   ping() {
     return mongoose.connection.db.admin().ping();
   },
-  async initialize() {
+  async initialize({ allowLegacy = false } = {}) {
+    if (!allowLegacy) await assertCollectionsMigrated();
     for (const Model of MODELS) {
       await Model.createCollection();
       if (Model.modelName === "MajorTransfer") {
         const indexes = await MajorTransfer.collection.indexes();
         for (const index of indexes) {
-          const status = index.partialFilterExpression?.status;
-          const legacyActiveTransferIndex =
-            Array.isArray(status?.$in) && status.$in.includes("APPROVED");
           if (
             index.unique &&
             index.key?.student_id === 1 &&
-            index.name !== "major_transfer_one_pending_per_student" &&
-            legacyActiveTransferIndex
+            index.name !== "major_transfer_one_active_per_student"
           ) {
             await MajorTransfer.collection.dropIndex(index.name);
           }

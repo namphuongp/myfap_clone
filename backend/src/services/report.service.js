@@ -3,7 +3,7 @@ import {
   courseRepository,
   userRepository,
   semesterRepository,
-  enrollmentRepository,
+  classMembershipRepository,
   classSessionRepository,
   leaveRepository,
   changeRepository,
@@ -58,7 +58,7 @@ const metrics = (row) => {
 export async function attendanceReport(actor, q) {
   const sections = await sectionsFor(actor, q),
     ids = sections.map((s) => s._id);
-  const counts = await enrollmentRepository.activeCounts(ids),
+  const counts = await classMembershipRepository.activeCounts(ids),
     countMap = new Map(counts.map((c) => [String(c._id), c.count]));
   const rows = await reportRepository.attendanceBySections(ids, {
     lecturerId: q.lecturer_id,

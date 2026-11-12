@@ -9,7 +9,7 @@ Phạm vi backend:
 - HEAD: quản lý môn/chương trình môn trong bộ môn, tạo lớp chưa phân công, mở/đóng đăng ký, phân công theo buổi, báo cáo bộ môn.
 - STAFF: tạo/phát hành thông báo, duyệt đổi lịch/phòng và chuyển ngành. Mọi role có profile chỉ đọc, avatar chữ.
 
-Course là môn; Section là lớp học phần của một môn trong một Semester; ClassSession là buổi với ngày/slot/phòng và giảng viên nullable. Trường lecturer_id cũ của Section không còn dùng cấp quyền. Sinh viên thuộc lớp qua EnrollmentPeriod theo thời điểm. Giữ nguyên lịch sử khi đổi người phụ trách hoặc rút/đăng ký lại lớp.
+Course là môn; Section là lớp học phần của một môn trong một Semester; ClassSession là buổi với ngày/slot/phòng và giảng viên nullable. Trường lecturer_id cũ của Section không còn dùng cấp quyền. Sinh viên thuộc lớp qua ClassMembership theo thời điểm. Giữ nguyên lịch sử khi đổi người phụ trách hoặc rút/đăng ký lại lớp.
 
 Mỗi lớp 30 sinh viên. Cán bộ/HEAD không đăng ký thay sinh viên. Lớp mới CLOSED, không cần giảng viên; chỉ mở sau khi có lịch tương lai hợp lệ. Phân công chỉ sửa các buổi tương lai chưa điểm danh, không viết lại buổi cũ. Cùng một lớp có thể có nhiều giảng viên ở các buổi khác nhau.
 
@@ -96,3 +96,5 @@ Tài liệu: [API](API.md), [Request mẫu](requests.http), [Database](database.
 ### HEAD sau tích hợp main
 
 HEAD vẫn có bốn màn riêng. Môn học dùng nghiệp vụ main, gồm ngành áp dụng và trạng thái hoạt động. Phân công chuyển sang từng buổi học, dùng version của buổi và lý do; giữ kiểm tra xung đột, lịch sử và hủy đề xuất cũ khi đổi người phụ trách. Màn chuyển phòng giữ nguyên ngày/ca và chờ STAFF duyệt. Giữ nguyên giao diện sinh viên, giảng viên và hồ sơ chỉ đọc từ main. `npm.cmd run test:head` kiểm tra luồng kết hợp trên database test riêng.
+
+Database mới: 17 collection; ClassMembership thay Enrollment/EnrollmentPeriod, ActivityLog thay Audit/SessionHistory, bỏ NoticeRead. Đơn chuyển ngành có hiệu lực từ kỳ tiếp theo sau khi duyệt, không đổi ngành ngay. Với DB cũ, dừng backend và chạy `npm run db:migrate` trước khi chạy ứng dụng. Xem API.md và database.md để biết quy trình và cấu trúc hiện tại.

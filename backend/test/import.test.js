@@ -11,14 +11,12 @@ import {
   ClassSession,
   Section,
   Semester,
-  Enrollment,
-  EnrollmentPeriod,
+  ClassMembership,
   Leave,
   Change,
-  SessionHistory,
+  ActivityLog,
   ImportBatch,
   AuthSession,
-  Audit,
 } from "../src/models/index.js";
 import { importSnapshot } from "../src/services/import.service.js";
 import { normalizeLegacySessions } from "../src/services/legacy-repair.service.js";
@@ -165,15 +163,15 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
     assert.equal(result.already_imported, false);
     assert.equal(result.counts.users, 3);
     assert.equal(await User.countDocuments(), 3);
-    assert.equal(await Enrollment.countDocuments(), 1);
+    assert.equal(await ClassMembership.countDocuments(), 1);
     assert.equal(await AuthSession.countDocuments(), 1);
-    assert.equal(await Audit.countDocuments(), 1);
+    assert.equal(await ActivityLog.countDocuments(), 1);
     const imported = await User.findOne({ legacy_id: 1 }).select(
       "+password_hash",
     );
     assert.equal(imported.password_hash, password_hash);
     assert.equal(
-      (await EnrollmentPeriod.findOne()).starts_at.toISOString(),
+      (await ClassMembership.findOne()).starts_at.toISOString(),
       "1970-01-01T00:00:00.000Z",
     );
     let lesson = await ClassSession.findOne({ legacy_id: 1 });
@@ -199,7 +197,10 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
       (await ClassSession.findById(lesson._id)).start_at.toISOString(),
       oldStart.toISOString(),
     );
-    assert.equal(await SessionHistory.countDocuments(), 0);
+    assert.equal(
+      await ActivityLog.countDocuments({ entity: "ClassSession" }),
+      0,
+    );
     const applied = await normalizeLegacySessions({ apply: true });
     assert.equal(applied.length, 1);
     lesson = await ClassSession.findById(lesson._id);
@@ -215,12 +216,15 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
     assert.equal(lesson.status, "COMPLETED");
     assert.equal(lesson.attendance[0].status, "ABSENT");
     assert.equal((await Leave.findOne()).status, "INVALIDATED");
-    const history = await SessionHistory.findOne();
+    const history = await ActivityLog.findOne({ entity: "ClassSession" });
     assert.equal(
       history.before_data.start_at.toISOString(),
       oldStart.toISOString(),
     );
-    assert.equal(await SessionHistory.countDocuments(), 1);
+    assert.equal(
+      await ActivityLog.countDocuments({ entity: "ClassSession" }),
+      1,
+    );
     assert.deepEqual(await normalizeLegacySessions({ apply: true }), []);
     const semesterCount = await Semester.countDocuments();
     const termPreview = await bootstrapAcademicCalendar();
@@ -232,7 +236,7 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
     const semester = await Semester.findById(section.semester_id);
     assert.ok(semester.term);
     assert.equal(
-      String((await Enrollment.findOne()).semester_id),
+      String((await ClassMembership.findOne()).semester_id),
       String(semester._id),
     );
     assert.deepEqual(await bootstrapAcademicCalendar({ apply: true }), []);
