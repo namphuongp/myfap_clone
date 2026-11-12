@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 import '../../lecturer/widgets/lecturer_ui.dart';
 import '../repositories/staff_repository.dart';
 
@@ -82,7 +84,7 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RoleScaffold(
     appBar: AppBar(
       title: const Text('Duyệt đơn học vụ'),
       actions: [

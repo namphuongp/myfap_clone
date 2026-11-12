@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 import '../../core/api/api_client.dart';
 import '../../core/profile/repositories/profile_repository.dart';
 import '../../core/profile/screens/profile_screen.dart';
@@ -73,45 +75,40 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     _theme = lecturerTheme(Theme.of(context));
     return Theme(
       data: _theme,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Cán bộ học vụ'),
-          actions: [
-            IconButton(
-              tooltip: 'Hồ sơ cá nhân',
-              onPressed: _openProfile,
-              icon: const Icon(Icons.account_circle_outlined),
+      child: RoleScaffold(
+        appBar: RoleHomeHeader(
+          name: widget.user['name']?.toString() ?? 'Cán bộ',
+          role: 'Cán bộ học vụ',
+          subtitleColor: lecturerMuted,
+          leading: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-            IconButton(
-              tooltip: 'Đăng xuất',
-              onPressed: _loggingOut ? null : _logout,
-              icon: const Icon(Icons.logout),
+            child: const Icon(
+              Icons.school_rounded,
+              color: lecturerNavy,
+              size: 28,
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
+          onProfile: _openProfile,
+          onLogout: _loggingOut ? null : _logout,
         ),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1000),
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
               children: [
-                Text(
-                  'Xin chào, ${widget.user['name'] ?? 'Cán bộ'}',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: lecturerNavy,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
                 const SectionHeading('NGHIỆP VỤ HỌC VỤ'),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final columns = constraints.maxWidth > 650 ? 2 : 1;
+                    const columns = 2;
                     final width =
-                        (constraints.maxWidth - (columns - 1) * 14) / columns;
+                        (constraints.maxWidth - (columns - 1) * 12) / columns;
                     return Wrap(
-                      spacing: 14,
-                      runSpacing: 14,
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
                         SizedBox(
                           width: width,
@@ -187,32 +184,40 @@ class _StaffTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(22),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: background,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(icon, color: color, size: 30),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
                   ),
-                  const SizedBox(height: 5),
-                  Text(subtitle, style: const TextStyle(color: lecturerMuted)),
-                ],
-              ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: lecturerMuted, fontSize: 11),
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right),
           ],
         ),
       ),

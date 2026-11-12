@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 const lecturerNavy = Color(0xFF7047EB);
 const lecturerNavyDark = Color(0xFF1E1E2D);
 const lecturerOrange = Color(0xFFF69A08);
@@ -20,7 +22,7 @@ ThemeData lecturerTheme(ThemeData base) => base.copyWith(
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.transparent,
     foregroundColor: Color(0xFF1E1E2D),
-    centerTitle: true,
+    centerTitle: false,
     elevation: 0,
     scrolledUnderElevation: 0,
     toolbarHeight: 72,
@@ -31,8 +33,8 @@ ThemeData lecturerTheme(ThemeData base) => base.copyWith(
     elevation: 0,
     margin: EdgeInsets.zero,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-      side: const BorderSide(color: Color(0xFFEBEBF2)),
+      borderRadius: BorderRadius.circular(24),
+      side: const BorderSide(color: Color(0xFFEBEBF2), width: 1.2),
     ),
   ),
   inputDecorationTheme: InputDecorationTheme(
@@ -72,7 +74,7 @@ ThemeData lecturerTheme(ThemeData base) => base.copyWith(
   navigationBarTheme: NavigationBarThemeData(
     backgroundColor: lecturerNavy,
     indicatorColor: const Color(0xFF384552),
-    height: 78,
+    height: 72,
     labelTextStyle: WidgetStateProperty.resolveWith(
       (s) => TextStyle(
         color: s.contains(WidgetState.selected)
@@ -103,8 +105,7 @@ class LecturerPage extends StatelessWidget {
     this.actions,
   });
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: lecturerBackground,
+  Widget build(BuildContext context) => RoleScaffold(
     appBar: AppBar(
       title: Text(
         title,

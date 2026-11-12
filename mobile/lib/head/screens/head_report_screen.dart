@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/academic/academic_widgets.dart';
 import '../repositories/head_repository.dart';
 
+/// Báo cáo tổng quan bộ môn và thống kê điểm danh theo các bộ lọc.
 class HeadReportScreen extends StatefulWidget {
   const HeadReportScreen({super.key, required this.repository});
   final HeadRepository repository;
@@ -17,11 +18,14 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
   String _group = 'SECTION';
   bool _loading = true;
   @override
+  // Tự tải báo cáo lần đầu khi màn hình được khởi tạo.
   void initState() {
     super.initState();
     _load();
   }
 
+  /// Tải song song danh mục bộ lọc, tổng quan bộ môn và báo cáo điểm danh.
+  /// Chỉ cập nhật giao diện khi màn hình còn tồn tại.
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -53,6 +57,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
     }
   }
 
+  /// Tạo bộ lọc; giá trị rỗng là Tất cả và mỗi lần đổi sẽ tải lại báo cáo.
   Widget _filter(
     String label,
     String? value,
@@ -79,8 +84,10 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
             _load();
           },
   );
+  /// Định dạng tỷ lệ; giữ rõ trường hợp API chưa có dữ liệu để tính.
   String _rate(dynamic v) => v == null ? 'Chưa có dữ liệu' : '$v%';
   @override
+  // Hiển thị bộ lọc, tổng quan, các nhóm kết quả và trạng thái tải/lỗi.
   Widget build(BuildContext context) => Column(
     children: [
       if (_loading) const LinearProgressIndicator(),

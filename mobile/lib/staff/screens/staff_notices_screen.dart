@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 import '../../lecturer/widgets/lecturer_ui.dart';
 import '../repositories/staff_repository.dart';
 
@@ -105,7 +107,7 @@ class _StaffNoticesScreenState extends State<StaffNoticesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RoleScaffold(
     appBar: AppBar(
       title: const Text('Thông báo học vụ'),
       actions: [
@@ -362,7 +364,7 @@ class _StaffNoticeFormScreenState extends State<StaffNoticeFormScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RoleScaffold(
     appBar: AppBar(title: const Text('Soạn thông báo')),
     body: Center(
       child: ConstrainedBox(

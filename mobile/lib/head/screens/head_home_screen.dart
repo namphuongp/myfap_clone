@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 import '../../core/api/api_client.dart';
 import '../../core/academic/academic_widgets.dart';
 import '../../core/profile/repositories/profile_repository.dart';
@@ -9,6 +11,7 @@ import '../widgets/head_ui.dart';
 import 'head_report_screen.dart';
 import 'head_lecturers_screen.dart';
 
+/// Trang chủ của Trưởng bộ môn: quản lý giảng viên, báo cáo và hồ sơ.
 class HeadHomeScreen extends StatefulWidget {
   const HeadHomeScreen({
     super.key,
@@ -26,11 +29,13 @@ class HeadHomeScreen extends StatefulWidget {
 class _HeadHomeScreenState extends State<HeadHomeScreen> {
   late final _repo = HeadRepository(widget.api);
   bool _busy = false;
+  /// Đóng các trang con rồi thông báo cho luồng đăng nhập rằng đã đăng xuất.
   void _signedOut() {
     Navigator.of(context).popUntil((r) => r.isFirst);
     widget.onLoggedOut();
   }
 
+  /// Mở trang con với theme HEAD và giữ điều hướng Trang chủ/Hồ sơ.
   Future<void> _open(Widget screen, {bool profile = false}) =>
       Navigator.of(context).push<void>(
         MaterialPageRoute(
@@ -47,7 +52,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
                 onHome: scope.onHome,
                 onProfile: scope.onProfile,
                 child: profile
-                    ? Scaffold(
+                    ? RoleScaffold(
                         body: screen,
                         bottomNavigationBar: scope.buildBar(profile: true),
                       )
@@ -57,6 +62,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
           },
         ),
       );
+  /// Mở hồ sơ cá nhân dùng chung và chọn tab Hồ sơ ở thanh điều hướng.
   Future<void> _profile() => _open(
     ProfileScreen(
       repository: ProfileRepository(widget.api),
@@ -64,18 +70,21 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
     ),
     profile: true,
   );
+  /// Mở báo cáo bộ môn, truyền repository để màn hình tự tải dữ liệu.
   void _report() => _open(
     HeadScaffold(
       appBar: AppBar(title: const Text('Báo cáo bộ môn')),
       body: HeadReportScreen(repository: _repo),
     ),
   );
+  /// Mở danh sách giảng viên thuộc phạm vi quản lý của Trưởng bộ môn.
   void _lecturers() => _open(
     HeadScaffold(
       appBar: AppBar(title: const Text('Quản lý giảng viên')),
       body: HeadLecturersScreen(repository: _repo),
     ),
   );
+  /// Gọi API đăng xuất; khóa thao tác trong lúc chờ và hiển thị lỗi nếu có.
   Future<void> _logout() async {
     setState(() => _busy = true);
     try {
@@ -89,68 +98,27 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
   }
 
   @override
+  // Dựng header, các ô chức năng, mục tài khoản và thanh điều hướng dưới.
   Widget build(BuildContext context) => HeadScaffold(
-    appBar: AppBar(
-      toolbarHeight: 88,
-      centerTitle: false,
-      titleSpacing: 16,
-      title: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.school_rounded,
-              color: headOrange,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.user['name']?.toString() ?? 'Trưởng bộ môn',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                const Text(
-                  'Trưởng bộ môn · MyFAP',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFBACADD)),
-                ),
-              ],
-            ),
-          ),
-        ],
+    appBar: RoleHomeHeader(
+      name: widget.user['name']?.toString() ?? 'Trưởng bộ môn',
+      role: 'Trưởng bộ môn · MyFAP',
+      subtitleColor: const Color(0xFFBACADD),
+      leading: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.school_rounded, color: headOrange, size: 28),
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Hồ sơ cá nhân',
-          onPressed: _busy ? null : _profile,
-          icon: const Icon(Icons.account_circle_outlined),
-        ),
-        IconButton(
-          tooltip: 'Đăng xuất',
-          onPressed: _busy ? null : _logout,
-          icon: const Icon(Icons.logout_rounded),
-        ),
-      ],
+      onProfile: _busy ? null : _profile,
+      onLogout: _busy ? null : _logout,
     ),
     body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 8, bottom: 14),
+          padding: EdgeInsets.only(top: 24, bottom: 16),
           child: Text(
             'CHỨC NĂNG BỘ MÔN',
             style: TextStyle(
@@ -163,9 +131,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
         ),
         LayoutBuilder(
           builder: (context, box) {
-            final width = ((box.maxWidth - 12) / 2)
-                .clamp(0.0, 260.0)
-                .toDouble();
+            final width = (box.maxWidth - 12) / 2;
             return Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -196,7 +162,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
         ),
         const SizedBox(height: 28),
         const Padding(
-          padding: EdgeInsets.only(left: 8, bottom: 14),
+          padding: EdgeInsets.only(bottom: 16),
           child: Text(
             'TÀI KHOẢN',
             style: TextStyle(
@@ -244,6 +210,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
   );
 }
 
+/// Ô chức năng trên trang chủ; nhận biểu tượng, màu và callback mở màn hình.
 class _DashboardTile extends StatelessWidget {
   const _DashboardTile({
     required this.label,
@@ -261,12 +228,12 @@ class _DashboardTile extends StatelessWidget {
     color: Colors.white,
     elevation: 1,
     shadowColor: const Color(0x101A304B),
-    borderRadius: BorderRadius.circular(20),
+    borderRadius: BorderRadius.circular(24),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 124),
+        constraints: const BoxConstraints(minHeight: 156),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           child: Column(
@@ -287,7 +254,7 @@ class _DashboardTile extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: headNavy,
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),

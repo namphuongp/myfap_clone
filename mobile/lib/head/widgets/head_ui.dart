@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/role_layout.dart';
+
 import '../../lecturer/widgets/lecturer_ui.dart' as shared;
 
 // Reuse the existing role style without editing any other role or global theme.
+/// Tạo theme của HEAD từ theme dùng chung hiện có.
 ThemeData headTheme(ThemeData base) => shared.lecturerTheme(base);
 const headNavy = shared.lecturerNavy;
 const headOrange = shared.lecturerOrange;
 const headMuted = shared.lecturerMuted;
 
+/// Hiển thị hộp thoại với theme HEAD và trả về lựa chọn của người dùng.
 Future<T?> showHeadDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -16,6 +20,7 @@ Future<T?> showHeadDialog<T>({
   builder: (c) => Theme(data: headTheme(Theme.of(context)), child: builder(c)),
 );
 
+/// Khung trang HEAD: áp dụng theme, giới hạn chiều rộng và gắn thanh điều hướng.
 class HeadScaffold extends StatelessWidget {
   const HeadScaffold({
     super.key,
@@ -29,7 +34,7 @@ class HeadScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Theme(
     data: headTheme(Theme.of(context)),
-    child: Scaffold(
+    child: RoleScaffold(
       appBar: appBar,
       body: Align(
         alignment: Alignment.topCenter,
@@ -45,6 +50,7 @@ class HeadScaffold extends StatelessWidget {
   );
 }
 
+/// Chia sẻ callback về Trang chủ/Hồ sơ cho các màn hình con của HEAD.
 class HeadNavigationScope extends InheritedWidget {
   const HeadNavigationScope({
     super.key,
@@ -53,8 +59,10 @@ class HeadNavigationScope extends InheritedWidget {
     required super.child,
   });
   final VoidCallback onHome, onProfile;
+  /// Tìm scope gần nhất; trả null nếu widget đang nằm ngoài điều hướng HEAD.
   static HeadNavigationScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<HeadNavigationScope>();
+  /// Tạo thanh điều hướng và chọn tab Hồ sơ khi profile bằng true.
   Widget buildBar({bool profile = false}) => NavigationBar(
     selectedIndex: profile ? 1 : 0,
     onDestinationSelected: (index) {
@@ -74,10 +82,12 @@ class HeadNavigationScope extends InheritedWidget {
     ],
   );
   @override
+  // Cập nhật các widget phụ thuộc khi callback điều hướng thay đổi.
   bool updateShouldNotify(HeadNavigationScope oldWidget) =>
       onHome != oldWidget.onHome || onProfile != oldWidget.onProfile;
 }
 
+/// Tiêu đề phân mục sử dụng kiểu trình bày dùng chung.
 class HeadHeading extends StatelessWidget {
   const HeadHeading(this.title, {super.key});
   final String title;
@@ -85,6 +95,7 @@ class HeadHeading extends StatelessWidget {
   Widget build(BuildContext context) => shared.SectionHeading(title);
 }
 
+/// Nhãn trạng thái hoạt động của tài khoản giảng viên.
 class HeadStatus extends StatelessWidget {
   const HeadStatus(this.active, {super.key});
   final bool active;
@@ -95,6 +106,7 @@ class HeadStatus extends StatelessWidget {
   );
 }
 
+/// Khối nội dung nền trắng, bo góc và đổ bóng trong các trang HEAD.
 class HeadPanel extends StatelessWidget {
   const HeadPanel({super.key, required this.child});
   final Widget child;
@@ -116,6 +128,7 @@ class HeadPanel extends StatelessWidget {
   );
 }
 
+/// Tiêu đề panel kèm biểu tượng; orange chọn nhóm màu nhấn cam.
 class HeadPanelTitle extends StatelessWidget {
   const HeadPanelTitle(
     this.title, {
@@ -159,6 +172,7 @@ class HeadPanelTitle extends StatelessWidget {
   );
 }
 
+/// Hiển thị một cặp nhãn/giá trị trong hồ sơ giảng viên.
 class HeadInfo extends StatelessWidget {
   const HeadInfo(this.label, this.value, {super.key});
   final String label, value;

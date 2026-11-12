@@ -5,6 +5,7 @@ import '../../core/academic/academic_widgets.dart';
 import '../repositories/head_repository.dart';
 import '../widgets/head_ui.dart';
 
+/// Danh sách giảng viên với tìm kiếm, lọc trạng thái và phân trang.
 class HeadLecturersScreen extends StatefulWidget {
   const HeadLecturersScreen({super.key, required this.repository});
   final HeadRepository repository;
@@ -20,17 +21,20 @@ class _LecturersState extends State<HeadLecturersScreen> {
   int _page = 1, _total = 0, _generation = 0;
   bool _busy = true, _more = false;
   @override
+  // Tải dữ liệu ban đầu khi mở màn hình.
   void initState() {
     super.initState();
     _load();
   }
 
   @override
+  // Giải phóng controller tìm kiếm khi rời danh sách.
   void dispose() {
     _search.dispose();
     super.dispose();
   }
 
+  /// Tải danh sách từ API; generation ngăn kết quả cũ ghi đè lần tải mới hơn.
   Future<void> _load() async {
     final generation = ++_generation;
     setState(() {
@@ -57,6 +61,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
     }
   }
 
+  /// Mở form thêm giảng viên; tạo thành công thì về trang đầu và tải lại.
   Future<void> _create() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -70,6 +75,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
     }
   }
 
+  /// Mở chi tiết theo ID và làm mới danh sách sau khi quay về.
   Future<void> _open(Json row) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -84,6 +90,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
     if (mounted) await _load();
   }
 
+  /// Truyền điều hướng HEAD sang route mới nếu trang hiện tại có scope.
   Widget _withNavigation(Widget child) {
     final navigation = HeadNavigationScope.maybeOf(context);
     return navigation == null
@@ -96,6 +103,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
   }
 
   @override
+  // Dựng vùng tìm kiếm/lọc, danh sách kết quả và các nút chuyển trang.
   Widget build(BuildContext context) => Column(
     children: [
       Padding(
@@ -268,6 +276,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
   );
 }
 
+/// Trang chi tiết hồ sơ, trạng thái tài khoản và số buổi dạy của giảng viên.
 class _LecturerDetail extends StatefulWidget {
   const _LecturerDetail({required this.repository, required this.id});
   final HeadRepository repository;
@@ -286,12 +295,14 @@ class _DetailState extends State<_LecturerDetail> {
     _load();
   }
 
+  /// Tải hồ sơ theo ID; quản lý trạng thái chờ, lỗi và khả năng thử lại.
   Future<void> _load() async {
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
+      // Lấy dữ liệu chi tiết mới nhất từ API, không dùng lại bản ghi danh sách.
       final data = await widget.repository.lecturer(widget.id);
       if (mounted) setState(() => _data = data);
     } catch (e) {
@@ -301,6 +312,7 @@ class _DetailState extends State<_LecturerDetail> {
     }
   }
 
+  /// Mở form sửa bằng dữ liệu chi tiết; lưu thành công thì tải lại hồ sơ.
   Future<void> _edit() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -324,6 +336,7 @@ class _DetailState extends State<_LecturerDetail> {
   }
 
   @override
+  // Hiển thị hồ sơ, thống kê giảng dạy và nút mở form chỉnh sửa.
   Widget build(BuildContext context) => HeadScaffold(
     appBar: AppBar(title: const Text('Chi tiết giảng viên')),
     body: _busy
@@ -398,6 +411,7 @@ class _DetailState extends State<_LecturerDetail> {
   );
 }
 
+/// Form thêm/sửa; row rỗng là tạo tài khoản, có row là cập nhật hồ sơ.
 class _LecturerEditor extends StatefulWidget {
   const _LecturerEditor({required this.repository, this.row});
   final HeadRepository repository;
@@ -427,9 +441,11 @@ class _EditorState extends State<_LecturerEditor> {
   late bool _active = widget.row?['active'] != false;
   bool _busy = false, _conflict = false, _obscure = true;
   String? _error;
+  /// Quyết định các trường và thao tác chỉ áp dụng khi tạo tài khoản mới.
   bool get _creating => widget.row == null;
   @override
   void dispose() {
+    // Giải phóng toàn bộ controller khi đóng form.
     for (final c in [
       _code,
       _name,
@@ -444,8 +460,11 @@ class _EditorState extends State<_LecturerEditor> {
     super.dispose();
   }
 
+  /// Kiểm tra form, xin xác nhận rồi gửi dữ liệu tạo/cập nhật qua repository.
+  /// Khi cập nhật gặp HTTP 409, khóa form để người dùng đóng và tải lại dữ liệu.
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
+    // Đánh dấu thay đổi email/trạng thái để hiện thông tin về phiên đăng nhập.
     final sensitive =
         !_creating &&
         (_active != widget.row!['active'] ||
@@ -477,6 +496,7 @@ class _EditorState extends State<_LecturerEditor> {
       _error = null;
     });
     try {
+      // Chuẩn hóa dữ liệu; chỉ gửi mã/mật khẩu khi tạo và active khi cập nhật.
       await widget.repository.saveLecturer(widget.row, {
         'name': _name.text.trim(),
         'email': _email.text.trim().toLowerCase(),
@@ -508,6 +528,7 @@ class _EditorState extends State<_LecturerEditor> {
   }
 
   @override
+  // Dựng form và kiểm tra từng trường; chặn quay lại khi đang gửi dữ liệu.
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
     child: HeadScaffold(
