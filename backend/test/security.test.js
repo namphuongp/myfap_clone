@@ -4,7 +4,7 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { checkVersion } from "../src/utils/version.js";
 import { hash, token } from "../src/utils/crypto.js";
-import { parse, id } from "../src/validators/common.js";
+import { parse, id } from "../src/modules/shared/validators/common.js";
 import { disconnect } from "../src/config/database.js";
 const app = createApp();
 test.after(() => disconnect());

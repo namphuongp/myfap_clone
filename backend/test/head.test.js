@@ -12,11 +12,11 @@ test("HEAD retains scoped read-only reporting after feature removal", async () =
     for (const path of [
       "/department/summary",
       "/reports/attendance",
-      "/reports/requests",
       "/head/options",
     ])
       await as("head", "get", path).expect(200);
     for (const [method, path] of [
+      ["get", "/reports/requests"],
       ["post", "/courses"],
       ["patch", "/courses/" + f.course._id],
       ["get", "/head/courses"],

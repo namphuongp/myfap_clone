@@ -15,7 +15,6 @@ router.get("/head/lecturers/:id",roles("HEAD"),lecturers.detail);
 router.post("/head/lecturers",roles("HEAD"),validate(lecturerSchemas.createLecturerSchema),lecturers.create);
 router.patch("/head/lecturers/:id",roles("HEAD"),validate(lecturerSchemas.updateLecturerSchema),lecturers.update);
 router.get("/head/options",roles("HEAD"),options);
-router.get("/reports/requests",roles("HEAD"),validate(reportSchemas.departmentSummarySchema,"query"),reports.requestReport);
 router.get("/reports/attendance",roles("HEAD"),validate(reportSchemas.attendanceReportSchema,"query"),reports.attendanceReport);
 router.get("/department/summary",roles("HEAD"),validate(reportSchemas.departmentSummarySchema,"query"),reports.departmentSummary);
 router.post("/sections",roles("HEAD"),validate(createSectionSchema),sections.createSection);

@@ -15,7 +15,7 @@ Base URL: `http://localhost:3000/api`. Android Emulator: `http://10.0.2.2:3000/a
 | Method | Endpoint       | Quyền                                |
 | ------ | -------------- | ------------------------------------ |
 | GET    | `/health`      | Công khai, kiểm tra MongoDB          |
-| POST   | `/auth/login`  | Công khai, có rate limit             |
+| POST   | `/auth/login`  | Công khai, không giới hạn số lần đăng nhập |
 | POST   | `/auth/logout` | Đã đăng nhập; thu hồi phiên, trả 204 |
 | GET    | `/profile`     | Mọi role, chỉ xem bản thân           |
 
@@ -240,7 +240,7 @@ Phân công dùng `GET /sections/:id/sessions` và `PUT /sections/:id/assignment
 
 HEAD được xem `/schedule` trong bộ môn và gửi `/change-requests` nhưng không đổi ngày/ca. Danh sách đơn HEAD chỉ gồm đơn tự gửi cho buổi cùng bộ môn. STAFF vẫn duyệt/từ chối. Response đơn giữ cấu trúc requester/lesson của main, bổ sung total/has_more cho phân trang HEAD.
 
-`GET /reports/requests?semester_id=...` bổ sung thống kê đơn nghỉ và đơn đổi lịch/phòng trong bộ môn cho HEAD; role khác trả 403. API chuyển ngành phục vụ STUDENT gửi/xem và STAFF duyệt. Hồ sơ vẫn chỉ đọc.
+Đã gỡ màn Đơn từ trong bộ môn và API `GET /reports/requests` của HEAD. API chuyển ngành phục vụ STUDENT gửi/xem và STAFF duyệt. Hồ sơ vẫn chỉ đọc.
 
 ## Database 17 collection và chuyển ngành theo kỳ
 
