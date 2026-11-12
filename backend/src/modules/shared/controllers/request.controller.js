@@ -1,5 +1,5 @@
 import * as service from "../services/request.service.js";
-// Tạo đơn nghỉ cho buổi học sinh viên đang tham gia.
+// XN5: Controller nhận người đăng nhập và dữ liệu hợp lệ, gọi service xử lý.
 export const createLeave = async (req, res) => {
   const result = await service.createLeave(req.user, req.validated.body);
   res.status(201).json(result);

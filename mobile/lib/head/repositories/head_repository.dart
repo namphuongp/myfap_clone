@@ -24,6 +24,7 @@ class HeadRepository {
     await api.request('GET', '/head/lecturers/$id') as Map,
   );
   Future<void> saveLecturer(Json? row, Json fields) async {
+    // GV3: Tạo bằng POST hoặc sửa bằng PATCH kèm version.
     await api.request(
       row == null ? 'POST' : 'PATCH',
       row == null ? '/head/lecturers' : '/head/lecturers/${row['id']}',
@@ -35,6 +36,7 @@ class HeadRepository {
     String path,
     Map<String, String> filters,
   ) async => Map<String, dynamic>.from(
+    // BC2: Gọi API báo cáo với bộ lọc học kỳ, môn và giảng viên.
     await api.request(
       'GET',
       '$path${filters.isEmpty ? '' : '?${Uri(queryParameters: filters).query}'}',

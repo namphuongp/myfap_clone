@@ -1,0 +1,37 @@
+MYFAP - MA COMMENT DE TIM LUONG CODE
+
+Cach tim: Trong VS Code nhan Ctrl+Shift+F, nhap ma nhu XN1, sau do lan theo XN2, XN3...
+
+SINH VIEN
+DN1-DN5  Dang nhap va phan quyen
+LH1-LH4  Xem lich hoc
+XN1-XN8  Gui va theo doi don xin nghi
+CN1-CN8  Gui, duyet va ap dung chuyen nganh
+TB1-TB6  Xem thong bao va chi tiet
+HS1-HS4  Xem ho so (dung chung cac role)
+DX1-DX3  Dang xuat sinh vien
+
+GIANG VIEN
+GD1-GD3  Xem lich day
+DD1-DD5  Diem danh
+DU1-DU4  Duyet don xin nghi
+DL1-DL4  Gui yeu cau doi lich/phong (tiep tuc o can bo: DL5-DL7)
+DX4      Bat dau dang xuat giang vien (xu ly chung: DX2-DX3)
+
+TRUONG BO MON
+GV1-GV5  Quan ly giang vien
+BC1-BC4  Xem bao cao bo mon va diem danh
+BT1-BT2  Xem bao cao don tu
+TL1-TL3  API tao lop hoc phan (chua co man Flutter)
+DX5      Bat dau dang xuat truong bo mon (xu ly chung: DX2-DX3)
+
+CAN BO
+DL5-DL7  Duyet/tu choi yeu cau doi lich/phong cua giang vien
+DC1-DC3  Duyet/tu choi don chuyen nganh cua sinh vien
+PT1-PT7  Soan ban nhap va phat hanh thong bao
+DX6      Bat dau dang xuat can bo (xu ly chung: DX2-DX3)
+
+GHI CHU
+- Ho so HS1-HS4 dung chung cho ca bon role.
+- Luong chuyen nganh cua sinh vien CN1-CN8 di qua buoc can bo duyet; DC1-DC3 danh dau man va API can bo.
+- Cac ma la comment de thuyet trinh, khong anh huong chuc nang chuong trinh.

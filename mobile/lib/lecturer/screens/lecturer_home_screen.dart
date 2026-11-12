@@ -77,6 +77,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
       _open(LecturerAttendanceCoursesScreen(repository: _repository));
   void _requests() => _open(LecturerRequestsScreen(repository: _repository));
   Future<void> _logout() async {
+    // DX4: Giảng viên đăng xuất qua cùng API thu hồi phiên DX2–DX3.
     setState(() => _loggingOut = true);
     try {
       await widget.api.logout();
@@ -212,11 +213,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFEDE8FE),
-                Color(0xFFF6F4FD),
-                Color(0xFFF3F0FC),
-              ],
+              colors: [Color(0xFFEDE8FE), Color(0xFFF6F4FD), Color(0xFFF3F0FC)],
             ),
           ),
           child: _dashboard(),

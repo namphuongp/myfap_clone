@@ -31,6 +31,7 @@ export async function listSections(user, q = {}) {
 }
 // Tạo lớp học phần; chưa bắt buộc có giảng viên.
 export async function createSection(user, data) {
+  // TL3: Chỉ tạo lớp cho môn cùng bộ môn/kỳ còn hiệu lực; lớp mặc định CLOSED, 30 chỗ.
   const result = await transaction(async (session) => {
     const course = await get(courseRepository, data.course_id, session);
     const semester = await get(semesterRepository, data.semester_id, session);

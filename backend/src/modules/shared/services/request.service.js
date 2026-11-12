@@ -22,6 +22,7 @@ const requestRepositories = {
 export async function createLeave(user, data) {
   const result = await transaction(async (session) => {
     const lesson = await get(classSessionRepository, data.session_id, session);
+    // XN6: Kiểm tra sinh viên thuộc lớp và buổi học còn ở tương lai.
     await authorizeLesson(lesson, user, session);
     if (
       lesson.status !== "SCHEDULED" ||
@@ -29,6 +30,7 @@ export async function createLeave(user, data) {
       !lesson.slot_id
     )
       fail(409, "Chỉ xin nghỉ buổi tương lai có slot hợp lệ");
+    // XN7: Lưu đơn PENDING cùng ngày/ca/giờ gốc và ghi audit trong transaction.
     const [row] = await leaveRepository.create(
       [
         {
@@ -50,6 +52,7 @@ export async function createLeave(user, data) {
 }
 // Tạo đề xuất đổi lịch hoặc phòng của giảng viên phụ trách.
 export async function createChange(user, data) {
+  // DL4: Kiểm tra buổi tương lai, đề xuất khác lịch cũ và phòng/ca không xung đột.
   const result = await transaction(async (session) => {
     const lesson = await get(classSessionRepository, data.session_id, session);
     const section = await authorizeLesson(lesson, user, session);
@@ -135,6 +138,7 @@ export async function listRequests(user, q, kind) {
 }
 // Duyệt đơn với kiểm tra phiên bản, lịch và quyền phụ trách.
 export async function reviewRequest(user, requestId, data, kind) {
+  // DU4: Với đơn nghỉ, chỉ người dạy được duyệt khi buổi chưa bắt đầu và đơn còn PENDING.
   const repository = requestRepositories[kind];
 
   const result = await transaction(async (session) => {
@@ -146,6 +150,7 @@ export async function reviewRequest(user, requestId, data, kind) {
     if (row.status !== "PENDING") fail(409, "Đơn không còn chờ duyệt");
     if (lesson.status !== "SCHEDULED" || lesson.start_at <= new Date())
       fail(409, "Buổi học đã bắt đầu hoặc không còn hiệu lực");
+    // DL7: Với đơn đổi lịch/phòng được duyệt, kiểm tra lại rồi cập nhật buổi học.
     if (data.decision === "APPROVED") {
       if (repository === leaveRepository) {
         if (

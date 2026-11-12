@@ -28,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // DN1: Sinh viên nhập email/mật khẩu; form hợp lệ mới gửi yêu cầu đăng nhập.
     if (!_form.currentState!.validate()) return;
     setState(() {
       _busy = true;

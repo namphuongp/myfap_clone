@@ -13,6 +13,7 @@ class LecturerRepository {
   Future<List<Json>> rooms() async =>
       jsonList(await api.request('GET', '/rooms'));
   Future<List<TeachingSession>> schedule(DateTime from, DateTime to) async {
+    // GD2: Gọi GET /schedule với khoảng ngày đã chọn.
     final query = Uri(
       queryParameters: {
         'from': vnMidnight(from).toIso8601String(),
@@ -45,6 +46,7 @@ class LecturerRepository {
   Future<Json> attendance(String id) async =>
       jsonObject(await api.request('GET', '/sessions/$id/attendance'));
   Future<void> saveAttendance(String id, int version, List<Json> rows) async {
+    // DD3: PUT /sessions/:id/attendance gửi trọn danh sách sinh viên.
     await api.request('PUT', '/sessions/$id/attendance', {
       'version': version,
       'rows': rows,
@@ -69,6 +71,7 @@ class LecturerRepository {
   }
 
   Future<void> reviewLeave(Json request, String decision, String note) async {
+    // DU3: PATCH quyết định kèm version để tránh duyệt trên dữ liệu cũ.
     await api.request('PATCH', '/leave-requests/${request['id']}/decision', {
       'version': request['version'],
       'decision': decision,
@@ -83,6 +86,7 @@ class LecturerRepository {
     required int slot,
     required String reason,
   }) async {
+    // DL2: Gửi ngày/ca/phòng/lý do từ form đến POST /change-requests.
     await api.request('POST', '/change-requests', {
       'session_id': session.id,
       'proposed_room_id': roomId,

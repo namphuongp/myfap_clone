@@ -24,6 +24,7 @@ class _RequestReportState extends State<HeadRequestReportScreen> {
   }
 
   Future<void> _load() async {
+    // BT1: Chọn học kỳ rồi tải báo cáo đơn từ của bộ môn.
     setState(() {
       _loading = true;
       _error = null;

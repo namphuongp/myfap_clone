@@ -15,6 +15,14 @@ Mỗi lớp có sức chứa 30 sinh viên. Lớp mới chưa cần giảng viê
 
 4 slot UTC+7: 07:30–09:50, 10:00–12:20, 12:50–15:10, 15:20–17:40. Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Đổi ngày/slot làm đơn nghỉ cũ hết hiệu lực; đổi phòng vẫn giữ. Khi điểm danh Vắng mặt cho sinh viên có đơn nghỉ được duyệt, hệ thống ghi Vắng có phép. Đơn còn chờ khi buổi học bắt đầu sẽ hết hạn.
 
+## Tìm luồng sinh viên trong code
+
+Tìm toàn dự án trong VS Code bằng `Ctrl+Shift+F` và mã: `DN` đăng nhập, `LH` lịch học, `XN` xin nghỉ, `CN` chuyển ngành, `TB` thông báo, `HS` hồ sơ, `DX` đăng xuất. Mỗi mã có các bước đánh số, ví dụ `XN1` → `XN8`; comment nằm ở Flutter và backend theo thứ tự xử lý.
+
+Các luồng có màn hình ở role khác dùng mã: `GD` lịch dạy, `DD` điểm danh, `DU` giảng viên duyệt nghỉ, `DL` đổi lịch/phòng và cán bộ duyệt, `GV` trưởng bộ môn quản lý giảng viên, `BC` báo cáo điểm danh/bộ môn, `BT` báo cáo đơn từ, `PT` cán bộ soạn/phát hành thông báo, `DC` cán bộ duyệt chuyển ngành. Hồ sơ các role dùng chung mã `HS`; đăng xuất của từng role nằm ở `DX1`/`DX4`/`DX5`/`DX6` và dùng chung API `DX2`–`DX3`.
+
+`TL` đánh dấu API tạo lớp học phần của HEAD; phạm vi hiện tại chưa có màn Flutter cho thao tác này.
+
 ## Chạy cục bộ
 
 Từ D:\Study\Project\myfap_clone:
@@ -46,6 +54,8 @@ Khi MongoDB đã chạy, từ thư mục backend:
 ```powershell
 npm run seed
 ```
+
+Để có thêm dữ liệu cố định cho màn chuyển ngành trên DB demo đã seed, chạy `npm run seed:transfer-demo` trong thư mục `backend`. Lệnh thêm ngành Hệ thống thông tin/Khoa học dữ liệu và ba đơn mẫu: An chờ duyệt, Bình bị từ chối, Cường đã duyệt cho kỳ tiếp theo. Lệnh chạy lại không tạo trùng và không sửa đơn hiện có của `student@myfap.local`.
 
 Lệnh duy nhất tạo/bổ sung tài khoản bốn role, bốn sinh viên mẫu, ngành/môn demo, hai lớp PRM393/DBI202, phòng, học kỳ, danh sách sinh viên thuộc lớp và lịch theo ngày chạy (UTC+7). Gán giảng viên ở từng buổi, không dựa vào giảng viên cũ của lớp. Trong tháng nghỉ, lịch thuộc kỳ kế tiếp. Không cần chạy seed học vụ hoặc seed giảng viên/sinh viên riêng. Alias seed:affairs cũ cũng gọi lệnh seed tổng.
 

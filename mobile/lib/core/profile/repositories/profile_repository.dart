@@ -21,6 +21,7 @@ class ProfileRepository {
   final ApiClient api;
   ProfileRepository(this.api);
   Future<UserProfile> getProfile() async => UserProfile(
+    // HS2: Flutter gọi GET /profile bằng phiên đăng nhập hiện tại.
     Map<String, dynamic>.from(await api.request('GET', '/profile') as Map),
   );
   Future<void> clearSession() => api.clearLocalSession();

@@ -84,6 +84,7 @@ class _HeadHomeScreenState extends State<HeadHomeScreen> {
     ),
   );
   Future<void> _logout() async {
+    // DX5: Trưởng bộ môn đăng xuất qua cùng API thu hồi phiên DX2–DX3.
     setState(() => _busy = true);
     try {
       await widget.api.logout();

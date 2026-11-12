@@ -43,6 +43,7 @@ class _StaffNoticesScreenState extends State<StaffNoticesScreen> {
   }
 
   Future<void> _compose() async {
+    // PT1: Cán bộ mở form soạn thông báo mới.
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => StaffNoticeFormScreen(repository: widget.repository),
@@ -74,14 +75,13 @@ class _StaffNoticesScreenState extends State<StaffNoticesScreen> {
   };
 
   Future<void> _publish(StaffJson notice) async {
+    // PT5: Xác nhận đối tượng nhận trước khi phát hành bản nháp.
     final target = _audienceLabel(notice['audience']?.toString()).toLowerCase();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Phát hành thông báo?'),
-        content: Text(
-          '“${notice['title']}” sẽ được gửi tới $target.',
-        ),
+        content: Text('“${notice['title']}” sẽ được gửi tới $target.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -362,6 +362,7 @@ class _StaffNoticeFormScreenState extends State<StaffNoticeFormScreen> {
   }
 
   Future<void> _save() async {
+    // PT2: Kiểm tra tiêu đề/nội dung rồi lưu bản nháp.
     if (!_formKey.currentState!.validate() || _saving) return;
     setState(() => _saving = true);
     try {

@@ -45,6 +45,7 @@ async function audienceFields(data, session) {
 }
 // Giới hạn thông báo theo đối tượng nhận và thời hạn.
 async function visibleFilter(actor) {
+  // TB4: Sinh viên chỉ thấy thông báo đã phát hành, chưa hết hạn, đúng ngành/bộ môn/đối tượng.
   const user = await get(userRepository, actor._id);
   const scope = [{ audience: "ALL_USERS" }];
   if (user.role === "STUDENT") scope.push({ audience: "ALL_STUDENTS" });
@@ -68,6 +69,7 @@ async function visibleFilter(actor) {
 }
 // Tạo thông báo nháp sau khi kiểm tra đối tượng nhận.
 export async function createNotice(actor, data) {
+  // PT4: Backend kiểm tra đối tượng nhận và lưu thông báo DRAFT.
   return transaction(async (session) => {
     const fields = await audienceFields(data, session);
     const row = await noticeRepository.create(
@@ -80,6 +82,7 @@ export async function createNotice(actor, data) {
 }
 // Phát hành thông báo với kiểm tra phiên bản.
 export async function publishNotice(actor, id, data) {
+  // PT7: Phát hành bản nháp để các role phù hợp bắt đầu nhìn thấy thông báo.
   return transaction(async (session) => {
     const row = await get(noticeRepository, id, session);
     checkVersion(row, data.version);
@@ -121,6 +124,7 @@ export async function listNotices(actor, q) {
 }
 // Đọc thông báo nếu người dùng thuộc đối tượng nhận.
 export async function getNotice(actor, id) {
+  // TB6: Mở chi tiết cũng kiểm tra lại quyền xem, không đọc được thông báo ngoài đối tượng.
   const row =
     actor.role === "STAFF"
       ? await get(noticeRepository, id)

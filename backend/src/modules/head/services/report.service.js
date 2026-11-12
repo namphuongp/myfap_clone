@@ -59,6 +59,7 @@ const metrics = (row) => {
 };
 // Tổng hợp điểm danh trong phạm vi bộ môn.
 export async function attendanceReport(actor, q) {
+  // BC3: Tổng hợp điểm danh theo phạm vi bộ môn và bộ lọc đã chọn.
   const sections = await sectionsFor(actor, q),
     ids = sections.map((s) => s._id);
   const counts = await classMembershipRepository.activeCounts(ids),
@@ -150,6 +151,7 @@ export async function attendanceReport(actor, q) {
 }
 // Tổng hợp tình hình giảng dạy theo bộ môn.
 export async function departmentSummary(actor, q) {
+  // BC4: Tổng quan số lớp, buổi và sinh viên của bộ môn.
   const sections = await sectionsFor(actor, q),
     rows = await reportRepository.attendanceBySections(
       sections.map((s) => s._id),
@@ -176,6 +178,7 @@ export async function departmentSummary(actor, q) {
 
 // Tổng hợp các đơn trong phạm vi bộ môn.
 export async function requestReport(actor, q) {
+  // BT2: Tổng hợp đơn nghỉ và đơn đổi lịch/phòng trong bộ môn.
   const sections = await sectionsFor(actor, q);
   const sessions = await classSessionRepository.distinct("_id", {
     section_id: { $in: sections.map((s) => s._id) },

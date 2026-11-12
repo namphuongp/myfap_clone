@@ -56,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _load() async {
+    // HS1: Mở Hồ sơ; tải thông tin của chính tài khoản đang đăng nhập.
     setState(() {
       _loading = true;
       _error = null;

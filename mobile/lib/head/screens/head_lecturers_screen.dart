@@ -32,6 +32,7 @@ class _LecturersState extends State<HeadLecturersScreen> {
   }
 
   Future<void> _load() async {
+    // GV1: Trưởng bộ môn tìm và lọc giảng viên thuộc bộ môn của mình.
     final generation = ++_generation;
     setState(() {
       _busy = true;
@@ -445,6 +446,7 @@ class _EditorState extends State<_LecturerEditor> {
   }
 
   Future<void> _save() async {
+    // GV2: Xác nhận tạo/sửa giảng viên rồi gửi dữ liệu qua repository.
     if (!_form.currentState!.validate()) return;
     final sensitive =
         !_creating &&

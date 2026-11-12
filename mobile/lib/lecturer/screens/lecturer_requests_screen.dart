@@ -32,6 +32,7 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
   }
 
   Future<void> _load() async {
+    // DU1: Tải đơn xin nghỉ thuộc các buổi giảng viên phụ trách.
     final generation = ++_generation;
     setState(() {
       _loading = true;
@@ -398,6 +399,7 @@ class _LeaveDecisionDialogState extends State<LeaveDecisionDialog> {
   }
 
   Future<void> _submit(String decision) async {
+    // DU2: Giảng viên chọn Duyệt/Từ chối và ghi phản hồi.
     if (!_form.currentState!.validate()) return;
     setState(() {
       _saving = true;

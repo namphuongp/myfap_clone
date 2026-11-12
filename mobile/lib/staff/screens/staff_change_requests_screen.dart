@@ -39,6 +39,7 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
   }
 
   Future<void> _load() async {
+    // DC1: Tải đơn chuyển ngành hoặc đổi lịch/phòng theo tab và trạng thái.
     setState(() {
       _loading = true;
       _error = null;
@@ -604,6 +605,7 @@ class _ChangeDecisionDialogState extends State<_ChangeDecisionDialog> {
   }
 
   Future<void> _submit(String decision) async {
+    // DL5: Cán bộ chọn Duyệt/Từ chối; form gọi API tương ứng với loại đơn.
     if (!_formKey.currentState!.validate() || _saving) return;
     setState(() {
       _saving = true;

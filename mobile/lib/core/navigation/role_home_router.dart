@@ -19,6 +19,7 @@ class RoleHomeRouter extends StatelessWidget {
   final VoidCallback onLoggedOut;
 
   @override
+  // DN5: Backend trả role STUDENT thì mở trang chủ sinh viên.
   Widget build(BuildContext context) => switch (user['role']) {
     'STUDENT' => StudentHomeScreen(
       user: user,

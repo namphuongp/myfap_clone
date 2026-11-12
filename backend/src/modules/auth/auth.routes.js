@@ -7,6 +7,7 @@ import { loginSchema } from "./validators/auth.validator.js";
 export function authRoutes() {
   const router = Router();
   router.get("/health", auth.health);
+  // DN3: Giới hạn số lần thử và kiểm tra dữ liệu trước khi xác thực.
   router.post("/auth/login", loginLimiter(), validate(loginSchema), auth.login);
   return router;
 }

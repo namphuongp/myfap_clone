@@ -51,6 +51,7 @@ export function headRoutes() {
     validate(reportSchemas.departmentSummarySchema, "query"),
     reports.departmentSummary,
   );
+  // TL1: API tạo lớp học phần chỉ dành cho trưởng bộ môn.
   router.post(
     "/sections",
     roles("HEAD"),

@@ -54,6 +54,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   );
 
   Future<void> _logout() async {
+    // DX6: Cán bộ đăng xuất qua cùng API thu hồi phiên DX2–DX3.
     setState(() => _loggingOut = true);
     try {
       await widget.api.logout();

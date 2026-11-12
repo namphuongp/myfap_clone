@@ -44,9 +44,11 @@ async function approvedLeaveSessions(user, rows) {
 }
 // Lấy lịch cá nhân đúng phạm vi và thời gian thuộc lớp.
 export async function personalSchedule(user, q) {
+  // LH3: Lọc buổi theo lớp sinh viên thực sự thuộc, chỉ trả điểm danh của chính mình.
   if (q.to <= q.from || q.to - q.from > 93 * 86400000)
     fail(400, "Khoảng xem lịch tối đa 93 ngày");
   const sections = await sectionRepository.find(await sectionFilter(user));
+  // GD3: Với LECTURER, chỉ lấy các buổi có lecturer_id là người đăng nhập.
   let rows = await classSessionRepository.find(
     {
       section_id: { $in: sections.map((s) => s._id) },

@@ -52,6 +52,7 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
   }
 
   Future<void> _load() async {
+    // GD1: Giảng viên chọn tuần/kỳ để tải lịch dạy của mình.
     final generation = ++_generation;
     setState(() {
       _loading = true;
@@ -365,8 +366,8 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
                                 decoration: BoxDecoration(
                                   color: hasLesson
                                       ? (active
-                                          ? Colors.white
-                                          : const Color(0xFFEF4444))
+                                            ? Colors.white
+                                            : const Color(0xFFEF4444))
                                       : Colors.transparent,
                                   shape: BoxShape.circle,
                                 ),

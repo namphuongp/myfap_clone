@@ -38,6 +38,7 @@ export async function options() {
 }
 // Tạo dữ liệu sau khi kiểm tra quyền và tính hợp lệ.
 export async function create(actor, data) {
+  // CN5: Chặn ngành trùng/đơn đang hiệu lực; lưu đơn PENDING cho kỳ tiếp theo.
   return transaction(async (session) => {
     const student = await get(userRepository, actor._id, session);
     if (!student.major_id) fail(409, "Tài khoản chưa được gán ngành hiện tại");
@@ -123,6 +124,8 @@ export async function list(actor, query) {
 }
 // Lưu quyết định duyệt; chuyển ngành chỉ lên lịch từ kỳ tới.
 export async function review(actor, id, data) {
+  // DC3: Cán bộ kiểm tra đơn và ngành đích; duyệt chỉ hẹn hiệu lực kỳ sau.
+  // CN6: Cán bộ duyệt đơn nhưng ngành trong hồ sơ chưa đổi ngay.
   return transaction(async (session) => {
     const row = await get(majorTransferRepository, id, session);
     checkVersion(row, data.version);
@@ -165,6 +168,7 @@ export async function applyDueMajorTransfers(
   now = new Date(),
   studentId = null,
 ) {
+  // CN7: Đến đầu kỳ, đổi ngành và kết thúc lớp không thuộc ngành mới; không tự xếp lớp.
   const filter = {
     status: "APPROVED",
     applied_at: null,

@@ -69,6 +69,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   Future<void> _openLeaveForm() async {
     final data = _data;
     if (data == null) return;
+    // XN1: Chỉ cho chọn buổi tương lai chưa có đơn chờ/đã duyệt.
     final active = _activeSessionRequests;
     final eligible = data.sessions
         .where((session) => !active.contains(session.id))
@@ -177,6 +178,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             }
                             setSheetState(() => submitting = true);
                             try {
+                              // XN2: Bấm Gửi đơn; chuyển ID buổi học và lý do sang repository.
                               await _repository.createLeave(
                                 sessionId: sessionId,
                                 reason: reasonController.text.trim(),
@@ -217,6 +219,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
 
     if (submitted == true) {
+      // XN8: API trả thành công; tải lại để thấy đơn ở trạng thái Chờ duyệt.
       _showMessage('Đã gửi đơn xin nghỉ thành công.');
       await _load();
     }
@@ -360,6 +363,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   Widget _transferContent(BuildContext context, StudentRequestsData data) {
+    // CN8: Hiển thị đơn Chờ duyệt, Đã duyệt và Đã áp dụng theo thời điểm.
     final pending = data.majorTransfers.any(
       (row) =>
           row['status'] == 'PENDING' ||
@@ -470,6 +474,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   };
 
   Future<void> _openMajorTransferForm(StudentRequestsData data) async {
+    // CN1: Mở form chuyển ngành, bỏ ngành hiện tại khỏi danh sách lựa chọn.
     final options = data.majors
         .where((row) => row['id']?.toString() != data.currentMajorId)
         .toList();
@@ -546,6 +551,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             if (!key.currentState!.validate()) return;
                             setSheetState(() => saving = true);
                             try {
+                              // CN2: Gửi ngành đích và lý do qua repository.
                               await _repository.createMajorTransfer(
                                 majorId: targetId,
                                 reason: reason.text,

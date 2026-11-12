@@ -43,6 +43,7 @@ class StaffRepository {
     required String decision,
     required String note,
   }) async {
+    // DL6: Gửi quyết định đổi lịch/phòng kèm version và ghi chú.
     await api.request('PATCH', '/change-requests/${request['id']}/decision', {
       'version': request['version'],
       'decision': decision,
@@ -51,7 +52,8 @@ class StaffRepository {
   }
 
   Future<StaffPage> majorTransfers({String? status, int page = 1}) async {
-    final query = Uri(queryParameters: {'page': '$page', 'status': ?status}).query;
+    final query = Uri(queryParameters: {'page': '$page', 'status': ?status})
+        .query;
     return StaffPage.fromJson(
       _object(await api.request('GET', '/major-transfer-requests?$query')),
       pageSize: 50,
@@ -63,6 +65,7 @@ class StaffRepository {
     required String decision,
     required String note,
   }) async {
+    // DC2: Gửi quyết định chuyển ngành kèm version và ghi chú.
     await api.request(
       'PATCH',
       '/major-transfer-requests/${request['id']}/decision',
@@ -85,6 +88,7 @@ class StaffRepository {
     String audience = 'ALL_STUDENTS',
     DateTime? expiresAt,
   }) async => _object(
+    // PT3: POST /notices tạo bản nháp trong MongoDB.
     await api.request('POST', '/notices', {
       'title': title,
       'content': content,
@@ -96,6 +100,7 @@ class StaffRepository {
   );
 
   Future<void> publishNotice(StaffJson notice) async {
+    // PT6: POST /notices/:id/publish với version của bản nháp.
     await api.request('POST', '/notices/${notice['id']}/publish', {
       'version': notice['version'],
     });
