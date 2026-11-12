@@ -1,5 +1,5 @@
 import { connect, initialize, disconnect } from "../config/database.js";
-import { normalizeLegacySessions } from "../services/legacy-repair.service.js";
+import { normalizeLegacySessions } from "../tools/services/legacy-repair.service.js";
 try {
   await connect();
   await initialize();

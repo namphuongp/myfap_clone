@@ -13,3 +13,6 @@ export { importBatchRepository } from "./import-batch.repository.js";
 
 export { classMembershipRepository } from "./class-membership.repository.js";
 export { activityLogRepository } from "./activity-log.repository.js";
+export { majorRepository } from "./major.repository.js";
+export { majorTransferRepository } from "./major-transfer.repository.js";
+export { noticeRepository } from "./notice.repository.js";

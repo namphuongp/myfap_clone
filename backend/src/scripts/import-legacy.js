@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { connect, initialize, disconnect } from "../config/database.js";
-import { importSnapshot } from "../services/import.service.js";
+import { importSnapshot } from "../tools/services/import.service.js";
 const path = process.argv[2];
 if (!path)
   throw new Error(

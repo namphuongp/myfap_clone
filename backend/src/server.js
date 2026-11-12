@@ -1,4 +1,4 @@
-import { applyDueMajorTransfers } from "./services/major-transfer.service.js";
+import { applyDueMajorTransfers } from "./modules/shared/services/major-transfer.service.js";
 import { connect, initialize, disconnect } from "./config/database.js";
 import { createApp } from "./app.js";
 await connect();

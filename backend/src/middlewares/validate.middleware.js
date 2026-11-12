@@ -1,4 +1,4 @@
-import { id } from "../validators/common.js";
+import { id } from "../modules/shared/validators/common.js";
 export function validate(schema, source = "body") {
   return (req, res, next) => {
     try {

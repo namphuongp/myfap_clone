@@ -1,9 +1,9 @@
 import { connect, disconnect, initialize } from "../config/database.js";
 import { userRepository } from "../repositories/index.js";
 import { get } from "../repositories/base.repository.js";
-import { createSession } from "../services/session.service.js";
-import { createSessionSchema } from "../validators/session.validator.js";
-import { id } from "../validators/common.js";
+import { createSession } from "../modules/shared/services/session.service.js";
+import { createSessionSchema } from "../modules/shared/validators/session.validator.js";
+import { id } from "../modules/shared/validators/common.js";
 const args = Object.fromEntries(
   process.argv.slice(2).map((arg) => {
     const i = arg.indexOf("=");

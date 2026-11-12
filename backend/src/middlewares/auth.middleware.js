@@ -1,5 +1,5 @@
 import { ApiError } from "../utils/api-error.js";
-import { resolveSession } from "../services/auth.service.js";
+import { resolveSession } from "../modules/auth/services/auth.service.js";
 export const roles =
   (...allowed) =>
   (req, res, next) =>
