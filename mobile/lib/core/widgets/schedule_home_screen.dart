@@ -87,7 +87,7 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
     final name = widget.user['name'] as String? ?? 'Người dùng';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: const Color(0xFFEDE8FE),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -131,8 +131,20 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFEDE8FE),
+              Color(0xFFF6F4FD),
+              Color(0xFFF3F0FC),
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
@@ -439,6 +451,7 @@ class _ScheduleHomeScreenState extends State<ScheduleHomeScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

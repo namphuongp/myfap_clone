@@ -102,20 +102,70 @@ class _LecturerRequestsScreenState extends State<LecturerRequestsScreen> {
         padding: const EdgeInsets.all(18),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: true, label: Text('Đơn nghỉ')),
-              ButtonSegment(value: false, label: Text('Đổi lịch / phòng')),
-            ],
-            selected: {_leave},
-            onSelectionChanged: (values) {
-              setState(() {
-                _leave = values.first;
-                _status = 'PENDING';
-                _page = 1;
-              });
-              _load();
-            },
+          Container(
+            height: 48,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFEBFA),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Row(
+              children: [
+                for (final (isLeave, label) in [
+                  (true, 'Đơn nghỉ'),
+                  (false, 'Đổi lịch / phòng'),
+                ])
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_leave != isLeave) {
+                          setState(() {
+                            _leave = isLeave;
+                            _status = 'PENDING';
+                            _page = 1;
+                          });
+                          _load();
+                        }
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          gradient: _leave == isLeave
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFF835DF8),
+                                    Color(0xFF6B41EB),
+                                  ],
+                                )
+                              : null,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: _leave == isLeave
+                              ? const [
+                                  BoxShadow(
+                                    color: Color(0x356B41EB),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _leave == isLeave
+                                ? Colors.white
+                                : const Color(0xFF645E7A),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(

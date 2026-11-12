@@ -76,6 +76,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     return Theme(
       data: _theme,
       child: Scaffold(
+        backgroundColor: const Color(0xFFEDE8FE),
         appBar: AppBar(
           toolbarHeight: 96,
           centerTitle: false,
@@ -167,7 +168,20 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             const SizedBox(width: 8),
           ],
         ),
-        body: _dashboard(),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFEDE8FE),
+                Color(0xFFF6F4FD),
+                Color(0xFFF3F0FC),
+              ],
+            ),
+          ),
+          child: _dashboard(),
+        ),
       ),
     );
   }
