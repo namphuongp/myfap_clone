@@ -112,6 +112,7 @@ class _LecturerChangeScreenState extends State<LecturerChangeScreen> {
   }
 
   Future<void> _submit() async {
+    // DL1: Giảng viên gửi đề xuất đổi lịch hoặc phòng cho một buổi tương lai.
     if (!_form.currentState!.validate()) return;
     if (_day == _session!.day &&
         _slot == _session!.slot &&

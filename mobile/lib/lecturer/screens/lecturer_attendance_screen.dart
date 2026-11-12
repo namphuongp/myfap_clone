@@ -41,6 +41,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
   }
 
   Future<void> _load() async {
+    // DD1: Mở danh sách điểm danh của đúng buổi giảng viên phụ trách.
     setState(() {
       _loading = true;
       _error = null;
@@ -90,6 +91,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
   }
 
   Future<void> _save() async {
+    // DD2: Kiểm tra đã chọn đủ sinh viên rồi gửi trạng thái và version lên API.
     if (_rows.any((row) => !attendanceLabels.containsKey(row['status']))) {
       setState(
         () => _error = 'Chọn trạng thái cho tất cả sinh viên trước khi lưu.',
@@ -247,7 +249,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
                     ),
                   ),
                 const Text(
-                  'Đơn nghỉ được duyệt chỉ thêm ghi chú, không tự đổi sinh viên sang Có mặt.',
+                  'Sinh viên có đơn nghỉ được duyệt: chọn Vắng mặt sẽ được ghi là Vắng có phép.',
                   style: TextStyle(color: lecturerMuted, fontSize: 12),
                 ),
               ],

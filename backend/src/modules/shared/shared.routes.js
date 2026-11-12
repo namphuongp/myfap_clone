@@ -20,6 +20,7 @@ export function sharedRoutes() {
   const router = Router();
   router.param("id", validateId);
   router.post("/auth/logout", auth.logout);
+  // HS3: Route chỉ đọc hồ sơ; không có API sửa thông tin trong scope demo.
   router.get("/profile", getProfile);
   router.get("/time-slots", catalog.timeSlots);
   for (const kind of ["courses", "semesters", "rooms"])
@@ -30,6 +31,7 @@ export function sharedRoutes() {
     validate(listSectionsSchema, "query"),
     sections.listSections,
   );
+  // LH2: Chỉ STUDENT/LECTURER xem lịch cá nhân; from/to phải hợp lệ.
   router.get(
     "/schedule",
     roles("STUDENT", "LECTURER"),
@@ -59,12 +61,17 @@ export function sharedRoutes() {
     validate(listSchema, "query"),
     transfers.list,
   );
+  // TB3: API danh sách thông báo dùng chung, backend vẫn lọc theo role người đăng nhập.
   router.get(
     "/notices",
-    roles("STUDENT", "STAFF"),
+    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
     validate(listNoticesSchema, "query"),
     notices.listNotices,
   );
-  router.get("/notices/:id", roles("STUDENT", "STAFF"), notices.getNotice);
+  router.get(
+    "/notices/:id",
+    roles("STUDENT", "LECTURER", "HEAD", "STAFF"),
+    notices.getNotice,
+  );
   return router;
 }

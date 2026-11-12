@@ -1,8 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
-import { ClassSession, Department, Leave } from "../src/models/index.js";
+import {
+  Change,
+  ClassSession,
+  Department,
+  Leave,
+} from "../src/models/index.js";
 import { localDate } from "../src/utils/slots.js";
+import { expirePendingRequests } from "../src/modules/shared/services/request-state.service.js";
 test("Remaining workflows: attendance, lecturer requests and reports", async (t) => {
   let f;
   try {
@@ -119,6 +125,119 @@ test("Remaining workflows: attendance, lecturer requests and reports", async (t)
         .send({ version: 0, status: "OPEN" })
         .expect(404);
     });
+    await t.test(
+      "approved leave becomes excused absence and old requests expire",
+      async () => {
+        const lesson = await ClassSession.findById(future._id);
+        const approved = (
+          await as("student", "post", "/leave-requests")
+            .send({ session_id: String(lesson._id), reason: "Khám bệnh" })
+            .expect(201)
+        ).body;
+        await as("lecturer", "patch", `/leave-requests/${approved.id}/decision`)
+          .send({ version: approved.version, decision: "APPROVED", note: "OK" })
+          .expect(200);
+        const from = new Date(+lesson.start_at - 86400000).toISOString();
+        const to = new Date(+lesson.end_at + 86400000).toISOString();
+        const schedule = (
+          await as(
+            "student",
+            "get",
+            `/schedule?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          ).expect(200)
+        ).body;
+        const scheduledLesson = schedule.find(
+          (row) => row.id === String(lesson._id),
+        );
+        assert.equal(scheduledLesson.approved_leave, true);
+        assert.equal(scheduledLesson.my_attendance, null);
+        const { row: otherStudent } = await f.person("STUDENT");
+        const pendingLeave = await Leave.create({
+          session_id: lesson._id,
+          requester_id: otherStudent._id,
+          reason: "Chờ duyệt",
+          session_version: lesson.version,
+          session_date: lesson.session_date,
+          slot_id: lesson.slot_id,
+          requested_start: lesson.start_at,
+          requested_end: lesson.end_at,
+        });
+        const pendingChange = await Change.create({
+          session_id: lesson._id,
+          requester_id: users.lecturer._id,
+          reason: "Chờ duyệt",
+          session_version: lesson.version,
+          proposed_room_id: rooms[0]._id,
+          proposed_start: lesson.start_at,
+          proposed_end: lesson.end_at,
+        });
+        const start = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        const end = new Date(Date.now() - 60 * 60 * 1000);
+        await ClassSession.updateOne(
+          { _id: lesson._id },
+          {
+            $set: {
+              session_date: localDate(start),
+              start_at: start,
+              end_at: end,
+              legacy_unaligned: true,
+            },
+          },
+        );
+        await Leave.updateOne(
+          { _id: approved.id },
+          { $set: { requested_start: start, requested_end: end } },
+        );
+        assert.equal(await expirePendingRequests(), 2);
+        assert.equal(
+          (await Leave.findById(pendingLeave._id)).status,
+          "EXPIRED",
+        );
+        assert.equal(
+          (await Change.findById(pendingChange._id)).status,
+          "EXPIRED",
+        );
+        await as(
+          "staff",
+          "patch",
+          `/change-requests/${pendingChange._id}/decision`,
+        )
+          .send({
+            version: pendingChange.version,
+            decision: "REJECTED",
+            note: "Late",
+          })
+          .expect(409);
+        const roster = (
+          await as(
+            "lecturer",
+            "get",
+            `/sessions/${lesson._id}/attendance`,
+          ).expect(200)
+        ).body;
+        await as("lecturer", "put", `/sessions/${lesson._id}/attendance`)
+          .send({
+            version: roster.version,
+            rows: roster.rows.map((row) => ({
+              student_id: row.student_id,
+              status: "ABSENT",
+            })),
+          })
+          .expect(200);
+        const saved = (
+          await as(
+            "lecturer",
+            "get",
+            `/sessions/${lesson._id}/attendance`,
+          ).expect(200)
+        ).body;
+        assert.equal(
+          saved.rows.find((row) => row.student_id === String(users.student._id))
+            .status,
+          "EXCUSED",
+        );
+      },
+    );
     await t.test(
       "department reports do not expose other departments",
       async () => {

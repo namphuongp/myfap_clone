@@ -23,6 +23,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
   }
 
   Future<void> _load() async {
+    // BC1: Trưởng bộ môn chọn bộ lọc và tải tổng quan cùng báo cáo điểm danh.
     setState(() {
       _loading = true;
       _error = null;

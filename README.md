@@ -4,16 +4,24 @@
 
 Phạm vi backend:
 
-- STUDENT: lịch học, đăng ký/rút môn, gửi/xem đơn nghỉ, đọc thông báo.
+- STUDENT: lịch học, gửi/xem đơn nghỉ, gửi/xem đơn chuyển ngành, đọc thông báo.
 - LECTURER: lịch của các buổi được giao, điểm danh, duyệt nghỉ đúng buổi, gửi/xem yêu cầu đổi lịch/phòng.
-- HEAD: quản lý môn/chương trình môn trong bộ môn, tạo lớp chưa phân công, mở/đóng đăng ký, phân công theo buổi, báo cáo bộ môn.
+- HEAD: quản lý môn/chương trình môn trong bộ môn, tạo lớp chưa phân công, phân công theo buổi, báo cáo bộ môn.
 - STAFF: tạo/phát hành thông báo, duyệt đổi lịch/phòng và chuyển ngành. Mọi role có profile chỉ đọc, avatar chữ.
 
-Course là môn; Section là lớp học phần của một môn trong một Semester; ClassSession là buổi với ngày/slot/phòng và giảng viên nullable. Trường lecturer_id cũ của Section không còn dùng cấp quyền. Sinh viên thuộc lớp qua ClassMembership theo thời điểm. Giữ nguyên lịch sử khi đổi người phụ trách hoặc rút/đăng ký lại lớp.
+Course là môn; Section là lớp học phần của một môn trong một Semester; ClassSession là buổi với ngày/slot/phòng và giảng viên nullable. Trường lecturer_id cũ của Section không còn dùng cấp quyền. Sinh viên thuộc lớp qua ClassMembership theo thời điểm; danh sách này do seed/import thiết lập và giữ lịch sử khi đổi người phụ trách.
 
-Mỗi lớp 30 sinh viên. Cán bộ/HEAD không đăng ký thay sinh viên. Lớp mới CLOSED, không cần giảng viên; chỉ mở sau khi có lịch tương lai hợp lệ. Phân công chỉ sửa các buổi tương lai chưa điểm danh, không viết lại buổi cũ. Cùng một lớp có thể có nhiều giảng viên ở các buổi khác nhau.
+Mỗi lớp có sức chứa 30 sinh viên. Lớp mới chưa cần giảng viên; danh sách lớp do seed/import thiết lập. Phân công chỉ sửa các buổi tương lai chưa điểm danh, không viết lại buổi cũ. Cùng một lớp có thể có nhiều giảng viên ở các buổi khác nhau.
 
-4 slot UTC+7: 07:30–09:50, 10:00–12:20, 12:50–15:10, 15:20–17:40. Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Đổi ngày/slot làm đơn nghỉ cũ hết hiệu lực; đổi phòng vẫn giữ. Duyệt nghỉ chỉ thêm note, không tự ghi Có mặt.
+4 slot UTC+7: 07:30–09:50, 10:00–12:20, 12:50–15:10, 15:20–17:40. Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Đổi ngày/slot làm đơn nghỉ cũ hết hiệu lực; đổi phòng vẫn giữ. Khi điểm danh Vắng mặt cho sinh viên có đơn nghỉ được duyệt, hệ thống ghi Vắng có phép. Đơn còn chờ khi buổi học bắt đầu sẽ hết hạn.
+
+## Tìm luồng sinh viên trong code
+
+Tìm toàn dự án trong VS Code bằng `Ctrl+Shift+F` và mã: `DN` đăng nhập, `LH` lịch học, `XN` xin nghỉ, `CN` chuyển ngành, `TB` thông báo, `HS` hồ sơ, `DX` đăng xuất. Mỗi mã có các bước đánh số, ví dụ `XN1` → `XN8`; comment nằm ở Flutter và backend theo thứ tự xử lý.
+
+Các luồng có màn hình ở role khác dùng mã: `GD` lịch dạy, `DD` điểm danh, `DU` giảng viên duyệt nghỉ, `DL` đổi lịch/phòng và cán bộ duyệt, `GV` trưởng bộ môn quản lý giảng viên, `BC` báo cáo điểm danh/bộ môn, `BT` báo cáo đơn từ, `PT` cán bộ soạn/phát hành thông báo, `DC` cán bộ duyệt chuyển ngành. Hồ sơ các role dùng chung mã `HS`; đăng xuất của từng role nằm ở `DX1`/`DX4`/`DX5`/`DX6` và dùng chung API `DX2`–`DX3`.
+
+`TL` đánh dấu API tạo lớp học phần của HEAD; phạm vi hiện tại chưa có màn Flutter cho thao tác này.
 
 ## Chạy cục bộ
 
@@ -47,9 +55,11 @@ Khi MongoDB đã chạy, từ thư mục backend:
 npm run seed
 ```
 
-Lệnh duy nhất tạo/bổ sung tài khoản bốn role, bốn sinh viên mẫu, ngành/môn demo, hai lớp PRM393/DBI202, phòng, học kỳ, đăng ký và lịch theo ngày chạy (UTC+7). Gán giảng viên ở từng buổi, không dựa vào giảng viên cũ của lớp. Trong tháng nghỉ, lịch thuộc kỳ kế tiếp. Không cần chạy seed học vụ hoặc seed giảng viên/sinh viên riêng. Alias seed:affairs cũ cũng gọi lệnh seed tổng.
+Để có thêm dữ liệu cố định cho màn chuyển ngành trên DB demo đã seed, chạy `npm run seed:transfer-demo` trong thư mục `backend`. Lệnh thêm ngành Hệ thống thông tin/Khoa học dữ liệu và ba đơn mẫu: An chờ duyệt, Bình bị từ chối, Cường đã duyệt cho kỳ tiếp theo. Lệnh chạy lại không tạo trùng và không sửa đơn hiện có của `student@myfap.local`.
 
-Chạy lại không đổi mật khẩu, không tự đăng ký lại sinh viên đã rút, không ghi đè buổi hoặc điểm danh cũ. Sinh viên bổ sung vào DB demo đã có chỉ tham gia từ thời điểm seed, để giữ roster lịch sử. Seed từ chối DB chứa tài khoản ngoài bộ demo. Các bước dùng transaction riêng và có thể chạy lại nếu lần trước bị gián đoạn. SEED_PASSWORD trong .env cần ít nhất 12 ký tự và tối đa 72 byte. Seed không xóa dữ liệu; không tự tạo đơn hoặc thông báo đã duyệt/phát hành.
+Lệnh duy nhất tạo/bổ sung tài khoản bốn role, bốn sinh viên mẫu, ngành/môn demo, hai lớp PRM393/DBI202, phòng, học kỳ, danh sách sinh viên thuộc lớp và lịch theo ngày chạy (UTC+7). Gán giảng viên ở từng buổi, không dựa vào giảng viên cũ của lớp. Trong tháng nghỉ, lịch thuộc kỳ kế tiếp. Không cần chạy seed học vụ hoặc seed giảng viên/sinh viên riêng. Alias seed:affairs cũ cũng gọi lệnh seed tổng.
+
+Chạy lại không đổi mật khẩu, không ghi đè danh sách lớp, buổi học hoặc điểm danh cũ. Sinh viên bổ sung vào DB demo đã có chỉ tham gia từ thời điểm seed, để giữ roster lịch sử. Seed từ chối DB chứa tài khoản ngoài bộ demo. Các bước dùng transaction riêng và có thể chạy lại nếu lần trước bị gián đoạn. SEED_PASSWORD trong .env cần ít nhất 12 ký tự và tối đa 72 byte. Seed không xóa dữ liệu; không tự tạo đơn hoặc thông báo đã duyệt/phát hành.
 
 ## Cập nhật scope và giữ dữ liệu cũ
 
@@ -61,7 +71,7 @@ npm run scope:preview
 npm run scope:migrate
 ```
 
-Scope migration thay index giảng viên cũ bằng unique index áp dụng cho lecturer_id là ObjectId. Startup cũng thay index MajorTransfer cũ để chỉ giới hạn một đơn PENDING mỗi sinh viên; không sửa document. MajorTransfer hỗ trợ gửi/xem/duyệt đơn; khi duyệt, major_id cập nhật nguyên tử cùng audit. Đơn cũ không tự áp dụng.
+Scope migration thay index giảng viên cũ bằng unique index áp dụng cho lecturer_id là ObjectId. Startup cũng thay index MajorTransfer cũ để chỉ giới hạn một đơn PENDING mỗi sinh viên; không sửa document. MajorTransfer hỗ trợ gửi/xem/duyệt đơn; đơn được duyệt đổi ngành từ kỳ tiếp theo, không tự xếp lớp. Danh sách lớp kỳ mới do seed/import chuẩn bị.
 
 API ngoài scope đã gỡ: sửa profile/mật khẩu, CRUD ngành, quản trị tài khoản/phòng/kỳ/bộ môn, xếp/sửa lịch trực tiếp qua REST, endpoint lịch sử kỹ thuật, đăng ký thay sinh viên và báo cáo đơn. Giữ danh mục đọc thực sự phục vụ form. HEAD có GET majors để chọn chương trình khi quản lý môn; STUDENT có danh sách ngành hoạt động để gửi đơn chuyển ngành; không có CRUD ngành.
 

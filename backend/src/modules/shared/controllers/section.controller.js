@@ -6,6 +6,7 @@ export const listSections = async (req, res) => {
 };
 // Tạo lớp học phần; chưa bắt buộc có giảng viên.
 export const createSection = async (req, res) => {
+  // TL2: Chuyển tài khoản HEAD và dữ liệu lớp đã kiểm tra sang service.
   const result = await service.createSection(req.user, req.validated.body);
   res.status(201).json(result);
 };

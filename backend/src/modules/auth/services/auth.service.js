@@ -16,6 +16,7 @@ export async function health() {
 }
 // Xác thực tài khoản và tạo phiên đăng nhập.
 export async function login(data) {
+  // DN4: So khớp mật khẩu đã băm, từ chối tài khoản sai hoặc ngừng hoạt động.
   const user = await userRepository.findOne(
     { email: data.email },
     { select: "+password_hash" },
@@ -72,5 +73,6 @@ export async function resolveSession(bearer) {
 }
 // Thu hồi phiên đăng nhập hiện tại.
 export async function logout(auth) {
+  // DX3: Xóa phiên đăng nhập để token cũ không gọi API được nữa.
   await authSessionRepository.deleteOne({ _id: auth._id });
 }

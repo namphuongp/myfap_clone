@@ -16,8 +16,15 @@ export const listRequestsSchema = (kind) =>
     status: z
       .enum(
         kind === "leave"
-          ? ["PENDING", "APPROVED", "REJECTED", "INVALIDATED", "CANCELLED"]
-          : ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+          ? [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "INVALIDATED",
+              "CANCELLED",
+              "EXPIRED",
+            ]
+          : ["PENDING", "APPROVED", "REJECTED", "CANCELLED", "EXPIRED"],
       )
       .optional(),
     page: z.coerce.number().int().min(1).max(10000).default(1),

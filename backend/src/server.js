@@ -1,17 +1,20 @@
 import { applyDueMajorTransfers } from "./modules/shared/services/major-transfer.service.js";
+import { expirePendingRequests } from "./modules/shared/services/request-state.service.js";
 import { connect, initialize, disconnect } from "./config/database.js";
 import { createApp } from "./app.js";
 await connect();
 await initialize();
+await expirePendingRequests();
 await applyDueMajorTransfers();
 let applying = false;
 const transferTimer = setInterval(async () => {
   if (applying) return;
   applying = true;
   try {
+    await expirePendingRequests();
     await applyDueMajorTransfers();
   } catch (error) {
-    console.error("Không áp dụng được đơn chuyển ngành:", error.message);
+    console.error("Không xử lý được đơn đến hạn:", error.message);
   } finally {
     applying = false;
   }

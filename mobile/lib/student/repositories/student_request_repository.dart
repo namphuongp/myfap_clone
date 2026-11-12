@@ -75,6 +75,7 @@ class StudentRequestRepository {
     required String sessionId,
     required String reason,
   }) async {
+    // XN3: Flutter gửi POST /leave-requests; không ghi trực tiếp vào MongoDB.
     await api.request('POST', '/leave-requests', {
       'session_id': sessionId,
       'reason': reason.trim(),
@@ -85,6 +86,7 @@ class StudentRequestRepository {
     required String majorId,
     required String reason,
   }) async {
+    // CN3: Flutter gọi POST /major-transfer-requests.
     await api.request('POST', '/major-transfer-requests', {
       'to_major_id': majorId,
       'reason': reason.trim(),

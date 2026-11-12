@@ -9,6 +9,7 @@ import * as transferSchemas from "../shared/validators/major-transfer.validator.
 // Khai báo thao tác riêng của sinh viên.
 export function studentRoutes() {
   const router = Router();
+  // XN4: Chỉ STUDENT được gọi; kiểm tra dữ liệu rồi chuyển sang controller.
   router.post(
     "/leave-requests",
     roles("STUDENT"),
@@ -16,6 +17,7 @@ export function studentRoutes() {
     requests.createLeave,
   );
   router.get("/major-transfer-options", roles("STUDENT"), transfers.options);
+  // CN4: Chỉ sinh viên được gửi đơn; backend kiểm tra ngành đích và lý do.
   router.post(
     "/major-transfer-requests",
     roles("STUDENT"),

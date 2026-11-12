@@ -18,6 +18,7 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
     ('PENDING', 'Chờ duyệt'),
     ('APPROVED', 'Đã duyệt'),
     ('REJECTED', 'Đã từ chối'),
+    ('EXPIRED', 'Quá hạn'),
     ('CANCELLED', 'Đã hủy'),
   ];
 
@@ -38,6 +39,7 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
   }
 
   Future<void> _load() async {
+    // DC1: Tải đơn chuyển ngành hoặc đổi lịch/phòng theo tab và trạng thái.
     setState(() {
       _loading = true;
       _error = null;
@@ -156,7 +158,9 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
                         ),
                         MenuAnchor(
                           menuChildren: [
-                            for (final option in _statusOptions)
+                            for (final option in _statusOptions.where(
+                              (option) => option.$1 != 'EXPIRED',
+                            ))
                               MenuItemButton(
                                 onPressed: () {
                                   setState(() {
@@ -537,6 +541,7 @@ class _ChangeRequestCard extends StatelessWidget {
   String _statusLabel(String value) => switch (value) {
     'APPROVED' => 'Đã duyệt',
     'REJECTED' => 'Đã từ chối',
+    'EXPIRED' => 'Quá hạn',
     'CANCELLED' => 'Đã hủy',
     _ => 'Chờ duyệt',
   };
@@ -600,6 +605,7 @@ class _ChangeDecisionDialogState extends State<_ChangeDecisionDialog> {
   }
 
   Future<void> _submit(String decision) async {
+    // DL5: Cán bộ chọn Duyệt/Từ chối; form gọi API tương ứng với loại đơn.
     if (!_formKey.currentState!.validate() || _saving) return;
     setState(() {
       _saving = true;

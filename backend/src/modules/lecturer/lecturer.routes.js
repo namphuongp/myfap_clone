@@ -27,6 +27,7 @@ export function lecturerRoutes() {
     validate(schemas.reviewRequestSchema),
     requests.reviewRequest("leave"),
   );
+  // DL3: Chỉ giảng viên được tạo yêu cầu đổi lịch/phòng.
   router.post(
     "/change-requests",
     roles("LECTURER"),

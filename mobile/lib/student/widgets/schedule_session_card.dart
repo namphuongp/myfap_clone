@@ -85,6 +85,12 @@ class ScheduleSessionCard extends StatelessWidget {
         const Color(0xFFE8F7EE),
         Icons.check_circle_outline_rounded,
       ),
+      _ when session.approvedLeave => (
+        'Đã duyệt nghỉ',
+        const Color(0xFF7047EB),
+        const Color(0xFFEDE8FE),
+        Icons.event_available_rounded,
+      ),
       _ => (
         'Chưa điểm danh',
         const Color(0xFF6B6680),
@@ -198,8 +204,10 @@ class ScheduleSessionCard extends StatelessWidget {
                     if (!session.attendanceSaved &&
                         session.status != 'CANCELLED') ...[
                       const SizedBox(height: 4),
-                      const Text(
-                        'Giảng viên sẽ điểm danh trong hoặc sau giờ học.',
+                      Text(
+                        session.approvedLeave
+                            ? 'Đơn nghỉ đã được duyệt. Giảng viên chưa ghi điểm danh cho buổi này.'
+                            : 'Giảng viên sẽ điểm danh trong hoặc sau giờ học.',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF757288),
@@ -332,6 +340,12 @@ class ScheduleSessionCard extends StatelessWidget {
         const Color(0xFF16A34A),
         const Color(0xFFE8F7EE),
         Icons.check_circle_outline_rounded,
+      ),
+      _ when session.approvedLeave => (
+        'Đã duyệt nghỉ',
+        const Color(0xFF7047EB),
+        const Color(0xFFEDE8FE),
+        Icons.event_available_rounded,
       ),
       _ when session.status == 'COMPLETED' => (
         'Đã hoàn thành',

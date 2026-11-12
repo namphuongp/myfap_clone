@@ -69,6 +69,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   Future<void> _openLeaveForm() async {
     final data = _data;
     if (data == null) return;
+    // XN1: Chỉ cho chọn buổi tương lai chưa có đơn chờ/đã duyệt.
     final active = _activeSessionRequests;
     final eligible = data.sessions
         .where((session) => !active.contains(session.id))
@@ -177,6 +178,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             }
                             setSheetState(() => submitting = true);
                             try {
+                              // XN2: Bấm Gửi đơn; chuyển ID buổi học và lý do sang repository.
                               await _repository.createLeave(
                                 sessionId: sessionId,
                                 reason: reasonController.text.trim(),
@@ -217,6 +219,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
 
     if (submitted == true) {
+      // XN8: API trả thành công; tải lại để thấy đơn ở trạng thái Chờ duyệt.
       _showMessage('Đã gửi đơn xin nghỉ thành công.');
       await _load();
     }
@@ -360,6 +363,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   Widget _transferContent(BuildContext context, StudentRequestsData data) {
+    // CN8: Hiển thị đơn Chờ duyệt, Đã duyệt và Đã áp dụng theo thời điểm.
     final pending = data.majorTransfers.any(
       (row) =>
           row['status'] == 'PENDING' ||
@@ -376,6 +380,13 @@ class _RequestsScreenState extends State<RequestsScreen> {
             ),
             title: const Text('Ngành hiện tại'),
             subtitle: Text(data.currentMajorName ?? 'Chưa cập nhật'),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            'Đơn được duyệt sẽ đổi ngành từ kỳ tiếp theo. Lịch học kỳ mới lấy từ dữ liệu lớp đã chuẩn bị.',
+            style: TextStyle(color: Color(0xFF66617A), fontSize: 13),
           ),
         ),
         const SizedBox(height: 12),
@@ -463,6 +474,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   };
 
   Future<void> _openMajorTransferForm(StudentRequestsData data) async {
+    // CN1: Mở form chuyển ngành, bỏ ngành hiện tại khỏi danh sách lựa chọn.
     final options = data.majors
         .where((row) => row['id']?.toString() != data.currentMajorId)
         .toList();
@@ -539,6 +551,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             if (!key.currentState!.validate()) return;
                             setSheetState(() => saving = true);
                             try {
+                              // CN2: Gửi ngành đích và lý do qua repository.
                               await _repository.createMajorTransfer(
                                 majorId: targetId,
                                 reason: reason.text,
@@ -808,6 +821,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
         'Không còn hiệu lực',
         const Color(0xFFDC2626),
         const Color(0xFFFEE2E2),
+        Icons.event_busy_outlined,
+      ),
+      'EXPIRED' => (
+        'Quá hạn duyệt',
+        const Color(0xFF757288),
+        const Color(0xFFF3F2F7),
         Icons.event_busy_outlined,
       ),
       'CANCELLED' => (

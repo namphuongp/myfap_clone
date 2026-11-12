@@ -52,6 +52,7 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
   }
 
   Future<void> _load() async {
+    // GD1: Giảng viên chọn tuần/kỳ để tải lịch dạy của mình.
     final generation = ++_generation;
     setState(() {
       _loading = true;
@@ -129,17 +130,33 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE2AF),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFECE7F7)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x06000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.school_outlined,
-                    size: 20,
-                    color: lecturerNavy,
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE8FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.school_outlined,
+                      size: 18,
+                      color: Color(0xFF7047EB),
+                    ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +176,8 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
                                   : 'Chưa có học kỳ hiện tại'),
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: lecturerNavy,
+                            fontSize: 15,
+                            color: Color(0xFF1E1A3C),
                           ),
                         ),
                       ],
@@ -168,95 +186,200 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
               children: [
-                IconButton(
-                  tooltip: 'Tuần trước',
-                  onPressed: _loading ? null : () => _moveWeek(-1),
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Expanded(
-                  child: Text(
-                    '${dateLabel(_week)} – ${dateLabel(_week.add(const Duration(days: 6)))}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: lecturerNavy,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFECE7F7)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Tuần trước',
+                    onPressed: _loading ? null : () => _moveWeek(-1),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Color(0xFF2E2A44),
+                      size: 24,
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Tuần sau',
-                  onPressed: _loading ? null : () => _moveWeek(1),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-                child: Row(
-                  children: days.map((day) {
-                    final active = day == _day;
-                    final hasLesson = matching.any((s) => s.day == day);
-                    return Expanded(
-                      child: Semantics(
-                        key: ValueKey('teaching-day-${dateKey(day)}'),
-                        selected: active,
-                        button: true,
-                        label: 'Ngày ${dateLabel(day)}',
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() => _day = day),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Column(
-                              children: [
-                                Text(
-                                  weekdayNames[day.weekday - 1],
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: lecturerMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                CircleAvatar(
-                                  radius: 17,
-                                  backgroundColor: active
-                                      ? lecturerNavy
-                                      : Colors.transparent,
-                                  foregroundColor: active
-                                      ? Colors.white
-                                      : lecturerNavy,
-                                  child: Text(
-                                    '${day.day}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Container(
-                                  width: 4,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: hasLesson
-                                        ? lecturerOrange
-                                        : Colors.transparent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFECE7F7)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x06000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 16,
+                          color: Color(0xFF6E46EB),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '${dateLabel(_week)} – ${dateLabel(_week.add(const Duration(days: 6)))}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E1A3C),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFECE7F7)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Tuần sau',
+                    onPressed: _loading ? null : () => _moveWeek(1),
+                    icon: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF2E2A44),
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: List.generate(days.length, (index) {
+                final day = days[index];
+                final active = day == _day;
+                final hasLesson = matching.any((s) => s.day == day);
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: index < 6 ? 6.0 : 0.0),
+                    child: Semantics(
+                      key: ValueKey('teaching-day-${dateKey(day)}'),
+                      selected: active,
+                      button: true,
+                      label: 'Ngày ${dateLabel(day)}',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => setState(() => _day = day),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: active
+                                ? const LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Color(0xFF8B64F6),
+                                      Color(0xFF6B40E8),
+                                    ],
+                                  )
+                                : null,
+                            color: active ? null : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: active
+                                ? null
+                                : Border.all(color: const Color(0xFFEFEBF8)),
+                            boxShadow: active
+                                ? const [
+                                    BoxShadow(
+                                      color: Color(0x356B40E8),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ]
+                                : const [
+                                    BoxShadow(
+                                      color: Color(0x05000000),
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                weekdayNames[day.weekday - 1],
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: active
+                                      ? Colors.white.withValues(alpha: 0.88)
+                                      : lecturerMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: active
+                                      ? Colors.white
+                                      : const Color(0xFF1E1A3C),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: hasLesson
+                                      ? (active
+                                            ? Colors.white
+                                            : const Color(0xFFEF4444))
+                                      : Colors.transparent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
             SectionHeading('Lịch ngày ${dateLabel(_day)}'),
             if (_loading)

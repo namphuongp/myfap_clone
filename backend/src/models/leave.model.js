@@ -6,7 +6,14 @@ export const Leave = model(
     ...requestFields,
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED", "INVALIDATED", "CANCELLED"],
+      enum: [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "INVALIDATED",
+        "CANCELLED",
+        "EXPIRED",
+      ],
       default: "PENDING",
     },
     session_version: { type: Number, required: true },

@@ -36,6 +36,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   }
 
   Future<void> _loadWeek({bool clear = false}) async {
+    // LH1: Chọn tuần; tính khoảng thời gian theo giờ Việt Nam để hỏi lịch học.
     final requestNumber = ++_requestNumber;
     final weekStart = _weekStart;
     setState(() {
@@ -56,6 +57,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
         'GET',
         '/schedule?from=$from&to=$to',
       );
+      // LH4: Đổi dữ liệu API thành buổi học, sắp theo giờ và cập nhật giao diện.
       final sessions =
           (data as List)
               .map(

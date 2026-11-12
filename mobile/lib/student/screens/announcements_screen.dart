@@ -43,6 +43,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   Future<void> _loadFirstPage() async {
+    // TB1: Sinh viên mở Thông báo; tải trang đầu và hiển thị danh sách.
     setState(() {
       _loading = true;
       _error = null;
@@ -97,6 +98,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   void _openNotice(StudentNotice notice) {
+    // TB5: Chạm thông báo để tải chi tiết từ API, không chỉ dùng nội dung danh sách.
     final detail = _repository.detail(notice.id);
     showModalBottomSheet<void>(
       context: context,
@@ -305,6 +307,10 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   String _audienceLabel(String audience) => switch (audience) {
+    'ALL_STUDENTS' => 'Sinh viên',
+    'ALL_LECTURERS' => 'Giảng viên',
+    'ALL_HEADS' => 'Trưởng bộ môn',
+    'ALL_USERS' => 'Toàn trường',
     'DEPARTMENT' => 'Bộ môn của bạn',
     'MAJOR' => 'Ngành của bạn',
     _ => 'Toàn trường',

@@ -51,6 +51,7 @@ export async function getAttendance(user, sessionId) {
 }
 // Ghi đủ danh sách điểm danh, kiểm tra quyền và phiên bản.
 export async function saveAttendance(user, sessionId, data) {
+  // DD4: Backend kiểm tra đúng giảng viên, đúng ngày, buổi đã bắt đầu và đủ roster.
   const result = await transaction(async (session) => {
     const lesson = await get(classSessionRepository, sessionId, session);
     await authorizeLesson(lesson, user, session);
@@ -81,12 +82,29 @@ export async function saveAttendance(user, sessionId, data) {
           "Điểm danh mới chỉ nhận PRESENT/ABSENT; trạng thái cũ chỉ được giữ nguyên",
         );
     }
+    // DD5: Sinh viên vắng có đơn nghỉ được duyệt sẽ được lưu EXCUSED.
+    const approvedLeaves = await leaveRepository.find(
+      {
+        session_id: lesson._id,
+        status: "APPROVED",
+        requested_start: lesson.start_at,
+        requested_end: lesson.end_at,
+      },
+      { session },
+    );
+    const excusedIds = new Set(
+      approvedLeaves.map((row) => String(row.requester_id)),
+    );
     const before = {
       version: lesson.version,
       rows: clean(lesson.attendance),
     };
     lesson.attendance = data.rows.map((r) => ({
       ...r,
+      status:
+        r.status === "ABSENT" && excusedIds.has(String(r.student_id))
+          ? "EXCUSED"
+          : r.status,
       updated_by: user._id,
       updated_at: now,
     }));

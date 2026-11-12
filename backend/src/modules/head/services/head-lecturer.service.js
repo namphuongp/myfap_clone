@@ -100,6 +100,7 @@ export async function detail(actor, id) {
 }
 // Tạo dữ liệu sau khi kiểm tra quyền và tính hợp lệ.
 export async function create(actor, data) {
+  // GV4: Tạo tài khoản giảng viên trong đúng bộ môn, băm mật khẩu và ghi audit.
   const { password, ...fields } = data;
   const password_hash = await bcrypt.hash(password, 12);
   return transaction(async (session) => {
@@ -128,6 +129,7 @@ export async function create(actor, data) {
 }
 // Cập nhật dữ liệu có kiểm tra phiên bản.
 export async function update(actor, id, data) {
+  // GV5: Chỉ sửa giảng viên cùng bộ môn và kiểm tra version trước khi lưu.
   return transaction(async (session) => {
     const row = await find(actor, id, session);
     checkVersion(row, data.version);

@@ -7,6 +7,7 @@ class StudentNoticeRepository {
   final ApiClient api;
 
   Future<List<StudentNotice>> list({int page = 1}) async {
+    // TB2: Gọi GET /notices, chỉ yêu cầu thông báo đã phát hành.
     final payload = Map<String, dynamic>.from(
       await api.request('GET', '/notices?page=$page&status=PUBLISHED') as Map,
     );

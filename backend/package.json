@@ -12,6 +12,7 @@
     "db:init": "node --env-file=.env src/scripts/init-db.js",
     "db:replica": "node --env-file=.env src/scripts/init-replica.js",
     "seed": "node --env-file=.env src/scripts/seed.js",
+    "seed:transfer-demo": "node --env-file=.env src/scripts/seed-transfer-demo.js",
     "import:legacy": "node --env-file=.env src/scripts/import-legacy.js",
     "slots:preview": "node --env-file=.env src/scripts/repair-legacy-slots.js",
     "slots:repair": "node --env-file=.env src/scripts/repair-legacy-slots.js --apply",

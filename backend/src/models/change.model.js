@@ -6,7 +6,7 @@ export const Change = model(
     ...requestFields,
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+      enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED", "EXPIRED"],
       default: "PENDING",
     },
     session_version: { type: Number, required: true },

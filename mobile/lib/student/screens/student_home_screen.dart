@@ -43,6 +43,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   );
 
   Future<void> _logout() async {
+    // DX1: Sinh viên bấm Đăng xuất; gọi API rồi quay về màn đăng nhập.
     setState(() => _loggingOut = true);
     try {
       await widget.api.logout();

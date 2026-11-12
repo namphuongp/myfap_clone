@@ -63,6 +63,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
+    // DN2: Gọi API đăng nhập và lưu token để các màn sinh viên gọi API có xác thực.
     final data = await request('POST', '/auth/login', {
       'email': email,
       'password': password,
@@ -91,6 +92,7 @@ class ApiClient {
   }
 
   Future<void> logout() async {
+    // DX2: Thu hồi phiên trên máy chủ và xóa token lưu trên thiết bị.
     try {
       await request('POST', '/auth/logout');
     } on ApiException catch (error) {

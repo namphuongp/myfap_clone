@@ -232,6 +232,7 @@ const requestStatusLabels = {
   'APPROVED': 'Đã duyệt',
   'REJECTED': 'Từ chối',
   'INVALIDATED': 'Hết hiệu lực',
+  'EXPIRED': 'Quá hạn',
   'CANCELLED': 'Đã hủy',
 };
 
