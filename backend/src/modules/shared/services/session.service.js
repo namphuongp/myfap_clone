@@ -16,7 +16,32 @@ import {
   sectionRepository,
   classMembershipRepository,
   classSessionRepository,
+  leaveRepository,
 } from "../../../repositories/index.js";
+
+async function approvedLeaveSessions(user, rows) {
+  if (user.role !== "STUDENT" || rows.length === 0) return new Set();
+  const leaves = await leaveRepository.find({
+    requester_id: user._id,
+    status: "APPROVED",
+    session_id: { $in: rows.map((row) => row._id ?? row.id) },
+  });
+  return new Set(
+    leaves
+      .filter((leave) => {
+        const lesson = rows.find((row) =>
+          same(row._id ?? row.id, leave.session_id),
+        );
+        return (
+          lesson &&
+          lesson.status !== "CANCELLED" &&
+          +leave.requested_start === +lesson.start_at &&
+          +leave.requested_end === +lesson.end_at
+        );
+      })
+      .map((leave) => String(leave.session_id)),
+  );
+}
 // Lấy lịch cá nhân đúng phạm vi và thời gian thuộc lớp.
 export async function personalSchedule(user, q) {
   if (q.to <= q.from || q.to - q.from > 93 * 86400000)
@@ -50,6 +75,7 @@ export async function personalSchedule(user, q) {
   const rooms = await roomRepository.find({
     _id: { $in: rows.map((s) => s.room_id) },
   });
+  const approvedLeaveIds = await approvedLeaveSessions(user, rows);
   return rows.map((s) => {
     const section = sections.find((c) => same(c._id, s.section_id));
     const dto = clean(s);
@@ -73,6 +99,7 @@ export async function personalSchedule(user, q) {
       course_code: courses.find((c) => same(c._id, section.course_id))?.code,
       room_name: rooms.find((r) => same(r._id, s.room_id))?.name,
       my_attendance: myAttendance,
+      approved_leave: approvedLeaveIds.has(String(s._id)),
     };
   });
 }
@@ -89,6 +116,7 @@ export async function sectionSessions(user, sectionId) {
       { sort: { start_at: 1 }, limit: 1000 },
     ),
   );
+  const approvedLeaveIds = await approvedLeaveSessions(user, rows);
   for (const row of rows) {
     if (user.role === "STUDENT" && row.attendance) {
       const myRecord = row.attendance.find((a) => same(a.student_id, user._id));
@@ -100,6 +128,7 @@ export async function sectionSessions(user, sectionId) {
       }
     }
     delete row.attendance;
+    row.approved_leave = approvedLeaveIds.has(String(row.id));
   }
   return rows;
 }

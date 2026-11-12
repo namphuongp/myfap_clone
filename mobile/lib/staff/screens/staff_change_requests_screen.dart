@@ -18,6 +18,7 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
     ('PENDING', 'Chờ duyệt'),
     ('APPROVED', 'Đã duyệt'),
     ('REJECTED', 'Đã từ chối'),
+    ('EXPIRED', 'Quá hạn'),
     ('CANCELLED', 'Đã hủy'),
   ];
 
@@ -156,7 +157,9 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
                         ),
                         MenuAnchor(
                           menuChildren: [
-                            for (final option in _statusOptions)
+                            for (final option in _statusOptions.where(
+                              (option) => option.$1 != 'EXPIRED',
+                            ))
                               MenuItemButton(
                                 onPressed: () {
                                   setState(() {
@@ -537,6 +540,7 @@ class _ChangeRequestCard extends StatelessWidget {
   String _statusLabel(String value) => switch (value) {
     'APPROVED' => 'Đã duyệt',
     'REJECTED' => 'Đã từ chối',
+    'EXPIRED' => 'Quá hạn',
     'CANCELLED' => 'Đã hủy',
     _ => 'Chờ duyệt',
   };

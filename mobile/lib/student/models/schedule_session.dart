@@ -25,6 +25,7 @@ class ScheduleSession {
     required this.slotId,
     this.attendanceSaved = false,
     this.myAttendance,
+    this.approvedLeave = false,
   });
 
   final String? id;
@@ -37,6 +38,7 @@ class ScheduleSession {
   final int? slotId;
   final bool attendanceSaved;
   final StudentAttendanceRecord? myAttendance;
+  final bool approvedLeave;
 
   DateTime get day => vietnamCalendarDate(startAt);
 
@@ -51,6 +53,7 @@ class ScheduleSession {
         status: json['status']?.toString() ?? 'SCHEDULED',
         slotId: json['slot_id'] as int?,
         attendanceSaved: json['attendance_saved'] == true,
+        approvedLeave: json['approved_leave'] == true,
         myAttendance: json['my_attendance'] is Map
             ? StudentAttendanceRecord.fromJson(
                 Map<String, dynamic>.from(json['my_attendance'] as Map),

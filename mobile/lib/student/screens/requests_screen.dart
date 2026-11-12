@@ -378,6 +378,13 @@ class _RequestsScreenState extends State<RequestsScreen> {
             subtitle: Text(data.currentMajorName ?? 'Chưa cập nhật'),
           ),
         ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            'Đơn được duyệt sẽ đổi ngành từ kỳ tiếp theo. Lịch học kỳ mới lấy từ dữ liệu lớp đã chuẩn bị.',
+            style: TextStyle(color: Color(0xFF66617A), fontSize: 13),
+          ),
+        ),
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: _loading || pending
@@ -808,6 +815,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
         'Không còn hiệu lực',
         const Color(0xFFDC2626),
         const Color(0xFFFEE2E2),
+        Icons.event_busy_outlined,
+      ),
+      'EXPIRED' => (
+        'Quá hạn duyệt',
+        const Color(0xFF757288),
+        const Color(0xFFF3F2F7),
         Icons.event_busy_outlined,
       ),
       'CANCELLED' => (

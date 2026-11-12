@@ -247,7 +247,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
                     ),
                   ),
                 const Text(
-                  'Đơn nghỉ được duyệt chỉ thêm ghi chú, không tự đổi sinh viên sang Có mặt.',
+                  'Sinh viên có đơn nghỉ được duyệt: chọn Vắng mặt sẽ được ghi là Vắng có phép.',
                   style: TextStyle(color: lecturerMuted, fontSize: 12),
                 ),
               ],

@@ -144,9 +144,9 @@ export async function reviewRequest(user, requestId, data, kind) {
       await authorizeLesson(lesson, user, session);
     checkVersion(row, data.version);
     if (row.status !== "PENDING") fail(409, "Đơn không còn chờ duyệt");
+    if (lesson.status !== "SCHEDULED" || lesson.start_at <= new Date())
+      fail(409, "Buổi học đã bắt đầu hoặc không còn hiệu lực");
     if (data.decision === "APPROVED") {
-      if (lesson.status !== "SCHEDULED" || lesson.start_at <= new Date())
-        fail(409, "Buổi học đã bắt đầu hoặc không còn hiệu lực");
       if (repository === leaveRepository) {
         if (
           row.requested_start.getTime() !== lesson.start_at.getTime() ||

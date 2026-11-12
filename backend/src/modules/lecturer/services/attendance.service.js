@@ -81,12 +81,28 @@ export async function saveAttendance(user, sessionId, data) {
           "Điểm danh mới chỉ nhận PRESENT/ABSENT; trạng thái cũ chỉ được giữ nguyên",
         );
     }
+    const approvedLeaves = await leaveRepository.find(
+      {
+        session_id: lesson._id,
+        status: "APPROVED",
+        requested_start: lesson.start_at,
+        requested_end: lesson.end_at,
+      },
+      { session },
+    );
+    const excusedIds = new Set(
+      approvedLeaves.map((row) => String(row.requester_id)),
+    );
     const before = {
       version: lesson.version,
       rows: clean(lesson.attendance),
     };
     lesson.attendance = data.rows.map((r) => ({
       ...r,
+      status:
+        r.status === "ABSENT" && excusedIds.has(String(r.student_id))
+          ? "EXCUSED"
+          : r.status,
       updated_by: user._id,
       updated_at: now,
     }));

@@ -45,7 +45,7 @@ Tạo môn:
 }
 ```
 
-`major_ids` mặc định []; chỉ chọn ngành hoạt động trong bộ môn. Môn chưa thuộc chương trình nào vẫn được tạo, nhưng sinh viên chưa đăng ký được môn đó. Không nhận department_id từ client.
+`major_ids` mặc định []; chỉ chọn ngành hoạt động trong bộ môn. Môn chưa thuộc chương trình nào vẫn được tạo, nhưng chưa đưa vào lịch học của ngành đó. Không nhận department_id từ client.
 
 Cập nhật môn:
 
@@ -58,7 +58,7 @@ Cập nhật môn:
 }
 ```
 
-Các trường code/name/active/major_ids đều tùy chọn nhưng phải có ít nhất một trường cập nhật. Nếu không gửi major_ids thì giữ chương trình hiện tại; [] gỡ môn khỏi các ngành của bộ môn. Không sửa chương trình của bộ môn khác. Ngừng môn bằng active=false; giữ các lớp/buổi/đăng ký cũ, chỉ chặn tạo lớp và đăng ký mới. Không có DELETE môn.
+Các trường code/name/active/major_ids đều tùy chọn nhưng phải có ít nhất một trường cập nhật. Nếu không gửi major_ids thì giữ chương trình hiện tại; [] gỡ môn khỏi các ngành của bộ môn. Không sửa chương trình của bộ môn khác. Ngừng môn bằng active=false; giữ các lớp/buổi cũ, chặn tạo lớp mới. Không có DELETE môn.
 
 Kỳ: Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Mốc theo UTC+7, end_at là đầu tháng nghỉ (exclusive). Danh mục kỳ/phòng/bộ môn/tài khoản được chuẩn bị bằng seed/công cụ thiết lập, không có REST CRUD riêng.
 
@@ -67,9 +67,9 @@ Kỳ: Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Mố
 | Method | Endpoint                                  | Quyền                                                                                                    |
 | ------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | GET    | `/lecturers`                              | HEAD; giảng viên hoạt động cùng bộ môn, chỉ id/name/user_code/department_id                              |
-| GET    | `/sections?semester_id=...&course_id=...` | HEAD lớp trong bộ môn; LECTURER lớp có buổi được giao; STUDENT lớp đã đăng ký, gồm lịch sử               |
+| GET    | `/sections?semester_id=...&course_id=...` | HEAD lớp trong bộ môn; LECTURER lớp có buổi được giao; STUDENT lớp đang/đã thuộc, gồm lịch sử               |
 | POST   | `/sections`                               | HEAD; tạo lớp chưa phân công, mặc định CLOSED                                                            |
-| GET    | `/sections/:id/sessions`                  | HEAD toàn bộ buổi trong lớp cùng bộ môn; LECTURER chỉ buổi được giao; STUDENT xem lịch lớp trước đăng ký |
+| GET    | `/sections/:id/sessions`                  | HEAD toàn bộ buổi trong lớp cùng bộ môn; LECTURER chỉ buổi được giao; STUDENT xem lịch lớp của mình |
 | PUT    | `/sections/:id/assignments`               | HEAD trong bộ môn; phân công/đổi/hủy phân công các buổi tương lai                                        |
 
 Tạo lớp:
@@ -84,7 +84,7 @@ Tạo lớp:
 
 Không nhận lecturer_id/capacity: lớp chưa có giảng viên, capacity=30. DTO lớp có `assignment_basis:"SESSION"`, không trả trường lecturer_id cũ như một phân công hiện tại.
 
-Mở đăng ký: `{"version":0,"status":"OPEN"}` hoặc CLOSED. Chỉ mở khi môn hoạt động và có buổi tương lai đúng slot. Buổi có phòng/lịch hợp lệ vẫn có thể mở đăng ký khi giảng viên chưa phân công. Tạo buổi ban đầu là công việc thiết lập, không thêm màn/API xếp lịch ngoài phạm vi.
+Danh sách sinh viên thuộc lớp do seed/import thiết lập. Tạo buổi ban đầu là công việc thiết lập, không thêm màn/API xếp lịch ngoài phạm vi.
 
 Phân công:
 
@@ -118,7 +118,7 @@ Tối đa 200 buổi, không lặp ID; null là hủy phân công. Mỗi buổi 
 
 Không còn chức năng tự tìm lớp mở đăng ký hoặc mở/đóng đăng ký lớp. Danh sách sinh viên thuộc lớp do seed/import thiết lập.
 
-Ví dụ lịch: `/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z`. Giảng viên lọc trực tiếp lecturer_id trên buổi; sinh viên lọc khoảng thuộc lớp tại giờ buổi học. Response giữ các trường id/section_id/section_code/course/course_code/semester_id/session_date/slot_id/start_at/end_at/room_id/room_name/lecturer_id/status/version/attendance_saved; không chứa roster/điểm danh của người khác. lecturer_id có thể null.
+Ví dụ lịch: `/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z`. Giảng viên lọc trực tiếp lecturer_id trên buổi; sinh viên lọc khoảng thuộc lớp tại giờ buổi học. Response giữ các trường id/section_id/section_code/course/course_code/semester_id/session_date/slot_id/start_at/end_at/room_id/room_name/lecturer_id/status/version/attendance_saved; không chứa roster/điểm danh của người khác. Sinh viên nhận thêm `my_attendance` và `approved_leave`: đơn nghỉ được duyệt đúng thời gian buổi học có thể hiển thị trước khi giảng viên điểm danh. lecturer_id có thể null.
 
 4 slot: 1=07:30–09:50, 2=10:00–12:20, 3=12:50–15:10, 4=15:20–17:40. Thời gian lưu UTC; ngày/slot theo Việt Nam.
 
@@ -129,7 +129,7 @@ Ví dụ lịch: `/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z`. 
 | GET    | `/sessions/:id/attendance` | LECTURER phụ trách đúng buổi                    |
 | PUT    | `/sessions/:id/attendance` | LECTURER phụ trách, buổi đã bắt đầu và chưa hủy |
 
-GET trả `{version,saved,session_status,rows:[{student_id,user_code,name,status,approved_leave_id,note}]}`. Chưa ghi nhận là NOT_RECORDED. Đơn nghỉ duyệt đúng ngày/slot thêm note "Nghỉ có phép", frontend hiện "Đã duyệt đơn nghỉ", không tự đổi sang PRESENT.
+GET trả `{version,saved,session_status,rows:[{student_id,user_code,name,status,approved_leave_id,note}]}`. Chưa ghi nhận là NOT_RECORDED. Đơn nghỉ duyệt đúng ngày/slot thêm note "Nghỉ có phép". Khi giảng viên chọn ABSENT và lưu, backend ghi EXCUSED; PRESENT vẫn là PRESENT.
 
 PUT phải gửi đủ roster, không lặp sinh viên:
 
@@ -140,13 +140,13 @@ PUT phải gửi đủ roster, không lặp sinh viên:
 }
 ```
 
-Điểm danh mới chỉ PRESENT/ABSENT. LATE/EXCUSED đã tồn tại có thể đọc và gửi lại nguyên trạng; không được tạo mới/chuyển sang hai giá trị này. Thành công trả `{version}`; đọc lại roster trước lần sửa tiếp. Lịch sử điểm danh vẫn lưu audit nhưng không có REST endpoint riêng.
+Điểm danh đầu vào chỉ PRESENT/ABSENT. Backend tự chuyển ABSENT thành EXCUSED nếu có đơn nghỉ được duyệt đúng buổi; LATE/EXCUSED đã tồn tại có thể đọc và gửi lại nguyên trạng. Thành công trả `{version}`; đọc lại roster trước lần sửa tiếp. Lịch sử điểm danh vẫn lưu audit nhưng không có REST endpoint riêng.
 
 ## Đơn nghỉ và yêu cầu đổi lịch/phòng
 
 | Method | Endpoint                                 | Quyền                                                  |
 | ------ | ---------------------------------------- | ------------------------------------------------------ |
-| POST   | `/leave-requests`                        | STUDENT xin nghỉ buổi tương lai thuộc đăng ký của mình |
+| POST   | `/leave-requests`                        | STUDENT xin nghỉ buổi tương lai thuộc lớp của mình |
 | GET    | `/leave-requests?status=PENDING&page=1`  | STUDENT đơn mình; LECTURER đơn của buổi đang phụ trách |
 | PATCH  | `/leave-requests/:id/decision`           | LECTURER phụ trách buổi                                |
 | POST   | `/change-requests`                       | LECTURER phụ trách buổi tương lai                      |
@@ -154,6 +154,8 @@ PUT phải gửi đủ roster, không lặp sinh viên:
 | PATCH  | `/change-requests/:id/decision`          | STAFF                                                  |
 
 Xin nghỉ: `{"session_id":"507f1f77bcf86cd799439014","reason":"Khám bệnh"}`.
+
+Đơn nghỉ và đơn đổi lịch/phòng còn PENDING sẽ thành EXPIRED khi buổi học bắt đầu. Bộ quét chạy lúc khởi động API và mỗi phút; sau thời điểm bắt đầu, cả duyệt lẫn từ chối đều không còn hợp lệ. Có thể lọc `status=EXPIRED` trong hai danh sách.
 
 Đổi lịch/phòng:
 
@@ -187,7 +189,7 @@ Duyệt/từ chối cả hai loại: `{"version":0,"decision":"APPROVED","note":
 | GET    | `/major-transfer-requests?page=1&status=PENDING` | STUDENT chỉ xem đơn của mình; STAFF xem/lọc mọi đơn                                                                     |
 | PATCH  | `/major-transfer-requests/:id/decision`          | STAFF duyệt/từ chối với `{version,decision,note}`; duyệt lên lịch chuyển ngành từ học kỳ tiếp theo, chưa đổi ngành ngay |
 
-Body tạo: `{"title":"Đăng ký môn","content":"Kiểm tra lịch đăng ký.","audience":"ALL_STUDENTS"}`. title tối đa 160, content 5000. audience có ALL_STUDENTS / DEPARTMENT / MAJOR; hai loại sau phải gửi department_ids hoặc major_ids tương ứng. expires_at ISO datetime hoặc null. Danh sách 20 dòng/trang.
+Body tạo: `{"title":"Lịch học kỳ mới","content":"Kiểm tra lịch học.","audience":"ALL_STUDENTS"}`. title tối đa 160, content 5000. audience có ALL_STUDENTS / DEPARTMENT / MAJOR; hai loại sau phải gửi department_ids hoặc major_ids tương ứng. expires_at ISO datetime hoặc null. Danh sách 20 dòng/trang.
 
 Không có API sửa/lưu trữ/đánh dấu đọc thông báo vì ngoài các màn đã chốt. Các bản ARCHIVED và lịch sử đọc cũ vẫn được giữ trong DB. Không tích hợp push/email.
 
