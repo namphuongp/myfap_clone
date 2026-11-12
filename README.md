@@ -25,7 +25,7 @@ Từ D:\Study\Project\myfap_clone:
 
 Script chạy MongoDB riêng cổng 27018 (myfap-rs) và API 3000; không ảnh hưởng MongoDB 27017 của máy. Khi MongoDB đã chạy, có thể dùng terminal backend: npm run dev. Chỉ chạy một API trên cổng 3000.
 
-Máy mới: cài Node >=22.12, MongoDB replica set hoặc Atlas, Flutter. Trong backend chạy npm ci; copy .env.example thành .env nếu chưa có; db:replica chỉ dành cho local; db:init; seed chỉ dành cho DB trống. Có Docker Compose ở thư mục gốc. Môi trường triển khai cần DB account/HTTPS, không commit URI có credential.
+Máy mới: cài Node >=22.12, MongoDB replica set hoặc Atlas, Flutter. Trong backend chạy npm ci; copy .env.example thành .env nếu chưa có; db:replica chỉ dành cho local; db:init; seed chỉ dành cho DB trống hoặc bộ tài khoản demo gốc. Có Docker Compose ở thư mục gốc. Môi trường triển khai cần DB account/HTTPS, không commit URI có credential.
 
 ```powershell
 cd mobile
@@ -37,7 +37,19 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
 flutter run -d windows --dart-define=API_BASE_URL=http://localhost:3000/api
 ```
 
-Chrome dùng localhost:3000, cổng frontend 5173 khớp CORS_ORIGINS. Android Emulator dùng 10.0.2.2, máy thật dùng IP LAN. Tài khoản demo student/lecturer/head/staff@myfap.local, mật khẩu Demo@12345678. Không seed lại database đang dùng.
+Chrome dùng localhost:3000, cổng frontend 5173 khớp CORS_ORIGINS. Android Emulator dùng 10.0.2.2, máy thật dùng IP LAN. Tài khoản demo student/lecturer/head/staff@myfap.local, mật khẩu Demo@12345678. Không chạy seed trên database có tài khoản thật.
+
+## Seed dữ liệu demo một lượt
+
+Khi MongoDB đã chạy, từ thư mục backend:
+
+```powershell
+npm run seed
+```
+
+Lệnh duy nhất tạo/bổ sung tài khoản bốn role, bốn sinh viên mẫu, ngành/môn demo, hai lớp PRM393/DBI202, phòng, học kỳ, đăng ký và lịch theo ngày chạy (UTC+7). Gán giảng viên ở từng buổi, không dựa vào giảng viên cũ của lớp. Trong tháng nghỉ, lịch thuộc kỳ kế tiếp. Không cần chạy seed học vụ hoặc seed giảng viên/sinh viên riêng. Alias seed:affairs cũ cũng gọi lệnh seed tổng.
+
+Chạy lại không đổi mật khẩu, không tự đăng ký lại sinh viên đã rút, không ghi đè buổi hoặc điểm danh cũ. Sinh viên bổ sung vào DB demo đã có chỉ tham gia từ thời điểm seed, để giữ roster lịch sử. Seed từ chối DB chứa tài khoản ngoài bộ demo. Các bước dùng transaction riêng và có thể chạy lại nếu lần trước bị gián đoạn. SEED_PASSWORD trong .env cần ít nhất 12 ký tự và tối đa 72 byte. Seed không xóa dữ liệu; không tự tạo đơn hoặc thông báo đã duyệt/phát hành.
 
 ## Cập nhật scope và giữ dữ liệu cũ
 

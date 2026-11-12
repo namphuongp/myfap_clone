@@ -1,10 +1,12 @@
 import { connect, initialize, disconnect } from "../config/database.js";
-import { seed } from "../services/seed.service.js";
+import { seedAllDemo } from "../services/seed-demo.service.js";
 try {
   await connect();
   await initialize();
-  await seed();
-  console.log("Đã tạo tài khoản và lịch demo");
+  console.log(JSON.stringify(await seedAllDemo(), null, 2));
+} catch (error) {
+  console.error("Không seed được dữ liệu demo:", error.message);
+  process.exitCode = 1;
 } finally {
   await disconnect();
 }

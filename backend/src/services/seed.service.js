@@ -15,7 +15,7 @@ import {
   enrollmentPeriodRepository,
   classSessionRepository,
 } from "../repositories/index.js";
-export async function seed() {
+export async function seed({ now = new Date() } = {}) {
   const password = process.env.SEED_PASSWORD;
   if (!password || password.length < 12 || Buffer.byteLength(password) > 72)
     throw new Error("SEED_PASSWORD cần >=12 ký tự và <=72 byte");
@@ -56,7 +56,6 @@ export async function seed() {
       ],
       { session, ordered: true },
     );
-    const now = new Date();
 
     const [semester] = await semesterRepository.create(
       [currentTerm(now) ?? nextTerm(now)],
@@ -119,20 +118,37 @@ export async function seed() {
       ],
       { session, ordered: true },
     );
+    const pastDay = new Date(
+      Math.max(
+        +semester.start_at,
+        Math.min(+semester.end_at - 86400000, +now - 86400000),
+      ),
+    );
+    let futureDay = new Date(
+      Math.max(
+        +semester.start_at,
+        Math.min(+semester.end_at - 86400000, +now + 86400000),
+      ),
+    );
+    if (localDate(pastDay) === localDate(futureDay))
+      futureDay = new Date(+pastDay + 86400000);
     await classSessionRepository.create(
       [
         {
           section_id: section._id,
           lecturer_id: users.LECTURER._id,
           room_id: room._id,
-          ...slotTimes(localDate(new Date(now.getTime() - 86400000)), 1),
-          status: "COMPLETED",
+          ...slotTimes(localDate(pastDay), 1),
+          status:
+            slotTimes(localDate(pastDay), 1).end_at <= now
+              ? "COMPLETED"
+              : "SCHEDULED",
         },
         {
           section_id: section._id,
           lecturer_id: users.LECTURER._id,
           room_id: room._id,
-          ...slotTimes(localDate(new Date(now.getTime() + 86400000)), 1),
+          ...slotTimes(localDate(futureDay), 1),
         },
       ],
       { session, ordered: true },
