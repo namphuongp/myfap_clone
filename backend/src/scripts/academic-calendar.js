@@ -1,5 +1,5 @@
 import { connect, initialize, disconnect } from "../config/database.js";
-import { bootstrapAcademicCalendar } from "../services/academic-bootstrap.service.js";
+import { bootstrapAcademicCalendar } from "../tools/services/academic-bootstrap.service.js";
 try {
   await connect();
   await initialize();

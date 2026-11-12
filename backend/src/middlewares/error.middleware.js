@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { ApiError } from "../utils/api-error.js";
+// Trả lỗi khi đường dẫn API không tồn tại.
 export function notFound(req, res) {
   res.status(404).json({ message: "API không tồn tại" });
 }
+// Chuyển lỗi thành phản hồi API thống nhất.
 export function errorHandler(error, req, res, next) {
   if (error instanceof z.ZodError)
     return res

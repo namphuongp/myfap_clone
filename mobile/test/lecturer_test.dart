@@ -39,7 +39,7 @@ class LecturerApiFixture extends ApiClient {
     },
   ];
   TeachingSession session({bool past = false}) {
-    final day = vnDay().add(Duration(days: past ? -1 : 1));
+    final day = vnDay().add(Duration(days: past ? 0 : 1));
     return TeachingSession({
       'id': past ? 'session-past' : 'session-next',
       'semester_id': 'term-1',
@@ -51,9 +51,11 @@ class LecturerApiFixture extends ApiClient {
       'status': past ? 'COMPLETED' : 'SCHEDULED',
       'slot_id': 1,
       'session_date': dateKey(day),
-      'start_at': vnMidnight(day)
-          .add(const Duration(hours: 7, minutes: 30))
-          .toIso8601String(),
+      'start_at':
+          (past
+                  ? DateTime.now().toUtc()
+                  : vnMidnight(day).add(const Duration(hours: 7, minutes: 30)))
+              .toIso8601String(),
       'end_at': vnMidnight(day)
           .add(const Duration(hours: 9, minutes: 50))
           .toIso8601String(),

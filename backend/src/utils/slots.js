@@ -7,6 +7,7 @@ export const SLOTS = Object.freeze([
 ]);
 export const day = z.iso.date();
 export const slotId = z.number().int().min(1).max(4);
+// Tính giờ bắt đầu và kết thúc theo ngày và slot.
 export function slotTimes(sessionDate, slot) {
   day.parse(sessionDate);
   slotId.parse(slot);
@@ -19,5 +20,6 @@ export function slotTimes(sessionDate, slot) {
     end_at: new Date(midnight.getTime() + row.end_minute * 60000),
   };
 }
+// Đổi thời điểm thành ngày học theo giờ Việt Nam.
 export const localDate = (date) =>
   new Date(new Date(date).getTime() + 7 * 3600000).toISOString().slice(0, 10);

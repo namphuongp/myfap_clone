@@ -4,9 +4,11 @@ import { MajorTransfer } from "../models/major-transfer.model.js";
 import mongoose from "mongoose";
 import { MODELS, Lock } from "../models/index.js";
 export const databaseRepository = {
+  // Kiểm tra database còn hoạt động.
   ping() {
     return mongoose.connection.db.admin().ping();
   },
+  // Khởi tạo collection và đúng các index cần thiết.
   async initialize({ allowLegacy = false } = {}) {
     if (!allowLegacy) await assertCollectionsMigrated();
     for (const Model of MODELS) {

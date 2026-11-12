@@ -1,4 +1,4 @@
-import { bootstrapAcademicCalendar } from "../src/services/academic-bootstrap.service.js";
+import { bootstrapAcademicCalendar } from "../src/tools/services/academic-bootstrap.service.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
@@ -18,8 +18,8 @@ import {
   ImportBatch,
   AuthSession,
 } from "../src/models/index.js";
-import { importSnapshot } from "../src/services/import.service.js";
-import { normalizeLegacySessions } from "../src/services/legacy-repair.service.js";
+import { importSnapshot } from "../src/tools/services/import.service.js";
+import { normalizeLegacySessions } from "../src/tools/services/legacy-repair.service.js";
 import { createApp } from "../src/app.js";
 import { hash } from "../src/utils/crypto.js";
 import { localDate, slotTimes } from "../src/utils/slots.js";
@@ -198,7 +198,10 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
       oldStart.toISOString(),
     );
     assert.equal(
-      await ActivityLog.countDocuments({ entity: "ClassSession" }),
+      await ActivityLog.countDocuments({
+        entity: "ClassSession",
+        action: "NORMALIZE_LEGACY_SLOT",
+      }),
       0,
     );
     const applied = await normalizeLegacySessions({ apply: true });
@@ -216,13 +219,19 @@ test("Import MySQL → MongoDB nguyên tử, giữ dữ liệu/hash, idempotent 
     assert.equal(lesson.status, "COMPLETED");
     assert.equal(lesson.attendance[0].status, "ABSENT");
     assert.equal((await Leave.findOne()).status, "INVALIDATED");
-    const history = await ActivityLog.findOne({ entity: "ClassSession" });
+    const history = await ActivityLog.findOne({
+      entity: "ClassSession",
+      action: "NORMALIZE_LEGACY_SLOT",
+    });
     assert.equal(
       history.before_data.start_at.toISOString(),
       oldStart.toISOString(),
     );
     assert.equal(
-      await ActivityLog.countDocuments({ entity: "ClassSession" }),
+      await ActivityLog.countDocuments({
+        entity: "ClassSession",
+        action: "NORMALIZE_LEGACY_SLOT",
+      }),
       1,
     );
     assert.deepEqual(await normalizeLegacySessions({ apply: true }), []);

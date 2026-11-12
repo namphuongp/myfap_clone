@@ -1,5 +1,5 @@
 import { connect, initialize, disconnect } from "../config/database.js";
-import { seedAllDemo } from "../services/seed-demo.service.js";
+import { seedAllDemo } from "../tools/services/seed-demo.service.js";
 try {
   await connect();
   await initialize();

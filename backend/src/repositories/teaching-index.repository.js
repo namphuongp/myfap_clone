@@ -1,5 +1,6 @@
 import { ClassSession } from "../models/class-session.model.js";
 const currentName = "session_lecturer_slot_assigned";
+// Xác định index giảng viên cần thay.
 export async function teachingIndexPlan() {
   const exists = await ClassSession.db.db
     .listCollections({ name: ClassSession.collection.name })

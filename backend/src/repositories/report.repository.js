@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { classSessionRepository } from "./index.js";
+// Đếm bản ghi điểm danh theo trạng thái.
 const statusCount = (status) => ({
   $size: {
     $filter: {
@@ -10,6 +11,7 @@ const statusCount = (status) => ({
   },
 });
 export const reportRepository = {
+  // Tổng hợp điểm danh theo danh sách lớp được phép.
   attendanceBySections(ids, { lecturerId, byLecturer = false } = {}) {
     return classSessionRepository.aggregate([
       {

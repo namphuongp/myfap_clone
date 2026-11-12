@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import { connect, initialize, disconnect } from "../src/config/database.js";
-import { seedAllDemo } from "../src/services/seed-demo.service.js";
+import { seedAllDemo } from "../src/tools/services/seed-demo.service.js";
 import {
   User,
   Section,

@@ -11,14 +11,17 @@ export const legacyCollections = [
   "noticereads",
 ];
 const marker = "schema-v3-17-collections";
+// Tính dấu vân tay để kiểm tra dữ liệu không bị thay đổi.
 const digest = (value) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+// Đọc dữ liệu nguồn cũ phục vụ migration.
 async function sourceRows(name, session) {
   const db = mongoose.connection.db;
   if (!(await db.listCollections({ name }, { nameOnly: true }).hasNext()))
     return [];
   return db.collection(name).find({}, { session }).sort({ _id: 1 }).toArray();
 }
+// Chặn chạy schema mới khi dữ liệu cũ chưa được chuyển.
 export async function assertCollectionsMigrated() {
   const db = mongoose.connection.db;
   const names = new Set(
@@ -35,6 +38,7 @@ export async function assertCollectionsMigrated() {
         "Cần dừng backend và chạy npm run db:migrate trước khi sử dụng schema mới",
       );
 }
+// Chuyển, xác minh dữ liệu rồi mới xóa collection cũ.
 export async function migrateCollections({ apply = false } = {}) {
   const db = mongoose.connection.db;
   const sources = {};

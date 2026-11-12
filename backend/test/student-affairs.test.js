@@ -1,4 +1,4 @@
-import { applyDueMajorTransfers } from "../src/services/major-transfer.service.js";
+import { applyDueMajorTransfers } from "../src/modules/shared/services/major-transfer.service.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
@@ -231,7 +231,7 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
           reason: "Dữ liệu index cũ",
         });
         await MajorTransfer.collection.dropIndex(
-          "major_transfer_one_pending_per_student",
+          "major_transfer_one_active_per_student",
         );
         await MajorTransfer.collection.createIndex(
           { student_id: 1 },
@@ -249,10 +249,11 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển
 
         assert.ok(await MajorTransfer.exists({ _id: legacyTransfer._id }));
         const index = (await MajorTransfer.collection.indexes()).find(
-          (row) => row.name === "major_transfer_one_pending_per_student",
+          (row) => row.name === "major_transfer_one_active_per_student",
         );
         assert.deepEqual(index.partialFilterExpression, {
-          status: "PENDING",
+          status: { $in: ["PENDING", "APPROVED"] },
+          applied_at: null,
         });
       },
     );

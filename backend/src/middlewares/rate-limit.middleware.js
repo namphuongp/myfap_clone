@@ -1,4 +1,5 @@
 import { rateLimit } from "express-rate-limit";
+// Giới hạn tần suất gọi API.
 export const apiLimiter = () =>
   rateLimit({
     windowMs: 60000,
@@ -7,6 +8,7 @@ export const apiLimiter = () =>
     legacyHeaders: false,
     message: { message: "Quá nhiều yêu cầu, hãy thử lại" },
   });
+// Giới hạn số lần thử đăng nhập.
 export const loginLimiter = () =>
   rateLimit({
     windowMs: 900000,

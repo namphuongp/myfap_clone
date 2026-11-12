@@ -3,6 +3,7 @@ const terms = {
   SUMMER: { month: 4, label: "Summer" },
   FALL: { month: 8, label: "Fall" },
 };
+// Tạo mốc thời gian học kỳ theo giờ Việt Nam.
 export function semesterData(term, year) {
   if (!terms[term] || !Number.isInteger(year) || year < 2000 || year > 2100)
     throw new Error("Học kỳ không hợp lệ");
@@ -19,6 +20,7 @@ export function semesterData(term, year) {
     legacy: false,
   };
 }
+// Xác định học kỳ chứa thời điểm hiện tại.
 export function currentTerm(now = new Date()) {
   const local = new Date(now.getTime() + 7 * 3600000);
   const year = local.getUTCFullYear();
@@ -28,6 +30,7 @@ export function currentTerm(now = new Date()) {
       .find((s) => s.start_at <= now && s.end_at > now) ?? null
   );
 }
+// Tìm học kỳ bắt đầu tiếp theo.
 export function nextTerm(now = new Date()) {
   const year = new Date(now.getTime() + 7 * 3600000).getUTCFullYear();
   return [year, year + 1]

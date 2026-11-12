@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+// Chuyển document thành JSON và loại thông tin nhạy cảm.
 export function clean(value) {
   if (value == null) return value;
   if (value instanceof Date) return value;

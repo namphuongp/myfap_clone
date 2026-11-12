@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import mongoose from "mongoose";
 import { connect, initialize, disconnect } from "../src/config/database.js";
-import { seed } from "../src/services/seed.service.js";
+import { seed } from "../src/tools/services/seed.service.js";
 import { createApp } from "../src/app.js";
 import {
   User,
@@ -17,7 +17,7 @@ import {
 } from "../src/models/index.js";
 import { token, hash } from "../src/utils/crypto.js";
 import { localDate } from "../src/utils/slots.js";
-import { createSession } from "../src/services/session.service.js";
+import { createSession } from "../src/modules/shared/services/session.service.js";
 export async function fixture() {
   await connect();
   assert.match(mongoose.connection.name, /_test$/, "Chỉ dùng DB test riêng");

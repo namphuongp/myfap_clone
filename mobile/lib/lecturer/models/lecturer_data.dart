@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import '../utils/lecturer_dates.dart';
 
 typedef Json = Map<String, dynamic>;
@@ -28,10 +26,7 @@ class TeachingSession {
       start.isAfter(DateTime.now()) &&
       !attendanceSaved;
   bool get canRecord => status != 'CANCELLED' && !start.isAfter(DateTime.now());
-  bool get canRecordToday =>
-      canRecord &&
-      (dateKey(day) == dateKey(vnDay()) ||
-          Platform.environment.containsKey('FLUTTER_TEST'));
+  bool get canRecordToday => canRecord && dateKey(day) == dateKey(vnDay());
 }
 
 class AcademicTerm {

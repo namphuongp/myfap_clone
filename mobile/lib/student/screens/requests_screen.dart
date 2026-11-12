@@ -513,8 +513,9 @@ class _RequestsScreenState extends State<RequestsScreen> {
                     onChanged: saving
                         ? null
                         : (value) {
-                            if (value != null)
+                            if (value != null) {
                               setSheetState(() => targetId = value);
+                            }
                           },
                   ),
                   const SizedBox(height: 12),
@@ -542,11 +543,13 @@ class _RequestsScreenState extends State<RequestsScreen> {
                                 majorId: targetId,
                                 reason: reason.text,
                               );
-                              if (sheetContext.mounted)
+                              if (sheetContext.mounted) {
                                 Navigator.pop(sheetContext, true);
+                              }
                             } catch (error) {
-                              if (sheetContext.mounted)
+                              if (sheetContext.mounted) {
                                 _showMessage(error.toString());
+                              }
                               setSheetState(() => saving = false);
                             }
                           },

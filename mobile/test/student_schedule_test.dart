@@ -100,7 +100,7 @@ void main() {
 
     // 5. Kiểm tra Bottom navigation
     expect(find.text('Lịch'), findsOneWidget);
-    expect(find.text('Đăng ký'), findsOneWidget);
+    expect(find.text('Đăng ký'), findsNothing);
     expect(find.text('Đơn từ'), findsOneWidget);
     expect(find.text('Thông báo'), findsOneWidget);
 

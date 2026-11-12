@@ -1,4 +1,5 @@
-import { id } from "../validators/common.js";
+import { id } from "../modules/shared/validators/common.js";
+// Kiểm tra dữ liệu đầu vào theo schema.
 export function validate(schema, source = "body") {
   return (req, res, next) => {
     try {
@@ -11,6 +12,7 @@ export function validate(schema, source = "body") {
     }
   };
 }
+// Kiểm tra định dạng ID trên đường dẫn.
 export function validateId(req, res, next, value, name) {
   try {
     req.params[name] = id.parse(value);
