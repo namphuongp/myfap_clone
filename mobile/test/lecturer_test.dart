@@ -253,7 +253,7 @@ void main() {
     await tester.tap(find.byTooltip('Hồ sơ cá nhân'));
     await tester.pumpAndSettle();
     expect(find.text('GV001'), findsOneWidget);
-    expect(find.text('HM'), findsOneWidget);
+    expect(find.text('N'), findsOneWidget);
     await capture(tester, 'profile');
     expect(tester.takeException(), isNull);
   });

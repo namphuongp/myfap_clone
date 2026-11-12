@@ -12,6 +12,7 @@ import { authRoutes, sessionRoutes } from "./routes/auth.routes.js";
 import { catalogRoutes } from "./routes/catalog.routes.js";
 import { academicRoutes } from "./routes/academic.routes.js";
 import { requestRoutes } from "./routes/request.routes.js";
+import { majorTransferRoutes } from "./routes/major-transfer.routes.js";
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
@@ -43,6 +44,7 @@ export function createApp() {
   app.use("/api", catalogRoutes());
   app.use("/api", academicRoutes());
   app.use("/api", requestRoutes());
+  app.use("/api", majorTransferRoutes());
   app.use(notFound);
   app.use(errorHandler);
   return app;
