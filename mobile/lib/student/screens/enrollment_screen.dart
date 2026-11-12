@@ -211,41 +211,6 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              if (!section.registrationOpen &&
-                  section.registrationOpenAt != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Mở đăng ký: ${_formatDate(section.registrationOpenAt!)}',
-                    style: const TextStyle(
-                      color: Color(0xFF7047EB),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              if (section.registrationCloseAt != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Đăng ký đến hết ngày ${_formatLastDay(section.registrationCloseAt!)}',
-                    style: const TextStyle(
-                      color: Color(0xFF757288),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              if (section.withdrawalDeadline != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Rút lớp đến hết ngày ${_formatLastDay(section.withdrawalDeadline!)}',
-                    style: const TextStyle(
-                      color: Color(0xFF757288),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -391,9 +356,6 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
                               ? 'Đã đăng ký môn này'
                               : canRegister
                               ? 'Đăng ký lớp'
-                              : !section.registrationOpen &&
-                                    section.registrationOpenAt != null
-                              ? 'Mở ngày ${_formatDate(section.registrationOpenAt!)}'
                               : !section.registrationOpen
                               ? 'Lớp đã đóng đăng ký'
                               : 'Lớp đã đầy',
@@ -413,14 +375,6 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
       ),
     );
   }
-
-  String _formatDate(DateTime instant) {
-    final date = vietnamCalendarDate(instant);
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  String _formatLastDay(DateTime deadline) =>
-      _formatDate(deadline.subtract(const Duration(days: 1)));
 
   @override
   Widget build(BuildContext context) {

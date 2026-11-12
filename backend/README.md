@@ -2,7 +2,7 @@
 
 Luồng route → validation/auth → controller → service → repository → Mongoose. Thư mục routes khai báo quyền/URL; controller lấy req.validated; service xử lý nghiệp vụ/version/transaction/audit; repository thực hiện truy vấn; model giữ schema/index.
 
-Scope API hiện tại nằm trong [../API.md](../API.md). HEAD quản lý môn, lớp, phân công theo từng buổi và báo cáo bộ môn. STAFF chỉ thông báo/duyệt đổi lịch; STUDENT đăng ký cho mình; profile chỉ GET. Đã bỏ job chuyển ngành và các route ghi profile/mật khẩu/quản trị ngoài màn.
+Scope API hiện tại nằm trong [../API.md](../API.md). HEAD quản lý môn, lớp, phân công theo từng buổi và báo cáo bộ môn. STAFF gửi thông báo và duyệt đổi lịch/chuyển ngành; STUDENT đăng ký và gửi đơn chuyển ngành cho mình; profile chỉ GET.
 
 Các service chính:
 
@@ -17,7 +17,7 @@ Các service chính:
 
 Transaction dùng khóa học vụ chung. Không Promise.all các truy vấn trong transaction. Callback retry phải đọc/tạo lại document; save qua saveDocument trong repository. Truy vấn ngoài transaction có thể batch khi độc lập. Không nhận body thô làm MongoDB filter, không trả password/token hash.
 
-Model MajorTransfer/NoticeRead giữ để đọc dữ liệu lưu trữ, không có workflow runtime. SessionHistory/Audit vẫn append để bảo toàn lịch sử dù đã bỏ endpoint kỹ thuật. Migration index lecturer xử lý đúng tên/key cũ, không syncIndexes hoặc drop collection; initialize idempotent.
+MajorTransfer hỗ trợ workflow gửi/xem/duyệt; duyệt cập nhật ngành trong cùng transaction và ghi audit. NoticeRead giữ dữ liệu lưu trữ. SessionHistory/Audit vẫn append để bảo toàn lịch sử dù đã bỏ endpoint kỹ thuật. Migration index lecturer xử lý đúng tên/key cũ, không syncIndexes hoặc drop collection; initialize idempotent.
 
 CLI: db:init/db:replica, seed/import/repair và scope:preview/scope:migrate/setup:session nằm trong src/scripts. Lệnh setup:session dùng HEAD hợp lệ và kiểm tra cùng bộ môn, không có route HTTP tương đương. Các danh mục tài khoản/phòng/kỳ ban đầu do seed/công cụ thiết lập quản lý.
 

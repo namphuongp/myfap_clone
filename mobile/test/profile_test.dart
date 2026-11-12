@@ -181,7 +181,7 @@ void main() {
       final api = FakeProfileApi(role);
       await pumpProfile(tester, api);
       expect(find.text(roleLabels[role]!), findsOneWidget);
-      expect(find.text('NP'), findsOneWidget);
+      expect(find.text('N'), findsOneWidget);
       expect(find.text('demo@myfap.local'), findsOneWidget);
       expect(find.byType(Image), findsNothing);
       expect(find.byType(TextFormField), findsNothing);

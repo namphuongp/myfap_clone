@@ -28,11 +28,9 @@ export const MajorTransfer = model(
     [
       { student_id: 1 },
       {
+        name: "major_transfer_one_pending_per_student",
         unique: true,
-        partialFilterExpression: {
-          status: { $in: ["PENDING", "APPROVED"] },
-          applied_at: null,
-        },
+        partialFilterExpression: { status: "PENDING" },
       },
     ],
     [{ status: 1, effective_at: 1, applied_at: 1 }, {}],

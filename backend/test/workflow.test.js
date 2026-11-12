@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
 import {
@@ -10,11 +10,21 @@ import {
   Leave,
   Section,
 } from "../src/models/index.js";
+import { localDate } from "../src/utils/slots.js";
 test("Remaining workflows: registration, attendance, lecturer requests and reports", async (t) => {
   let f;
   try {
     f = await fixture();
     const { as, users, rooms, past, future, section } = f;
+    const attendanceNow = new Date();
+    const attendanceSlot = {
+      session_date: localDate(attendanceNow),
+      start_at: new Date(attendanceNow.getTime() - 2 * 60 * 60 * 1000),
+      end_at: new Date(attendanceNow.getTime() - 60 * 60 * 1000),
+      legacy_unaligned: true,
+    };
+    await ClassSession.updateOne({ _id: past._id }, { $set: attendanceSlot });
+    Object.assign(past, attendanceSlot);
     await t.test(
       "private profile remains read only and removed management APIs stay unavailable",
       async () => {

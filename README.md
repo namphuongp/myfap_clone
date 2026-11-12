@@ -7,7 +7,7 @@ Phạm vi backend:
 - STUDENT: lịch học, đăng ký/rút môn, gửi/xem đơn nghỉ, đọc thông báo.
 - LECTURER: lịch của các buổi được giao, điểm danh, duyệt nghỉ đúng buổi, gửi/xem yêu cầu đổi lịch/phòng.
 - HEAD: quản lý môn/chương trình môn trong bộ môn, tạo lớp chưa phân công, mở/đóng đăng ký, phân công theo buổi, báo cáo bộ môn.
-- STAFF: tạo/phát hành thông báo và duyệt đổi lịch/phòng. Mọi role có profile chỉ đọc.
+- STAFF: tạo/phát hành thông báo, duyệt đổi lịch/phòng và chuyển ngành. Mọi role có profile chỉ đọc, avatar chữ.
 
 Course là môn; Section là lớp học phần của một môn trong một Semester; ClassSession là buổi với ngày/slot/phòng và giảng viên nullable. Trường lecturer_id cũ của Section không còn dùng cấp quyền. Sinh viên thuộc lớp qua EnrollmentPeriod theo thời điểm. Giữ nguyên lịch sử khi đổi người phụ trách hoặc rút/đăng ký lại lớp.
 
@@ -61,9 +61,9 @@ npm run scope:preview
 npm run scope:migrate
 ```
 
-Chỉ thay index giảng viên cũ bằng unique index áp dụng cho lecturer_id là ObjectId. Giữ nguyên document, giảng viên từng buổi, version, đăng ký, đơn, điểm danh và audit. Startup cũng bảo đảm index mới. MajorTransfer/NoticeRead cũ còn lưu trữ, không còn route ghi hoặc job chuyển ngành.
+Scope migration thay index giảng viên cũ bằng unique index áp dụng cho lecturer_id là ObjectId. Startup cũng thay index MajorTransfer cũ để chỉ giới hạn một đơn PENDING mỗi sinh viên; không sửa document. MajorTransfer hỗ trợ gửi/xem/duyệt đơn; khi duyệt, major_id cập nhật nguyên tử cùng audit. Đơn cũ không tự áp dụng.
 
-API ngoài scope đã gỡ: sửa profile/mật khẩu, chuyển ngành/CRUD ngành, quản trị tài khoản/phòng/kỳ/bộ môn, xếp/sửa lịch trực tiếp qua REST, endpoint lịch sử kỹ thuật, đăng ký thay sinh viên và báo cáo đơn. Giữ danh mục đọc thực sự phục vụ form. HEAD có GET majors để chọn chương trình khi quản lý môn; không có CRUD ngành.
+API ngoài scope đã gỡ: sửa profile/mật khẩu, CRUD ngành, quản trị tài khoản/phòng/kỳ/bộ môn, xếp/sửa lịch trực tiếp qua REST, endpoint lịch sử kỹ thuật, đăng ký thay sinh viên và báo cáo đơn. Giữ danh mục đọc thực sự phục vụ form. HEAD có GET majors để chọn chương trình khi quản lý môn; STUDENT có danh sách ngành hoạt động để gửi đơn chuyển ngành; không có CRUD ngành.
 
 Lịch ban đầu được seed/import hoặc chuẩn bị bằng công cụ, không mở thêm màn quản trị lịch:
 
