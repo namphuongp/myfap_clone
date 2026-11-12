@@ -7,7 +7,7 @@ Base URL: `http://localhost:3000/api`. Android Emulator: `http://10.0.2.2:3000/a
 - Course là môn; Semester là kỳ cụ thể; Section là lớp học phần của một môn trong một kỳ, tối đa 30 sinh viên. Không phải lớp hành chính gắn cố định với sinh viên.
 - ClassSession là một buổi thuộc Section, gồm ngày, slot, phòng và `lecturer_id` có thể null. Giảng viên được xác định trên từng buổi. `Section.lecturer_id` cũ chỉ còn trong dữ liệu lưu trữ, không dùng cấp quyền/phân công.
 - Enrollment và EnrollmentPeriod lưu việc sinh viên tham gia/rút lớp theo thời điểm; không có lớp cố định trên User. Roster lấy theo khoảng đăng ký phủ giờ bắt đầu buổi. Không xóa điểm danh/lịch sử khi rút hoặc đăng ký lại.
-- HEAD quản lý môn, lớp, phân công và báo cáo trong bộ môn của mình. LECTURER thao tác trên buổi mình phụ trách. STUDENT chỉ thao tác dữ liệu bản thân. STAFF gửi thông báo và duyệt đổi lịch/phòng.
+- HEAD quản lý môn, lớp, phân công và báo cáo trong bộ môn của mình. LECTURER thao tác trên buổi mình phụ trách. STUDENT chỉ thao tác dữ liệu bản thân. STAFF gửi thông báo, duyệt đổi lịch/phòng và duyệt chuyển ngành.
 - `version` lấy từ GET gần nhất, bắt đầu 0; version cũ trả 409. Các thao tác học vụ dùng transaction và audit. Không sửa/xóa buổi quá khứ khi phân công lại.
 
 ## Đăng nhập và hồ sơ
@@ -21,7 +21,7 @@ Base URL: `http://localhost:3000/api`. Android Emulator: `http://10.0.2.2:3000/a
 
 Login body: `{"email":"lecturer@myfap.local","password":"Demo@12345678"}`. Response: `{accessToken,expiresAt,user}`; user có role để chọn màn, không có password hash. Phiên mặc định 8 giờ.
 
-Profile trả `{id,user_code,name,email,role,major}`; major chỉ có cho sinh viên, gồm id/code/name hoặc null. Không trả thông tin liên hệ, bộ môn, ảnh hoặc đơn chuyển ngành. Không có API cập nhật hồ sơ/đổi mật khẩu. Avatar do frontend lấy chữ từ tên; không có upload ảnh.
+Profile trả `{id,user_code,name,email,role,major}`; major chỉ có cho sinh viên, gồm id/code/name hoặc null. Không trả thông tin liên hệ, bộ môn hoặc ảnh. Không có API cập nhật hồ sơ/đổi mật khẩu. Avatar do frontend lấy chữ đầu tiên từ tên; không có upload ảnh.
 
 ## Danh mục hỗ trợ và quản lý môn
 
@@ -143,6 +143,13 @@ Duyệt/từ chối cả hai loại: `{"version":0,"decision":"APPROVED","note":
 | GET | `/notices?page=1&status=PUBLISHED` | STAFF lọc nháp/đã phát hành/lưu trữ; STUDENT chỉ bản đã phát hành, chưa hết hạn, đúng đối tượng |
 | GET | `/notices/:id` | STUDENT/STAFF, đúng phạm vi |
 
+| Method | Endpoint | Quyền / mục đích |
+|---|---|---|
+| GET | `/major-transfer-options` | STUDENT; danh sách ngành đang hoạt động |
+| POST | `/major-transfer-requests` | STUDENT gửi đơn `{to_major_id,reason}` |
+| GET | `/major-transfer-requests?page=1&status=PENDING` | STUDENT chỉ xem đơn của mình; STAFF xem/lọc mọi đơn |
+| PATCH | `/major-transfer-requests/:id/decision` | STAFF duyệt/từ chối với `{version,decision,note}`; duyệt cập nhật ngành trong cùng transaction |
+
 Body tạo: `{"title":"Đăng ký môn","content":"Kiểm tra lịch đăng ký.","audience":"ALL_STUDENTS"}`. title tối đa 160, content 5000. audience có ALL_STUDENTS / DEPARTMENT / MAJOR; hai loại sau phải gửi department_ids hoặc major_ids tương ứng. expires_at ISO datetime hoặc null. Danh sách 20 dòng/trang.
 
 Không có API sửa/lưu trữ/đánh dấu đọc thông báo vì ngoài các màn đã chốt. Các bản ARCHIVED và lịch sử đọc cũ vẫn được giữ trong DB. Không tích hợp push/email.
@@ -160,7 +167,7 @@ Chỉ phạm vi bộ môn của HEAD; bộ lọc ngoài bộ môn trả 403. Th�
 
 401: chưa đăng nhập/token hết hạn. 403: sai role/phạm vi. 404: dữ liệu không tồn tại hoặc API đã bỏ. 400: đầu vào sai. 409: version cũ, trùng lịch, đủ chỗ hoặc trạng thái không còn hợp lệ. Lỗi trả `{message}`; Zod có thêm issues. Không gửi selector MongoDB trong body/query.
 
-Đã bỏ `/auth/me`, PATCH profile/password, CRUD ngành và chuyển ngành, GET departments, POST users/departments/semesters/rooms, POST sessions, PATCH lịch/trạng thái buổi trực tiếp, GET lịch sử lịch/điểm danh, GET roster theo lớp, GET reports/requests và các API sửa/archive/read thông báo. STAFF không còn quyền tạo môn/lớp hoặc đăng ký thay sinh viên. Không thay bằng route tắt xác thực cho test.
+Đã bỏ `/auth/me`, PATCH profile/password, CRUD ngành, GET departments, POST users/departments/semesters/rooms, POST sessions, PATCH lịch/trạng thái buổi trực tiếp, GET lịch sử lịch/điểm danh, GET roster theo lớp, GET reports/requests và các API sửa/archive/read thông báo. STAFF không còn quyền tạo môn/lớp hoặc đăng ký thay sinh viên. Không thay bằng route tắt xác thực cho test.
 
 ## Chuyển dữ liệu và thiết lập
 
@@ -170,7 +177,7 @@ cd D:\Study\Project\myfap_clone\backend
 npm run scope:preview
 npm run scope:migrate
 ```
-Migration thay đúng index giảng viên cũ bằng partial unique index chỉ áp dụng khi lecturer_id là ObjectId. Không rewrite/xóa document hoặc syncIndexes hàng loạt. Startup db:init cũng đảm bảo index này. Giữ nguyên Section.lecturer_id cũ, ClassSession.lecturer_id cũ, enrollment periods, audit, đơn và điểm danh. Collection chuyển ngành còn lưu trữ nhưng không có job/xác thực tự áp dụng.
+Migration scope thay đúng index giảng viên cũ bằng partial unique index chỉ áp dụng khi lecturer_id là ObjectId. Khởi tạo DB cũng thay index unique MajorTransfer cũ bằng index chỉ khóa một đơn PENDING trên mỗi sinh viên. Không rewrite/xóa document hoặc syncIndexes hàng loạt. Giữ nguyên Section.lecturer_id cũ, ClassSession.lecturer_id cũ, enrollment periods, audit, đơn và điểm danh. Đơn chuyển ngành mới được STAFF duyệt; khi duyệt, ngành sinh viên được cập nhật trong cùng transaction và có audit.
 
 Buổi ban đầu được seed/import hoặc tạo bằng công cụ vận hành sau khi HEAD tạo lớp:
 ```powershell

@@ -24,6 +24,13 @@ String initialsForName(String name) {
       .toUpperCase();
 }
 
+String firstInitialForName(String name) {
+  final value = name.trim();
+  return value.isEmpty
+      ? '?'
+      : String.fromCharCode(value.runes.first).toUpperCase();
+}
+
 class ProfileScreen extends StatefulWidget {
   final ProfileRepository repository;
   final VoidCallback onSignedOut;
@@ -76,8 +83,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color iconBg,
     bool isLast = false,
   }) {
-    final displayValue =
-        (value == null || value.trim().isEmpty) ? 'Chưa cập nhật' : value;
+    final displayValue = (value == null || value.trim().isEmpty)
+        ? 'Chưa cập nhật'
+        : value;
 
     return Column(
       children: [
@@ -166,262 +174,257 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: primaryColor),
-            )
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFECEB),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.error_outline_rounded,
-                              color: Color(0xFFE11D48),
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF1E1E2D),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 28,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _load,
-                            child: const Text('Thử lại'),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                )
-              : profile == null
-                  ? const Center(
-                      child: Text(
-                        'Chưa có thông tin hồ sơ',
-                        style: TextStyle(color: Color(0xFF8C8CA1)),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 500),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // 1. Thẻ Avatar & Họ tên
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 24,
-                                  horizontal: 20,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryColor.withValues(alpha: 0.06),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    Stack(
-                                      alignment: Alignment.bottomRight,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 42,
-                                          backgroundColor: primaryColor,
-                                          foregroundColor: Colors.white,
-                                          child: Text(
-                                            initialsForName(profile.name),
-                                            style: const TextStyle(
-                                              fontSize: 28,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 1,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          width: 22,
-                                          height: 22,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF10B981),
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 2.5,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 14),
-                                    Text(
-                                      profile.name,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Color(0xFF1E1E2D),
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF3EEFF),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: const Color(0xFFDDD2FE),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        roleLabels[profile.role] ?? profile.role,
-                                        style: const TextStyle(
-                                          color: primaryColor,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // 2. Thẻ Thông tin tài khoản
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.03),
-                                      blurRadius: 14,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    _infoItem(
-                                      label: 'Mã tài khoản',
-                                      value: profile.userCode,
-                                      icon: Icons.badge_outlined,
-                                      iconColor: const Color(0xFF7047EB),
-                                      iconBg: const Color(0xFFF3EEFF),
-                                    ),
-                                    _infoItem(
-                                      label: 'Email',
-                                      value: profile.email,
-                                      icon: Icons.mail_outline_rounded,
-                                      iconColor: const Color(0xFF0284C7),
-                                      iconBg: const Color(0xFFE0F2FE),
-                                      isLast: profile.role != 'STUDENT',
-                                    ),
-                                    if (profile.role == 'STUDENT')
-                                      _infoItem(
-                                        label: 'Ngành học',
-                                        value: profile.majorName,
-                                        icon: Icons.school_outlined,
-                                        iconColor: const Color(0xFF059669),
-                                        iconBg: const Color(0xFFD1FAE5),
-                                        isLast: true,
-                                      ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // 3. Thông báo chú thích
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F2F9),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.info_outline_rounded,
-                                      size: 18,
-                                      color: Color(0xFF8C8CA1),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        'Thông tin hồ sơ do nhà trường quản lý.',
-                                        style: TextStyle(
-                                          color: const Color(0xFF8C8CA1)
-                                              .withValues(alpha: 0.9),
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-                          ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFECEB),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFE11D48),
+                          size: 28,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFF1E1E2D),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _load,
+                        child: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : profile == null
+          ? const Center(
+              child: Text(
+                'Chưa có thông tin hồ sơ',
+                style: TextStyle(color: Color(0xFF8C8CA1)),
+              ),
+            )
+          : SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Thẻ Avatar & Họ tên
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 24,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withValues(alpha: 0.06),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                CircleAvatar(
+                                  radius: 42,
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  child: Text(
+                                    firstInitialForName(profile.name),
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              profile.name,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF1E1E2D),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3EEFF),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFFDDD2FE),
+                                ),
+                              ),
+                              child: Text(
+                                roleLabels[profile.role] ?? profile.role,
+                                style: const TextStyle(
+                                  color: primaryColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // 2. Thẻ Thông tin tài khoản
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _infoItem(
+                              label: 'Mã tài khoản',
+                              value: profile.userCode,
+                              icon: Icons.badge_outlined,
+                              iconColor: const Color(0xFF7047EB),
+                              iconBg: const Color(0xFFF3EEFF),
+                            ),
+                            _infoItem(
+                              label: 'Email',
+                              value: profile.email,
+                              icon: Icons.mail_outline_rounded,
+                              iconColor: const Color(0xFF0284C7),
+                              iconBg: const Color(0xFFE0F2FE),
+                              isLast: profile.role != 'STUDENT',
+                            ),
+                            if (profile.role == 'STUDENT')
+                              _infoItem(
+                                label: 'Ngành học',
+                                value: profile.majorName,
+                                icon: Icons.school_outlined,
+                                iconColor: const Color(0xFF059669),
+                                iconBg: const Color(0xFFD1FAE5),
+                                isLast: true,
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // 3. Thông báo chú thích
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F2F9),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              size: 18,
+                              color: Color(0xFF8C8CA1),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Thông tin hồ sơ do nhà trường quản lý.',
+                                style: TextStyle(
+                                  color: const Color(0xFF8C8CA1)
+                                      .withValues(alpha: 0.9),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }

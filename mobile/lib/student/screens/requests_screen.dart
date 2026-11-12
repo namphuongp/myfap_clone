@@ -234,8 +234,22 @@ class _RequestsScreenState extends State<RequestsScreen> {
         children: [
           _buildTabs(),
           const SizedBox(height: 16),
-          if (_tab == 1)
-            _transferUnavailable(context)
+          if (_tab == 1 && _loading && data == null)
+            const Padding(
+              padding: EdgeInsets.all(48),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF7047EB)),
+              ),
+            )
+          else if (_tab == 1 && data == null)
+            _messageCard(
+              context,
+              icon: Icons.wifi_off_rounded,
+              message: _error ?? 'Không tải được đơn chuyển ngành.',
+              action: TextButton(onPressed: _load, child: const Text('Thử lại')),
+            )
+          else if (_tab == 1)
+            _transferContent(context, data!)
           else if (_loading && data == null)
             const Padding(
               padding: EdgeInsets.all(48),
@@ -337,13 +351,149 @@ class _RequestsScreenState extends State<RequestsScreen> {
                 ),
               ),
           ],
-          if (_tab == 0 && data != null) ...[
-            const SizedBox(height: 24),
-            _transferInfoCard(context),
-          ],
         ],
       ),
     );
+  }
+
+  Widget _transferContent(BuildContext context, StudentRequestsData data) {
+    final pending = data.majorTransfers.any((row) => row['status'] == 'PENDING');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.school_outlined, color: Color(0xFF7047EB)),
+            title: const Text('Ngành hiện tại'),
+            subtitle: Text(data.currentMajorName ?? 'Chưa cập nhật'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _loading || pending ? null : () => _openMajorTransferForm(data),
+          icon: const Icon(Icons.add),
+          label: Text(pending ? 'Đơn chuyển ngành đang chờ duyệt' : 'Tạo đơn chuyển ngành'),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Đơn chuyển ngành đã gửi',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        if (data.majorTransfers.isEmpty)
+          _messageCard(context, icon: Icons.swap_horiz, message: 'Bạn chưa gửi đơn chuyển ngành nào.')
+        else
+          for (final request in data.majorTransfers)
+            Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${(request['from_major'] as Map?)?['name'] ?? 'Ngành hiện tại'} → ${(request['to_major'] as Map?)?['name'] ?? 'Ngành đích'}',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Chip(label: Text(_transferStatus(request['status']?.toString() ?? 'PENDING'))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('Lý do: ${request['reason'] ?? ''}'),
+                    if ((request['review_note']?.toString() ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text('Phản hồi: ${request['review_note']}'),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        if (_error != null)
+          Text('Không tải được dữ liệu mới: $_error', style: const TextStyle(color: Color(0xFFDC2626))),
+      ],
+    );
+  }
+
+  String _transferStatus(String status) => switch (status) {
+    'APPROVED' => 'Đã duyệt',
+    'REJECTED' => 'Từ chối',
+    'CANCELLED' => 'Đã hủy',
+    _ => 'Chờ duyệt',
+  };
+
+  Future<void> _openMajorTransferForm(StudentRequestsData data) async {
+    final options = data.majors
+        .where((row) => row['id']?.toString() != data.currentMajorId)
+        .toList();
+    if (options.isEmpty) {
+      _showMessage('Không có ngành đích đang hoạt động để chọn.');
+      return;
+    }
+    final key = GlobalKey<FormState>();
+    final reason = TextEditingController();
+    var targetId = options.first['id'].toString();
+    var saving = false;
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+            child: Form(
+              key: key,
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  const Text('Tạo đơn chuyển ngành', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: targetId,
+                    decoration: const InputDecoration(labelText: 'Ngành muốn chuyển đến'),
+                    items: options.map((row) => DropdownMenuItem(value: row['id'].toString(), child: Text('${row['code']} · ${row['name']}'))).toList(),
+                    onChanged: saving ? null : (value) { if (value != null) setSheetState(() => targetId = value); },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: reason,
+                    minLines: 3,
+                    maxLines: 5,
+                    maxLength: 1000,
+                    decoration: const InputDecoration(labelText: 'Lý do chuyển ngành'),
+                    validator: (value) => value == null || value.trim().isEmpty ? 'Nhập lý do chuyển ngành' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: saving ? null : () async {
+                      if (!key.currentState!.validate()) return;
+                      setSheetState(() => saving = true);
+                      try {
+                        await _repository.createMajorTransfer(majorId: targetId, reason: reason.text);
+                        if (sheetContext.mounted) Navigator.pop(sheetContext, true);
+                      } catch (error) {
+                        if (sheetContext.mounted) _showMessage(error.toString());
+                        setSheetState(() => saving = false);
+                      }
+                    },
+                    child: Text(saving ? 'Đang gửi...' : 'Gửi đơn'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    reason.dispose();
+    if (created == true && mounted) {
+      _showMessage('Đã gửi đơn chuyển ngành.');
+      await _load();
+    }
   }
 
   Widget _buildTabs() {
@@ -764,45 +914,6 @@ class _RequestsScreenState extends State<RequestsScreen> {
     final local = value.toUtc().add(const Duration(hours: 7));
     return '${local.year.toString().padLeft(4, '0')}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
   }
-
-  Widget _transferUnavailable(BuildContext context) =>
-      _transferInfoCard(context);
-
-  Widget _transferInfoCard(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFFEDE9F7), width: 1.2),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x08000000),
-          blurRadius: 10,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.info_outline_rounded, color: Color(0xFF7047EB), size: 24),
-        SizedBox(height: 10),
-        Text(
-          'Đơn chuyển ngành chưa khả dụng',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E1A3C),
-          ),
-        ),
-        SizedBox(height: 6),
-        Text(
-          'Backend trên main hiện không có API tạo và theo dõi đơn chuyển ngành. Chức năng này cần được bổ sung ở backend trước khi có thể gửi đơn từ ứng dụng.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF6B6680), height: 1.4),
-        ),
-      ],
-    ),
-  );
 
   Widget _messageCard(
     BuildContext context, {

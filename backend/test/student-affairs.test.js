@@ -1,9 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
-import { Major, MajorTransfer, Notice, User } from "../src/models/index.js";
+import {
+  Audit,
+  Major,
+  MajorTransfer,
+  Notice,
+  User,
+} from "../src/models/index.js";
 import { semesterData, nextTerm } from "../src/utils/academic-calendar.js";
-test("Scope học vụ: hồ sơ chỉ đọc, thông báo và lưu trữ chuyển ngành cũ", async (t) => {
+import { disconnect } from "../src/config/database.js";
+import { databaseRepository } from "../src/repositories/database.repository.js";
+test("Scope học vụ: hồ sơ chỉ đọc, thông báo và workflow chuyển ngành", async (t) => {
   let f;
   try {
     f = await fixture();
@@ -62,6 +70,80 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và lưu trữ chuy�
       },
     );
     await t.test(
+      "Sinh viên gửi đơn, STAFF duyệt và cập nhật ngành có audit",
+      async () => {
+        const target = await Major.create({
+          code: "TRANSFER-TARGET",
+          name: "Ngành đích",
+          department_id: department._id,
+          course_ids: [],
+        });
+        await as("student", "get", "/major-transfer-options")
+          .expect(200)
+          .then((r) =>
+            assert.ok(r.body.some((row) => row.id === String(target._id))),
+          );
+        await as("staff", "post", "/major-transfer-requests")
+          .send({ to_major_id: String(target._id), reason: "Lý do hợp lệ" })
+          .expect(403);
+        const created = await as("student", "post", "/major-transfer-requests")
+          .send({
+            to_major_id: String(target._id),
+            reason: "Xin chuyển sang ngành đích",
+          })
+          .expect(201);
+        assert.equal(created.body.status, "PENDING");
+        const studentList = await as(
+          "student",
+          "get",
+          "/major-transfer-requests?page=1",
+        ).expect(200);
+        assert.ok(
+          studentList.body.items.some((row) => row.id === created.body.id),
+        );
+        const staffList = await as(
+          "staff",
+          "get",
+          "/major-transfer-requests?status=PENDING",
+        ).expect(200);
+        assert.equal(
+          staffList.body.items[0].student.user_code,
+          users.student.user_code,
+        );
+        await as(
+          "staff",
+          "patch",
+          `/major-transfer-requests/${created.body.id}/decision`,
+        )
+          .send({ version: 0, decision: "APPROVED", note: "Đã kiểm tra" })
+          .expect(200);
+        const updated = await User.findById(users.student._id);
+        assert.equal(String(updated.major_id), String(target._id));
+        const request = await MajorTransfer.findById(created.body.id);
+        assert.ok(request.applied_at);
+        assert.equal(request.status, "APPROVED");
+        assert.ok(
+          await Audit.exists({
+            entity: "MajorTransfer",
+            entity_id: request._id,
+          }),
+        );
+        assert.ok(
+          await Audit.exists({
+            action: "APPLY_MAJOR_TRANSFER",
+            entity_id: users.student._id,
+          }),
+        );
+        await as(
+          "student",
+          "patch",
+          `/major-transfer-requests/${created.body.id}/decision`,
+        )
+          .send({ version: request.version, decision: "APPROVED", note: "No" })
+          .expect(403);
+      },
+    );
+    await t.test(
       "STAFF nháp/phát hành, đúng đối tượng; API ngoài scope bị gỡ",
       async () => {
         await as("lecturer", "post", "/notices")
@@ -114,7 +196,48 @@ test("Scope học vụ: hồ sơ chỉ đọc, thông báo và lưu trữ chuy�
         await as("student", "get", `/notices/${expired._id}`).expect(404);
       },
     );
+    await t.test(
+      "Migration index chuyển ngành giữ dữ liệu và chạy lặp lại an toàn",
+      async () => {
+        const student = await f.person("STUDENT");
+        const legacyTransfer = await MajorTransfer.create({
+          student_id: student.row._id,
+          from_major_id: major._id,
+          to_major_id: major._id,
+          from_department_id: department._id,
+          to_department_id: department._id,
+          effective_at: new Date(),
+          status: "APPROVED",
+          reason: "Dữ liệu index cũ",
+        });
+        await MajorTransfer.collection.dropIndex(
+          "major_transfer_one_pending_per_student",
+        );
+        await MajorTransfer.collection.createIndex(
+          { student_id: 1 },
+          {
+            unique: true,
+            partialFilterExpression: {
+              status: { $in: ["PENDING", "APPROVED"] },
+              applied_at: null,
+            },
+          },
+        );
+
+        await databaseRepository.initialize();
+        await databaseRepository.initialize();
+
+        assert.ok(await MajorTransfer.exists({ _id: legacyTransfer._id }));
+        const index = (await MajorTransfer.collection.indexes()).find(
+          (row) => row.name === "major_transfer_one_pending_per_student",
+        );
+        assert.deepEqual(index.partialFilterExpression, {
+          status: "PENDING",
+        });
+      },
+    );
   } finally {
     if (f) await f.disconnect();
+    else await disconnect();
   }
 });
