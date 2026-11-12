@@ -20,10 +20,11 @@ class TeachingSession {
   DateTime get start => DateTime.parse(data['start_at'] as String);
   DateTime get day => vnDay(start);
   int get slot => (data['slot_id'] as num?)?.toInt() ?? 0;
+  bool get attendanceSaved => data['attendance_saved'] == true;
   bool get canChange =>
       status == 'SCHEDULED' &&
       start.isAfter(DateTime.now()) &&
-      data['attendance_saved'] != true;
+      !attendanceSaved;
   bool get canRecord => status != 'CANCELLED' && !start.isAfter(DateTime.now());
   bool get canRecordToday =>
       canRecord &&

@@ -95,6 +95,14 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
     if (mounted) _load();
   }
 
+  Future<void> _attendance(TeachingSession session) async {
+    await pushLecturer(
+      context,
+      LecturerAttendanceScreen(repository: widget.repository, session: session),
+    );
+    if (mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final days = List.generate(7, (i) => _week.add(Duration(days: i)));
@@ -267,13 +275,7 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
                   padding: const EdgeInsets.only(bottom: 14),
                   child: TeachingSessionCard(
                     session: session,
-                    onAttendance: () => pushLecturer(
-                      context,
-                      LecturerAttendanceScreen(
-                        repository: widget.repository,
-                        session: session,
-                      ),
-                    ),
+                    onAttendance: () => _attendance(session),
                     onChange: () => _change(session),
                   ),
                 ),
