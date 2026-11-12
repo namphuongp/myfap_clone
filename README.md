@@ -98,3 +98,5 @@ Tài liệu: [API](API.md), [Request mẫu](requests.http), [Database](database.
 HEAD vẫn có bốn màn riêng. Môn học dùng nghiệp vụ main, gồm ngành áp dụng và trạng thái hoạt động. Phân công chuyển sang từng buổi học, dùng version của buổi và lý do; giữ kiểm tra xung đột, lịch sử và hủy đề xuất cũ khi đổi người phụ trách. Màn chuyển phòng giữ nguyên ngày/ca và chờ STAFF duyệt. Giữ nguyên giao diện sinh viên, giảng viên và hồ sơ chỉ đọc từ main. `npm.cmd run test:head` kiểm tra luồng kết hợp trên database test riêng.
 
 Database mới: 17 collection; ClassMembership thay Enrollment/EnrollmentPeriod, ActivityLog thay Audit/SessionHistory, bỏ NoticeRead. Đơn chuyển ngành có hiệu lực từ kỳ tiếp theo sau khi duyệt, không đổi ngành ngay. Với DB cũ, dừng backend và chạy `npm run db:migrate` trước khi chạy ứng dụng. Xem API.md và database.md để biết quy trình và cấu trúc hiện tại.
+
+Phạm vi cập nhật: đã bỏ màn/API tự đăng ký môn, rút lớp, tìm lớp mở đăng ký và mở/đóng đăng ký. Danh sách sinh viên thuộc lớp được thiết lập qua seed/import; ClassMembership vẫn giữ lịch sử để xem lịch, điểm danh và áp dụng chuyển ngành.

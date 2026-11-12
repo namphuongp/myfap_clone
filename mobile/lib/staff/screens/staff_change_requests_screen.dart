@@ -45,7 +45,10 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
     try {
       final data = _majorTransferTab
           ? await widget.repository.majorTransfers(status: _status, page: _page)
-          : await widget.repository.changeRequests(status: _status, page: _page);
+          : await widget.repository.changeRequests(
+              status: _status,
+              page: _page,
+            );
       if (mounted) setState(() => _data = data);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
@@ -142,17 +145,24 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
                 const SectionHeading('ĐƠN CHUYỂN NGÀNH'),
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
-                        const Expanded(child: Text('Trạng thái đơn chuyển ngành')),
+                        const Expanded(
+                          child: Text('Trạng thái đơn chuyển ngành'),
+                        ),
                         MenuAnchor(
                           menuChildren: [
                             for (final option in _statusOptions)
                               MenuItemButton(
                                 onPressed: () {
                                   setState(() {
-                                    _status = option.$1 == 'ALL' ? null : option.$1;
+                                    _status = option.$1 == 'ALL'
+                                        ? null
+                                        : option.$1;
                                     _page = 1;
                                   });
                                   _load();
@@ -160,10 +170,11 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
                                 child: Text(option.$2),
                               ),
                           ],
-                          builder: (context, controller, child) => OutlinedButton(
-                            onPressed: _loading ? null : controller.open,
-                            child: Text(_selectedStatusLabel),
-                          ),
+                          builder: (context, controller, child) =>
+                              OutlinedButton(
+                                onPressed: _loading ? null : controller.open,
+                                child: Text(_selectedStatusLabel),
+                              ),
                         ),
                       ],
                     ),
@@ -171,24 +182,51 @@ class _StaffChangeRequestsScreenState extends State<StaffChangeRequestsScreen> {
                 ),
                 const SizedBox(height: 14),
                 if (_loading)
-                  const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
                 else if (_error != null)
                   ErrorPanel(_error!, onRetry: _load)
                 else if (_data?.items.isEmpty ?? true)
-                  const EmptyPanel(title: 'Không có đơn chuyển ngành', message: 'Đơn sinh viên gửi sẽ hiển thị tại đây.', icon: Icons.swap_horiz)
+                  const EmptyPanel(
+                    title: 'Không có đơn chuyển ngành',
+                    message: 'Đơn sinh viên gửi sẽ hiển thị tại đây.',
+                    icon: Icons.swap_horiz,
+                  )
                 else ...[
                   for (final request in _data!.items)
                     _MajorTransferCard(
                       request: request,
-                      onReview: request['status'] == 'PENDING' ? () => _review(request) : null,
+                      onReview: request['status'] == 'PENDING'
+                          ? () => _review(request)
+                          : null,
                     ),
                   if (_page > 1 || (_data?.hasNext ?? false))
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton(onPressed: _page > 1 ? () { setState(() => _page--); _load(); } : null, child: const Text('Trang trước')),
+                        TextButton(
+                          onPressed: _page > 1
+                              ? () {
+                                  setState(() => _page--);
+                                  _load();
+                                }
+                              : null,
+                          child: const Text('Trang trước'),
+                        ),
                         Text('Trang $_page'),
-                        TextButton(onPressed: _data?.hasNext == true ? () { setState(() => _page++); _load(); } : null, child: const Text('Trang sau')),
+                        TextButton(
+                          onPressed: _data?.hasNext == true
+                              ? () {
+                                  setState(() => _page++);
+                                  _load();
+                                }
+                              : null,
+                          child: const Text('Trang sau'),
+                        ),
                       ],
                     ),
                 ],
@@ -350,10 +388,16 @@ class _MajorTransferCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Từ: ${from['code'] ?? ''} · ${from['name'] ?? 'Ngành hiện tại'}'),
+            Text(
+              'Từ: ${from['code'] ?? ''} · ${from['name'] ?? 'Ngành hiện tại'}',
+            ),
             Text('Đến: ${to['code'] ?? ''} · ${to['name'] ?? 'Ngành đích'}'),
             if (status != 'REJECTED' && status != 'CANCELLED')
-              Text(request['applied_at'] != null ? 'Đã áp dụng chuyển ngành' : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}'),
+              Text(
+                request['applied_at'] != null
+                    ? 'Đã áp dụng chuyển ngành'
+                    : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}',
+              ),
             const SizedBox(height: 8),
             const Text('Lý do', style: TextStyle(fontWeight: FontWeight.w700)),
             Text(request['reason']?.toString() ?? 'Không có nội dung'),
@@ -587,7 +631,11 @@ class _ChangeDecisionDialogState extends State<_ChangeDecisionDialog> {
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
     child: AlertDialog(
-      title: Text(widget.majorTransfer ? 'Xử lý đơn chuyển ngành' : 'Xử lý yêu cầu đổi lịch / phòng'),
+      title: Text(
+        widget.majorTransfer
+            ? 'Xử lý đơn chuyển ngành'
+            : 'Xử lý yêu cầu đổi lịch / phòng',
+      ),
       content: SizedBox(
         width: 460,
         child: Form(

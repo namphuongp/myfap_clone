@@ -4,7 +4,7 @@ export const ClassMembership = model(
   {
     section_id: ref("Section"),
     student_id: ref("User"),
-    // Giữ môn/kỳ để tạo unique index, tránh đăng ký trùng môn giữa nhiều lớp.
+    // Giữ môn/kỳ để tạo unique index, tránh sinh viên thuộc hai lớp của cùng môn/kỳ.
     course_id: ref("Course"),
     semester_id: ref("Semester"),
     starts_at: { type: Date, required: true },

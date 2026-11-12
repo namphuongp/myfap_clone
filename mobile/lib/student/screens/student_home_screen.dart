@@ -4,7 +4,6 @@ import '../../core/api/api_client.dart';
 import '../../core/profile/repositories/profile_repository.dart';
 import '../../core/profile/screens/profile_screen.dart';
 import 'announcements_screen.dart';
-import 'enrollment_screen.dart';
 import 'requests_screen.dart';
 import 'student_schedule_screen.dart';
 
@@ -26,7 +25,6 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
-  int _scheduleRevision = 0;
   bool _loggingOut = false;
 
   void _signedOutFromProfile() {
@@ -66,7 +64,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         'Lịch học',
         'Quản lý thời khóa biểu của bạn',
       ),
-      (Icons.school_rounded, 'Đăng ký môn', 'Quản lý học phần và môn học'),
       (Icons.description_rounded, 'Đơn từ', 'Quản lý yêu cầu sinh viên'),
       (
         Icons.notifications_rounded,
@@ -189,7 +186,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Widget _buildBottomBar() {
     final items = [
       (Icons.calendar_month_rounded, 'Lịch'),
-      (Icons.school_outlined, 'Đăng ký'),
       (Icons.description_outlined, 'Đơn từ'),
       (Icons.notifications_none_outlined, 'Thông báo'),
     ];
@@ -280,16 +276,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  StudentScheduleScreen(
-                    key: ValueKey(_scheduleRevision),
-                    api: widget.api,
-                  ),
-                  EnrollmentScreen(
-                    api: widget.api,
-                    studentId: widget.user['id'] as String,
-                    onEnrollmentChanged: () =>
-                        setState(() => _scheduleRevision++),
-                  ),
+                  StudentScheduleScreen(api: widget.api),
                   RequestsScreen(api: widget.api),
                   AnnouncementsScreen(api: widget.api),
                 ],

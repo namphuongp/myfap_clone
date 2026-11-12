@@ -246,7 +246,10 @@ class _RequestsScreenState extends State<RequestsScreen> {
               context,
               icon: Icons.wifi_off_rounded,
               message: _error ?? 'Không tải được đơn chuyển ngành.',
-              action: TextButton(onPressed: _load, child: const Text('Thử lại')),
+              action: TextButton(
+                onPressed: _load,
+                child: const Text('Thử lại'),
+              ),
             )
           else if (_tab == 1)
             _transferContent(context, data!)
@@ -357,22 +360,35 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   Widget _transferContent(BuildContext context, StudentRequestsData data) {
-    final pending = data.majorTransfers.any((row) => row['status'] == 'PENDING' || (row['status'] == 'APPROVED' && row['applied_at'] == null));
+    final pending = data.majorTransfers.any(
+      (row) =>
+          row['status'] == 'PENDING' ||
+          (row['status'] == 'APPROVED' && row['applied_at'] == null),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Card(
           child: ListTile(
-            leading: const Icon(Icons.school_outlined, color: Color(0xFF7047EB)),
+            leading: const Icon(
+              Icons.school_outlined,
+              color: Color(0xFF7047EB),
+            ),
             title: const Text('Ngành hiện tại'),
             subtitle: Text(data.currentMajorName ?? 'Chưa cập nhật'),
           ),
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
-          onPressed: _loading || pending ? null : () => _openMajorTransferForm(data),
+          onPressed: _loading || pending
+              ? null
+              : () => _openMajorTransferForm(data),
           icon: const Icon(Icons.add),
-          label: Text(pending ? 'Đơn chuyển ngành đang chờ duyệt' : 'Tạo đơn chuyển ngành'),
+          label: Text(
+            pending
+                ? 'Đơn chuyển ngành đang chờ duyệt'
+                : 'Tạo đơn chuyển ngành',
+          ),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -381,7 +397,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
         ),
         const SizedBox(height: 10),
         if (data.majorTransfers.isEmpty)
-          _messageCard(context, icon: Icons.swap_horiz, message: 'Bạn chưa gửi đơn chuyển ngành nào.')
+          _messageCard(
+            context,
+            icon: Icons.swap_horiz,
+            message: 'Bạn chưa gửi đơn chuyển ngành nào.',
+          )
         else
           for (final request in data.majorTransfers)
             Card(
@@ -399,14 +419,26 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        Chip(label: Text(_transferStatus(request['status']?.toString() ?? 'PENDING'))),
+                        Chip(
+                          label: Text(
+                            _transferStatus(
+                              request['status']?.toString() ?? 'PENDING',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text('Lý do: ${request['reason'] ?? ''}'),
-                    if (request['status'] != 'REJECTED' && request['status'] != 'CANCELLED')
-                      Text(request['applied_at'] != null ? 'Đã áp dụng chuyển ngành' : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}'),
-                    if ((request['review_note']?.toString() ?? '').isNotEmpty) ...[
+                    if (request['status'] != 'REJECTED' &&
+                        request['status'] != 'CANCELLED')
+                      Text(
+                        request['applied_at'] != null
+                            ? 'Đã áp dụng chuyển ngành'
+                            : 'Hiệu lực từ kỳ: ${(request['effective_semester'] as Map?)?['code'] ?? 'Kỳ tiếp theo'}',
+                      ),
+                    if ((request['review_note']?.toString() ?? '')
+                        .isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text('Phản hồi: ${request['review_note']}'),
                     ],
@@ -415,7 +447,10 @@ class _RequestsScreenState extends State<RequestsScreen> {
               ),
             ),
         if (_error != null)
-          Text('Không tải được dữ liệu mới: $_error', style: const TextStyle(color: Color(0xFFDC2626))),
+          Text(
+            'Không tải được dữ liệu mới: $_error',
+            style: const TextStyle(color: Color(0xFFDC2626)),
+          ),
       ],
     );
   }
@@ -446,19 +481,41 @@ class _RequestsScreenState extends State<RequestsScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              20 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
             child: Form(
               key: key,
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  const Text('Tạo đơn chuyển ngành', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Tạo đơn chuyển ngành',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: targetId,
-                    decoration: const InputDecoration(labelText: 'Ngành muốn chuyển đến'),
-                    items: options.map((row) => DropdownMenuItem(value: row['id'].toString(), child: Text('${row['code']} · ${row['name']}'))).toList(),
-                    onChanged: saving ? null : (value) { if (value != null) setSheetState(() => targetId = value); },
+                    decoration: const InputDecoration(
+                      labelText: 'Ngành muốn chuyển đến',
+                    ),
+                    items: options
+                        .map(
+                          (row) => DropdownMenuItem(
+                            value: row['id'].toString(),
+                            child: Text('${row['code']} · ${row['name']}'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: saving
+                        ? null
+                        : (value) {
+                            if (value != null)
+                              setSheetState(() => targetId = value);
+                          },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -466,22 +523,33 @@ class _RequestsScreenState extends State<RequestsScreen> {
                     minLines: 3,
                     maxLines: 5,
                     maxLength: 1000,
-                    decoration: const InputDecoration(labelText: 'Lý do chuyển ngành'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Nhập lý do chuyển ngành' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Lý do chuyển ngành',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Nhập lý do chuyển ngành'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: saving ? null : () async {
-                      if (!key.currentState!.validate()) return;
-                      setSheetState(() => saving = true);
-                      try {
-                        await _repository.createMajorTransfer(majorId: targetId, reason: reason.text);
-                        if (sheetContext.mounted) Navigator.pop(sheetContext, true);
-                      } catch (error) {
-                        if (sheetContext.mounted) _showMessage(error.toString());
-                        setSheetState(() => saving = false);
-                      }
-                    },
+                    onPressed: saving
+                        ? null
+                        : () async {
+                            if (!key.currentState!.validate()) return;
+                            setSheetState(() => saving = true);
+                            try {
+                              await _repository.createMajorTransfer(
+                                majorId: targetId,
+                                reason: reason.text,
+                              );
+                              if (sheetContext.mounted)
+                                Navigator.pop(sheetContext, true);
+                            } catch (error) {
+                              if (sheetContext.mounted)
+                                _showMessage(error.toString());
+                              setSheetState(() => saving = false);
+                            }
+                          },
                     child: Text(saving ? 'Đang gửi...' : 'Gửi đơn'),
                   ),
                 ],

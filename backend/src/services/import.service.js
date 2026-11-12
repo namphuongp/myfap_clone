@@ -193,7 +193,7 @@ export async function importSnapshot(input) {
       );
       const student = tables.users.find((u) => u.id === row.student_id);
       if (student?.role !== "STUDENT")
-        throw new Error("Đăng ký cũ không thuộc sinh viên");
+        throw new Error("Dữ liệu lớp cũ không thuộc sinh viên");
       const enrolled_at = row.enrolled_at ? date(row.enrolled_at) : new Date(0);
       const fields = {
         section_id: section._id,
@@ -226,7 +226,7 @@ export async function importSnapshot(input) {
             { session: session },
           ))
         )
-          throw new Error("Điểm danh cũ không có đăng ký");
+          throw new Error("Điểm danh cũ không có sinh viên thuộc lớp");
         attendance.push({
           student_id: studentId,
           status: a.status,

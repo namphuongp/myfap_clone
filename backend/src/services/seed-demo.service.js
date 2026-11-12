@@ -128,7 +128,7 @@ async function ensureCourse(session, context, code, name) {
   return row;
 }
 
-async function enroll(session, student, section, startsAt) {
+async function ensureMembership(session, student, section, startsAt) {
   const existing = await classMembershipRepository.findOne(
     { section_id: section._id, student_id: student._id },
     { session },
@@ -339,7 +339,7 @@ async function seedTeachingDemo({ now, fresh, passwordHash }) {
       )
         throw new Error(`Lớp ${code} đã được sử dụng cho môn/bộ môn khác`);
       for (const student of classStudents)
-        await enroll(session, student, section, startsAt);
+        await ensureMembership(session, student, section, startsAt);
       for (const date of dates)
         if (
           await ensureLesson(
@@ -414,6 +414,6 @@ export async function seedAllDemo({ now = new Date() } = {}) {
   return {
     ...result,
     initialized: fresh,
-    note: "Giữ mật khẩu, đăng ký đã rút, lịch và điểm danh cũ. Ngoài học kỳ, tạo lịch cho kỳ kế tiếp.",
+    note: "Giữ mật khẩu, các khoảng thuộc lớp đã kết thúc, lịch và điểm danh cũ. Ngoài học kỳ, tạo lịch cho kỳ kế tiếp.",
   };
 }

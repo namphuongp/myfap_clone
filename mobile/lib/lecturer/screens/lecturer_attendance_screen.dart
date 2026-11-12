@@ -196,7 +196,7 @@ class _LecturerAttendanceScreenState extends State<LecturerAttendanceScreen> {
                 if (_rows.isEmpty && _error == null)
                   const EmptyPanel(
                     title: 'Chưa có sinh viên',
-                    message: 'Danh sách được tính theo đăng ký tại thời điểm buổi học.',
+                    message: 'Danh sách được tính theo sinh viên thuộc lớp tại thời điểm buổi học.',
                     icon: Icons.groups_outlined,
                   ),
                 ..._rows.map(

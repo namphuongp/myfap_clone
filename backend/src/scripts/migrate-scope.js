@@ -10,7 +10,7 @@ try {
       mode: apply ? "APPLIED" : "PREVIEW",
       replaced_indexes: oldIndexes,
       documents_changed: 0,
-      note: "Giữ nguyên buổi/giảng viên cũ, đăng ký, đơn, điểm danh và audit. Chuyển ngành cũ chỉ lưu trữ, không tự áp dụng.",
+      note: "Giữ nguyên buổi/giảng viên cũ, danh sách sinh viên, đơn, điểm danh và nhật ký. Schema cũ cần chạy db:migrate trước.",
     }),
   );
 } finally {

@@ -6,7 +6,7 @@ Base URL: `http://localhost:3000/api`. Android Emulator: `http://10.0.2.2:3000/a
 
 - Course là môn; Semester là kỳ cụ thể; Section là lớp học phần của một môn trong một kỳ, tối đa 30 sinh viên. Không phải lớp hành chính gắn cố định với sinh viên.
 - ClassSession là một buổi thuộc Section, gồm ngày, slot, phòng và `lecturer_id` có thể null. Giảng viên được xác định trên từng buổi. `Section.lecturer_id` cũ chỉ còn trong dữ liệu lưu trữ, không dùng cấp quyền/phân công.
-- ClassMembership lưu các khoảng thời gian sinh viên thuộc lớp; không có lớp cố định trên User. Roster lấy theo khoảng đăng ký phủ giờ bắt đầu buổi. Không xóa điểm danh/lịch sử khi rút hoặc đăng ký lại.
+- ClassMembership lưu các khoảng thời gian sinh viên thuộc lớp; không có lớp cố định trên User. Roster lấy theo khoảng thuộc lớp phủ giờ bắt đầu buổi. Không xóa điểm danh/lịch sử khi sinh viên thay đổi lớp.
 - HEAD quản lý môn, lớp, phân công và báo cáo trong bộ môn của mình. LECTURER thao tác trên buổi mình phụ trách. STUDENT chỉ thao tác dữ liệu bản thân. STAFF gửi thông báo, duyệt đổi lịch/phòng và duyệt chuyển ngành.
 - `version` lấy từ GET gần nhất, bắt đầu 0; version cũ trả 409. Các thao tác học vụ dùng transaction và audit. Không sửa/xóa buổi quá khứ khi phân công lại.
 
@@ -69,7 +69,6 @@ Kỳ: Fall tháng 9–11, Spring 1–3, Summer 5–7; nghỉ tháng 12/4/8. Mố
 | GET    | `/lecturers`                              | HEAD; giảng viên hoạt động cùng bộ môn, chỉ id/name/user_code/department_id                              |
 | GET    | `/sections?semester_id=...&course_id=...` | HEAD lớp trong bộ môn; LECTURER lớp có buổi được giao; STUDENT lớp đã đăng ký, gồm lịch sử               |
 | POST   | `/sections`                               | HEAD; tạo lớp chưa phân công, mặc định CLOSED                                                            |
-| PATCH  | `/sections/:id/status`                    | HEAD trong bộ môn; mở/đóng đăng ký                                                                       |
 | GET    | `/sections/:id/sessions`                  | HEAD toàn bộ buổi trong lớp cùng bộ môn; LECTURER chỉ buổi được giao; STUDENT xem lịch lớp trước đăng ký |
 | PUT    | `/sections/:id/assignments`               | HEAD trong bộ môn; phân công/đổi/hủy phân công các buổi tương lai                                        |
 
@@ -111,19 +110,15 @@ Tối đa 200 buổi, không lặp ID; null là hủy phân công. Mỗi buổi 
 
 Đổi người phụ trách hủy các đơn đổi lịch/phòng PENDING của buổi để tránh đề xuất từ người cũ; đơn nghỉ giữ nguyên nếu ngày/slot không đổi. Giảng viên cũ vẫn đọc yêu cầu mình đã gửi và các buổi quá khứ từng phụ trách; không được điểm danh/duyệt nghỉ trên buổi tương lai đã giao cho người khác.
 
-## Đăng ký môn và lịch cá nhân
+## Lịch cá nhân
 
-| Method | Endpoint                                            | Quyền                                                                              |
-| ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| GET    | `/sections/available?semester_id=...&course_id=...` | STUDENT; lớp mở có lịch tương lai, môn thuộc ngành hiện tại, có enrolled/remaining |
-| GET    | `/me/enrollments`                                   | STUDENT; đăng ký bản thân, gồm ACTIVE/WITHDRAWN và version                         |
-| POST   | `/sections/:id/enrollments`                         | STUDENT; body `{}`                                                                 |
-| POST   | `/sections/:id/enrollments/:studentId/withdraw`     | STUDENT bản thân; body `{"version":0}`                                             |
-| GET    | `/schedule?from=...&to=...`                         | STUDENT/LECTURER; tối đa 93 ngày, đúng phạm vi thời điểm                           |
+| Method | Endpoint                    | Quyền                                                    |
+| ------ | --------------------------- | -------------------------------------------------------- |
+| GET    | `/schedule?from=...&to=...` | STUDENT/LECTURER; tối đa 93 ngày, đúng phạm vi thời điểm |
 
-Đăng ký kiểm tra ngành/chương trình, môn hoạt động, lịch đã có, chỗ còn, trùng môn cùng kỳ và trùng lịch. Một môn tối đa một đăng ký ACTIVE mỗi sinh viên/kỳ. Lớp đầy trả 409. Rút không xóa dữ liệu cũ; đăng ký lại mở ClassMembership mới. Không có API cán bộ đăng ký/rút thay hoặc đơn chuyển lớp sinh viên trong MVP này.
+Không còn chức năng tự tìm lớp mở đăng ký hoặc mở/đóng đăng ký lớp. Danh sách sinh viên thuộc lớp do seed/import thiết lập.
 
-Ví dụ lịch: `/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z`. Giảng viên lọc trực tiếp lecturer_id trên buổi; sinh viên lọc khoảng đăng ký tại giờ buổi học. Response giữ các trường id/section_id/section_code/course/course_code/semester_id/session_date/slot_id/start_at/end_at/room_id/room_name/lecturer_id/status/version/attendance_saved; không chứa roster/điểm danh của người khác. lecturer_id có thể null.
+Ví dụ lịch: `/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z`. Giảng viên lọc trực tiếp lecturer_id trên buổi; sinh viên lọc khoảng thuộc lớp tại giờ buổi học. Response giữ các trường id/section_id/section_code/course/course_code/semester_id/session_date/slot_id/start_at/end_at/room_id/room_name/lecturer_id/status/version/attendance_saved; không chứa roster/điểm danh của người khác. lecturer_id có thể null.
 
 4 slot: 1=07:30–09:50, 2=10:00–12:20, 3=12:50–15:10, 4=15:20–17:40. Thời gian lưu UTC; ngày/slot theo Việt Nam.
 
@@ -221,7 +216,7 @@ npm run scope:preview
 npm run scope:migrate
 ```
 
-Migration scope thay đúng index giảng viên cũ bằng partial unique index chỉ áp dụng khi lecturer_id là ObjectId. Khởi tạo DB cũng thay index unique MajorTransfer cũ bằng index khóa một đơn PENDING hoặc APPROVED chưa áp dụng trên mỗi sinh viên. Không rewrite/xóa document hoặc syncIndexes hàng loạt. Giữ nguyên Section.lecturer_id cũ, ClassSession.lecturer_id cũ, enrollment periods, audit, đơn và điểm danh. Đơn chuyển ngành mới được STAFF duyệt; khi duyệt, đơn giữ APPROVED/applied_at=null và được lên lịch từ kỳ kế tiếp; đến hạn mới cập nhật major_id/department_id và kết thúc membership của các môn ngoài ngành mới trong transaction.
+Migration scope thay đúng index giảng viên cũ bằng partial unique index chỉ áp dụng khi lecturer_id là ObjectId. Khởi tạo DB cũng thay index unique MajorTransfer cũ bằng index khóa một đơn PENDING hoặc APPROVED chưa áp dụng trên mỗi sinh viên. Giữ lịch sử giảng viên, đơn và điểm danh. Dữ liệu membership và nhật ký được chuyển theo quy trình db:migrate bên dưới. Đơn chuyển ngành mới được STAFF duyệt; khi duyệt, đơn giữ APPROVED/applied_at=null và được lên lịch từ kỳ kế tiếp; đến hạn mới cập nhật major_id/department_id và kết thúc membership của các môn ngoài ngành mới trong transaction.
 
 Buổi ban đầu được seed/import hoặc tạo bằng công cụ vận hành sau khi HEAD tạo lớp:
 
@@ -249,10 +244,12 @@ HEAD được xem `/schedule` trong bộ môn và gửi `/change-requests` nhưn
 
 ## Database 17 collection và chuyển ngành theo kỳ
 
-- `classmemberships` thay `enrollments`/`enrollmentperiods`: một document cho mỗi khoảng `starts_at`/`ends_at`; `course_id` và `semester_id` phục vụ unique index. Các API đăng ký/rút lớp vẫn giữ nguyên URL, response `status`, `enrolled_at`, `withdrawn_at` được ánh xạ để frontend tương thích. `id` là ID membership gần nhất; client cần tải lại dữ liệu/version sau migration.
+- `classmemberships` thay `enrollments`/`enrollmentperiods`: một document cho mỗi khoảng `starts_at`/`ends_at`; `course_id` và `semester_id` phục vụ unique index. Không còn API tự đăng ký/rút lớp. Membership chỉ phục vụ quyền truy cập, lịch học, roster và lịch sử.
 - `activitylogs` thay `audits`/`sessionhistories`: `entity`, `entity_id`, `actor_id`, `action`, `request_id`, snapshot trước/sau. Dữ liệu cũ giữ ID và metadata nguồn trong `legacy_data`; thao tác buổi học mới chỉ ghi một log.
 - Bỏ collection `noticereads`; nếu có dữ liệu cũ sẽ chuyển thành log `READ_NOTICE` trước khi xoá nguồn. Giữ `importbatches` và `academiclocks`.
 - Khi STAFF duyệt chuyển ngành: chọn kỳ chuẩn tiếp theo tại thời điểm duyệt, ghi `effective_semester_id`, `effective_at=start_at` của kỳ, giữ `applied_at=null`. Không đổi ngành hoặc rút lớp ngay. GET danh sách trả thêm `effective_semester`.
 - Chỉ một đơn PENDING/APPROVED chưa áp dụng cho mỗi sinh viên. Đến hạn, hệ thống đổi cả ngành/bộ môn và kết thúc membership các môn không thuộc ngành mới; môn chung giữ nguyên, không tự thêm lớp mới. Điểm danh/lịch sử cũ không bị xoá. Nếu ngành đích bị tắt hoặc ngành hiện tại khác ngành nguồn thì hủy việc áp dụng và ghi log.
 - Áp dụng khi server khởi động, kiểm tra nền mỗi phút và trước khi xử lý request xác thực của sinh viên; xử lý bù khi server tắt qua thời điểm đầu kỳ. Các đơn cũ có `applied_at` không bị áp dụng lại hoặc đảo ngược.
 - Chuyển DB cũ: dừng backend, chạy `npm run db:migrate:preview`, sau đó `npm run db:migrate`, rồi `npm run dev`. Migration kiểm tra dữ liệu đích trước khi drop đúng năm collection nguồn, có checkpoint để chạy lại sau gián đoạn. Không dùng seed để thay migration.
+
+Phạm vi cập nhật: đã bỏ màn/API tự đăng ký môn, rút lớp, tìm lớp mở đăng ký và mở/đóng đăng ký. Danh sách sinh viên thuộc lớp được thiết lập qua seed/import; ClassMembership vẫn giữ lịch sử để xem lịch, điểm danh và áp dụng chuyển ngành.

@@ -83,35 +83,6 @@ Content-Type: application/json
 
 {"reason":"Phân công tuần tới","assignments":[{"session_id":"{{sessionId}}","lecturer_id":"{{lecturerId}}","version":0}]}
 
-### HEAD — mở đăng ký sau khi có lịch
-PATCH {{base}}/sections/{{sectionId}}/status
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0,"status":"OPEN"}
-
-### STUDENT — lớp còn chỗ thuộc ngành
-GET {{base}}/sections/available
-Authorization: Bearer {{token}}
-
-### STUDENT — đăng ký bản thân
-POST {{base}}/sections/{{sectionId}}/enrollments
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{}
-
-### STUDENT — đăng ký/lịch sử bản thân
-GET {{base}}/me/enrollments
-Authorization: Bearer {{token}}
-
-### STUDENT — rút giữ lịch sử
-POST {{base}}/sections/{{sectionId}}/enrollments/{{studentId}}/withdraw
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{"version":0}
-
 ### STUDENT/LECTURER — lịch cá nhân, tối đa 93 ngày
 GET {{base}}/schedule?from=2026-11-08T17:00:00Z&to=2026-11-15T17:00:00Z
 Authorization: Bearer {{token}}
@@ -168,7 +139,7 @@ POST {{base}}/notices
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"title":"Đăng ký môn","content":"Sinh viên kiểm tra lịch đăng ký.","audience":"ALL_STUDENTS"}
+{"title":"Thông báo học vụ","content":"Sinh viên kiểm tra lịch học.","audience":"ALL_STUDENTS"}
 
 ### STAFF — phát hành (requestId là id thông báo)
 POST {{base}}/notices/{{requestId}}/publish

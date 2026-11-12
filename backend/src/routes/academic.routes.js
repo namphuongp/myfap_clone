@@ -3,8 +3,6 @@ import { roles } from "../middlewares/auth.middleware.js";
 import { validate, validateId } from "../middlewares/validate.middleware.js";
 import * as sections from "../controllers/section.controller.js";
 import * as sectionSchemas from "../validators/section.validator.js";
-import * as enrollment from "../controllers/enrollment.controller.js";
-import * as enrollmentSchemas from "../validators/enrollment.validator.js";
 import * as sessions from "../controllers/session.controller.js";
 import { personalScheduleSchema } from "../validators/session.validator.js";
 import * as attendance from "../controllers/attendance.controller.js";
@@ -14,13 +12,6 @@ import { departmentSummarySchema } from "../validators/report.validator.js";
 export function academicRoutes() {
   const router = Router();
   router.param("id", validateId);
-  router.param("studentId", validateId);
-  router.get(
-    "/sections/available",
-    roles("STUDENT"),
-    validate(sectionSchemas.availableSectionsSchema, "query"),
-    sections.availableSections,
-  );
   router.get(
     "/sections",
     roles("STUDENT", "LECTURER", "HEAD"),
@@ -32,25 +23,6 @@ export function academicRoutes() {
     roles("HEAD"),
     validate(sectionSchemas.createSectionSchema),
     sections.createSection,
-  );
-  router.patch(
-    "/sections/:id/status",
-    roles("HEAD"),
-    validate(sectionSchemas.setSectionStatusSchema),
-    sections.setSectionStatus,
-  );
-  router.get("/me/enrollments", roles("STUDENT"), enrollment.myEnrollments);
-  router.post(
-    "/sections/:id/enrollments",
-    roles("STUDENT"),
-    validate(enrollmentSchemas.registerStudentSchema),
-    enrollment.registerStudent,
-  );
-  router.post(
-    "/sections/:id/enrollments/:studentId/withdraw",
-    roles("STUDENT"),
-    validate(enrollmentSchemas.withdrawStudentSchema),
-    enrollment.withdrawStudent,
   );
   router.get(
     "/schedule",

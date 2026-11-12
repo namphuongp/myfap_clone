@@ -1,16 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./fixtures.js";
-import {
-  ClassSession,
-  Course,
-  Department,
-  ClassMembership,
-  Leave,
-  Section,
-} from "../src/models/index.js";
+import { ClassSession, Department, Leave } from "../src/models/index.js";
 import { localDate } from "../src/utils/slots.js";
-test("Remaining workflows: registration, attendance, lecturer requests and reports", async (t) => {
+test("Remaining workflows: attendance, lecturer requests and reports", async (t) => {
   let f;
   try {
     f = await fixture();
@@ -109,71 +102,23 @@ test("Remaining workflows: registration, attendance, lecturer requests and repor
         assert.ok(history.items[0].proposed_room_name);
       },
     );
-    await t.test(
-      "withdrawal and registration preserve past attendance and enrollment history",
-      async () => {
-        const enrollment = await ClassMembership.findOne({
-          student_id: users.student._id,
-          section_id: section._id,
-        });
-        await as(
-          "student",
-          "post",
-          `/sections/${section._id}/enrollments/${users.student._id}/withdraw`,
-        )
-          .send({ version: enrollment.version })
-          .expect(200);
-        assert.equal(
-          (await ClassSession.findById(past._id)).attendance.length,
-          1,
-        );
-        await as("student", "post", `/sections/${section._id}/enrollments`)
-          .send({})
-          .expect(201);
-        assert.equal(
-          await ClassMembership.countDocuments({
-            student_id: users.student._id,
-            section_id: section._id,
-          }),
-          2,
-        );
-      },
-    );
-    await t.test(
-      "last seat remains atomic and inactive course blocks new registrations",
-      async () => {
-        const target = await Section.create({
-          code: "CAPACITY",
-          course_id: f.course._id,
-          semester_id: f.semester._id,
-          department_id: f.department._id,
-          status: "OPEN",
-        });
-        await f.lesson(target._id, 3, 3);
-        for (let i = 0; i < 29; i++) {
-          const p = await f.person("STUDENT");
-          await as(p.key, "post", `/sections/${target._id}/enrollments`)
-            .send({})
-            .expect(201);
-        }
-        const a = await f.person("STUDENT"),
-          b = await f.person("STUDENT");
-        const result = await Promise.all(
-          [a, b].map((p) =>
-            as(p.key, "post", `/sections/${target._id}/enrollments`).send({}),
-          ),
-        );
-        assert.deepEqual(result.map((r) => r.status).sort(), [201, 409]);
-        await Course.updateOne(
-          { _id: f.course._id },
-          { $set: { active: false } },
-        );
-        const c = await f.person("STUDENT");
-        await as(c.key, "post", `/sections/${section._id}/enrollments`)
-          .send({})
-          .expect(409);
-      },
-    );
+    await t.test("Removed registration APIs are unavailable", async () => {
+      await as("student", "get", "/sections/available").expect(404);
+      await as("student", "get", "/me/enrollments").expect(404);
+      await as("student", "post", `/sections/${section._id}/enrollments`)
+        .send({})
+        .expect(404);
+      await as(
+        "student",
+        "post",
+        `/sections/${section._id}/enrollments/${users.student._id}/withdraw`,
+      )
+        .send({ version: 0 })
+        .expect(404);
+      await as("head", "patch", `/sections/${section._id}/status`)
+        .send({ version: 0, status: "OPEN" })
+        .expect(404);
+    });
     await t.test(
       "department reports do not expose other departments",
       async () => {

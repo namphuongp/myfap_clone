@@ -22,7 +22,7 @@
 
 ## Sinh viên thuộc lớp
 
-ClassMembership: section_id, student_id, course_id, semester_id, starts_at, ends_at, metadata. Mỗi lần rời rồi trở lại lớp tạo khoảng mới. ends_at=null là khoảng chưa kết thúc. Unique partial ngăn hai khoảng mở của cùng cặp lớp/sinh viên và ngăn trùng môn/kỳ. Lịch/roster lấy khoảng phủ giờ bắt đầu buổi; kết thúc khoảng không xóa điểm danh cũ. API đăng ký/rút lớp vẫn được giữ.
+ClassMembership: section_id, student_id, course_id, semester_id, starts_at, ends_at, metadata. Mỗi lần rời rồi trở lại lớp tạo khoảng mới. ends_at=null là khoảng chưa kết thúc. Unique partial ngăn hai khoảng mở của cùng cặp lớp/sinh viên và ngăn trùng môn/kỳ. Lịch/roster lấy khoảng phủ giờ bắt đầu buổi; kết thúc khoảng không xóa điểm danh cũ. Không có API tự đăng ký/rút lớp.
 
 ## Buổi học và lịch sử
 
@@ -41,3 +41,5 @@ Server kiểm tra khi khởi động, mỗi phút và lúc xác thực sinh viê
 Dừng backend. Chạy npm run db:migrate:preview rồi npm run db:migrate trong backend. Migration chuyển và kiểm tra dữ liệu trước khi drop enrollments, enrollmentperiods, audits, sessionhistories, noticereads. Dữ liệu nguồn quan trọng được giữ trong legacy_data; NoticeRead cũ nếu có được giữ thành log READ_NOTICE. Checkpoint trong importbatches hỗ trợ chạy lại sau gián đoạn. Chỉ chạy một phiên migration với backend đã dừng. Seed và db:init không tự xóa/chuyển DB cũ.
 
 Tham chiếu MongoDB do service kiểm tra, không phải SQL FK. Các writer học vụ phải dùng transaction/AcademicLock. Chi tiết API trong API.md.
+
+Phạm vi cập nhật: đã bỏ màn/API tự đăng ký môn, rút lớp, tìm lớp mở đăng ký và mở/đóng đăng ký. Danh sách sinh viên thuộc lớp được thiết lập qua seed/import; ClassMembership vẫn giữ lịch sử để xem lịch, điểm danh và áp dụng chuyển ngành.

@@ -94,14 +94,14 @@ export async function seed({ now = new Date() } = {}) {
       ],
       { session, ordered: true },
     );
-    const enrolled_at = new Date(now.getTime() - 7 * 86400000);
+    const membershipStart = new Date(now.getTime() - 7 * 86400000);
     await classMembershipRepository.create(
       {
         section_id: section._id,
         student_id: users.STUDENT._id,
         course_id: course._id,
         semester_id: semester._id,
-        starts_at: enrolled_at,
+        starts_at: membershipStart,
       },
       { session },
     );

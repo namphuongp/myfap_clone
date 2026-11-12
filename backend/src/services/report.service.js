@@ -76,7 +76,7 @@ export async function attendanceReport(actor, q) {
         id: r._id ? String(r._id) : null,
         name: people.find((p) => same(p._id, r._id))?.name ?? "Chưa phân công",
         sections: r.section_ids.length,
-        active_enrollments: r.section_ids.reduce(
+        active_students: r.section_ids.reduce(
           (n, id) => n + (countMap.get(String(id)) ?? 0),
           0,
         ),
@@ -95,7 +95,7 @@ export async function attendanceReport(actor, q) {
       section_code: s.code,
       course_id: String(s.course_id),
       course: courses.find((c) => same(c._id, s.course_id))?.name,
-      active_enrollments: countMap.get(String(s._id)) ?? 0,
+      active_students: countMap.get(String(s._id)) ?? 0,
       ...metrics(summaryMap.get(String(s._id))),
     }));
   if (q.group_by === "SECTION")
@@ -110,7 +110,7 @@ export async function attendanceReport(actor, q) {
       id: row.course_id,
       name: row.course,
       sections: 0,
-      active_enrollments: 0,
+      active_students: 0,
       sessions: 0,
       cancelled_sessions: 0,
       completed_sessions: 0,
@@ -122,7 +122,7 @@ export async function attendanceReport(actor, q) {
     };
     g.sections++;
     for (const key of [
-      "active_enrollments",
+      "active_students",
       "sessions",
       "cancelled_sessions",
       "completed_sessions",
@@ -140,7 +140,7 @@ export async function attendanceReport(actor, q) {
       id: g.id,
       name: g.name,
       sections: g.sections,
-      active_enrollments: g.active_enrollments,
+      active_students: g.active_students,
       ...metrics(g),
     })),
   };

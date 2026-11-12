@@ -187,7 +187,7 @@ class _HeadReportScreenState extends State<HeadReportScreen> {
                           if (r['course'] != null)
                             Text('${r['course']} • ${r['lecturer'] ?? '—'}'),
                           Text(
-                            'Đăng ký đang học: ${r['active_enrollments']}\nSố buổi: ${r['sessions']} • Đã điểm danh: ${r['recorded_sessions']}\nTỷ lệ có mặt / muộn: ${_rate(r['presence_rate'])}',
+                            'Sinh viên đang học: ${r['active_students']}\nSố buổi: ${r['sessions']} • Đã điểm danh: ${r['recorded_sessions']}\nTỷ lệ có mặt / muộn: ${_rate(r['presence_rate'])}',
                           ),
                         ],
                       ),

@@ -11,7 +11,7 @@ import {
 import { get, saveDocument } from "../repositories/base.repository.js";
 import { transaction } from "../repositories/transaction.js";
 import { audit } from "./audit.service.js";
-import { withdraw } from "./enrollment.service.js";
+import { closeMembership } from "./class-membership.service.js";
 import { nextTerm } from "../utils/academic-calendar.js";
 import { same } from "../utils/identity.js";
 import { clean } from "../utils/serialize.js";
@@ -216,7 +216,7 @@ export async function applyDueMajorTransfers(
         const section = sectionsById.get(String(member.section_id));
         if (!section) fail(409, "Dữ liệu sinh viên thuộc lớp không hợp lệ");
         if (!allowed.has(String(section.course_id)))
-          await withdraw(
+          await closeMembership(
             session,
             actor,
             member.section_id,

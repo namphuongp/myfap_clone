@@ -23,9 +23,7 @@ lib/
     screens/  widgets/  utils/
 ```
 
-Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình theo role. Sinh viên có lịch theo tuần, đăng ký/rút lớp, gửi/theo dõi đơn xin nghỉ và chuyển ngành, xem/tìm kiếm thông báo học vụ theo phạm vi được nhận. Giảng viên có lịch dạy, điểm danh và xử lý đơn; HEAD có màn quản lý môn/lớp và báo cáo; STAFF có màn thông báo và duyệt đổi lịch/phòng/chuyển ngành. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
-
-Backend hiện dùng trạng thái lớp `OPEN/CLOSED` để cho phép đăng ký, chưa có mốc thời gian mở và đóng đăng ký. Nếu cần đợt đăng ký theo giờ, backend phải lưu mốc thời gian và kiểm tra khi nhận yêu cầu đăng ký; chỉ đếm ngược ở Flutter không đủ để chặn đăng ký ngoài thời gian.
+Sau khi đăng nhập, `RoleHomeRouter` đưa `STUDENT`, `LECTURER`, `HEAD`, `STAFF` tới màn hình theo role. Sinh viên có lịch theo tuần, gửi/theo dõi đơn xin nghỉ và chuyển ngành, xem/tìm kiếm thông báo học vụ theo phạm vi được nhận. Giảng viên có lịch dạy, điểm danh và xử lý đơn; HEAD có màn quản lý môn/lớp và báo cáo; STAFF có màn thông báo và duyệt đổi lịch/phòng/chuyển ngành. Khi thêm chức năng, đặt màn hình và widget vào thư mục role tương ứng; chỉ đưa phần được nhiều role dùng vào `core`.
 
 ## Chạy trên Android emulator
 
@@ -59,3 +57,5 @@ Mọi role mở hồ sơ qua icon tài khoản hoặc nút Hồ sơ của tôi; 
 HEAD có bốn màn riêng và dùng core/academic cho lịch/danh sách đơn. Phân công thực hiện qua API theo buổi của main; các màn giảng viên và sinh viên giữ nguyên từ main. Không có màn Theo dõi chuyên cần cho HEAD. Course form hỗ trợ major_ids và trạng thái hoạt động, dùng cùng nghiệp vụ main qua alias /head/courses.
 
 Database mới: 17 collection; ClassMembership thay Enrollment/EnrollmentPeriod, ActivityLog thay Audit/SessionHistory, bỏ NoticeRead. Đơn chuyển ngành có hiệu lực từ kỳ tiếp theo sau khi duyệt, không đổi ngành ngay. Với DB cũ, dừng backend và chạy `npm run db:migrate` trước khi chạy ứng dụng. Xem API.md và database.md để biết quy trình và cấu trúc hiện tại.
+
+Phạm vi cập nhật: đã bỏ màn/API tự đăng ký môn, rút lớp, tìm lớp mở đăng ký và mở/đóng đăng ký. Danh sách sinh viên thuộc lớp được thiết lập qua seed/import; ClassMembership vẫn giữ lịch sử để xem lịch, điểm danh và áp dụng chuyển ngành.
