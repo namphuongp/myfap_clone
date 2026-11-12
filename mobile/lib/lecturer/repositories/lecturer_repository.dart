@@ -1,5 +1,6 @@
 import '../../core/api/api_client.dart';
 import '../models/lecturer_data.dart';
+import '../models/teaching_class.dart';
 import '../utils/lecturer_dates.dart';
 
 class LecturerRepository {
@@ -21,6 +22,24 @@ class LecturerRepository {
     return jsonList(await api.request('GET', '/schedule?$query'))
         .map(TeachingSession.new)
         .toList();
+  }
+
+  Future<List<TeachingSession>> attendanceSessions(AcademicTerm term) async {
+    final rows = await schedule(vnDay(term.start), vnDay(term.end));
+    return rows
+        .where((s) => s.semesterId == term.id && s.status != 'CANCELLED')
+        .toList();
+  }
+
+  Future<({AcademicTerm? term, List<TeachingClass> classes})>
+  attendanceOverview() async {
+    final term = (await terms()).where((t) => t.includes(vnDay())).firstOrNull;
+    if (term == null) return (term: null, classes: <TeachingClass>[]);
+    // Tải cả kỳ một lần rồi nhóm theo lớp, tránh gọi một API cho từng lớp.
+    return (
+      term: term,
+      classes: TeachingClass.group(await attendanceSessions(term)),
+    );
   }
 
   Future<Json> attendance(String id) async =>

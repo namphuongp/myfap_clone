@@ -6,6 +6,7 @@ import '../../core/profile/screens/profile_screen.dart';
 import '../repositories/lecturer_repository.dart';
 import '../widgets/lecturer_ui.dart';
 import 'lecturer_schedule_screen.dart';
+import 'lecturer_attendance_courses_screen.dart';
 import 'lecturer_change_screen.dart';
 import 'lecturer_requests_screen.dart';
 
@@ -51,9 +52,9 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     ),
   );
   void _schedule() => _open(LecturerScheduleScreen(repository: _repository));
-  void _requests({bool leave = true}) => _open(
-    LecturerRequestsScreen(repository: _repository, initialLeave: leave),
-  );
+  void _attendance() =>
+      _open(LecturerAttendanceCoursesScreen(repository: _repository));
+  void _requests() => _open(LecturerRequestsScreen(repository: _repository));
   Future<void> _logout() async {
     setState(() => _loggingOut = true);
     try {
@@ -198,11 +199,11 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                           ),
                           _tile(
                             'Điểm danh',
-                            'Ghi nhận theo buổi',
+                            'Theo môn và lớp phụ trách',
                             Icons.fact_check_rounded,
                             lecturerGreen,
                             const Color(0xFFDDF8ED),
-                            _schedule,
+                            _attendance,
                           ),
                           _tile(
                             'Duyệt đơn nghỉ',
@@ -238,34 +239,16 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
           ),
           const SectionHeading('TÀI KHOẢN'),
           Card(
-            child: Column(
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 6,
-                  ),
-                  leading: const Icon(
-                    Icons.person_outline,
-                    color: lecturerNavy,
-                  ),
-                  title: const Text('Hồ sơ của tôi'),
-                  subtitle: const Text('Xem thông tin cá nhân'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _profile,
-                ),
-                const Divider(height: 1, indent: 18, endIndent: 18),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 6,
-                  ),
-                  leading: const Icon(Icons.history, color: lecturerNavy),
-                  title: const Text('Yêu cầu đã gửi'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _requests(leave: false),
-                ),
-              ],
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 6,
+              ),
+              leading: const Icon(Icons.person_outline, color: lecturerNavy),
+              title: const Text('Hồ sơ của tôi'),
+              subtitle: const Text('Xem thông tin cá nhân'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _profile,
             ),
           ),
           const SizedBox(height: 16),

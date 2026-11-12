@@ -106,7 +106,9 @@ class _LecturerScheduleScreenState extends State<LecturerScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final days = List.generate(7, (i) => _week.add(Duration(days: i)));
-    final matching = _sessions.where((s) => s.semesterId == _termId);
+    final matching = _sessions.where(
+      (s) => s.semesterId == _termId && s.status != 'CANCELLED',
+    );
     final selected = matching.where((s) => s.day == _day).toList()
       ..sort((a, b) => a.slot.compareTo(b.slot));
     return LecturerPage(

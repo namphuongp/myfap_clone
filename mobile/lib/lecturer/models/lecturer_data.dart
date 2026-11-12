@@ -10,6 +10,8 @@ class TeachingSession {
   final Json data;
   TeachingSession(this.data);
   String get id => data['id'] as String;
+  String get sectionId => data['section_id'] as String;
+  String get courseId => data['course_id'] as String;
   String get semesterId => data['semester_id'] as String;
   String get section => data['section_code']?.toString() ?? 'Lớp học';
   String get course => data['course']?.toString() ?? 'Môn học';
